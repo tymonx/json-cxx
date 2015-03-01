@@ -48,30 +48,134 @@
 
 namespace json {
 
+/*!
+ * @brief JSON deserialization from string stream contains JSON objects {} or
+ * arrays [] to JSON C++ value
+ * */
 class Deserializer {
 public:
+    /*!
+     * @brief Default constructor
+     *
+     * No JSON values stored, no parsing started
+     * */
     Deserializer();
+
+    /*!
+     * @brief JSON deserialization from null-terminated character array
+     * to JSON C++ object or array
+     *
+     * This constructor will start parsing string and store valid JSON
+     * object {} or array [] on the stack. To pop from stack use operator>>
+     *
+     * @param[in]   str     String contains JSON objects {} or arrays [].
+     *                      It may contains whitespaces (spaces, newlines,
+     *                      tabulations or carriage returns)
+     * */
     Deserializer(const char* str);
+
+    /*!
+     * @brief JSON deserialization from String to JSON C++ object or array
+     *
+     * This constructor will start parsing string and store valid JSON
+     * objects {} or arrays [] on the stack. To pop from stack
+     * use operator>>
+     *
+     * @param[in]   str     String contains JSON objects {} or arrays [].
+     *                      It may contains whitespaces (spaces, newlines,
+     *                      tabulations or carriage returns)
+     * */
     Deserializer(const String& str);
+
+    /*!
+     * @brief Copy parsed JSON values on the stack to new Deserializer object
+     * */
     Deserializer(const Deserializer&) = default;
+
+    /*!
+     * @brief Move parsed JSON values on the stack to new Deserializer object
+     * */
     Deserializer(Deserializer&&) = default;
 
+    /*!
+     * @brief Start parsing null-terminated character array that contains JSON
+     * objects {} or arrays []
+     *
+     * All parsed and valid JSON values are stored on the stack. To pop from
+     * stack use operator>>
+     *
+     * @param[in]   str     String contains JSON objects {} or arrays [].
+     *                      It may contains whitespaces (spaces, newlines,
+     *                      tabulations or carriage returns)
+     * */
     Deserializer& operator<<(const char* str);
+
+    /*!
+     * @brief Start parsing String that constains JSON objects {} or arrays []
+     *
+     * All parsed and valid JSON values are stored on the stack.
+     * To pop from stack use operator>>
+     *
+     * @param[in]   str     String contains JSON objects {} or arrays [].
+     *                      It may contains whitespaces (spaces, newlines,
+     *                      tabulations or carriage returns)
+     * */
     Deserializer& operator<<(const String& str);
+
+    /*!
+     * @brief Pop parsed single JSON value from the stack
+     *
+     * JSON value may be a JSON object or an array. Check the stack size
+     * with size() or empty()
+     *
+     * @param[out]  value   JSON value to store from the stack
+     * */
     Deserializer& operator>>(Value& value);
 
+    /*!
+     * @brief Copy parsed JSON values on the stack to new Deserializer object
+     * */
     Deserializer& operator=(const Deserializer&) = default;
+
+    /*!
+     * @brief Move parsed JSON values on the stack to new Deserializer object
+     * */
     Deserializer& operator=(Deserializer&&) = default;
 
     friend Deserializer operator>>(const char* str, Value& val);
     friend Deserializer operator>>(const String& str, Value& val);
 
+    /*!
+     * @brief Set maximum characters to parse per JSON object or array
+     *
+     * This limitation protect application stack from reach out of the
+     * memory. Also from stack attack
+     *
+     * @param[in]   limit   Set maximum characters to parse per one valid
+     *                      JSON object or array. Without any argument
+     *                      set default limitation
+     * */
     void set_limit(size_t limit = MAX_LIMIT_PER_OBJECT);
 
+    /*!
+     * @brief Check if stack that contains parsed JSON values is empty
+     *
+     * This method is equivalent to size() == 0
+     *
+     * @return  When empty return true otherwise return false
+     * */
     bool empty() const;
+
+    /*!
+     * @brief Get how many JSON values are stored on the stack
+     *
+     * @return Number of JSON values stored on the stack
+     * */
     size_t size() const;
 
+    /*! JSON error parsing */
     struct Error {
+        /*! Error parsing codes */
         enum class Code {
             NONE,
             END_OF_FILE,
