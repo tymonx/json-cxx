@@ -89,13 +89,20 @@ public:
 
     /*!
      * @brief Copy parsed JSON values on the stack to new Deserializer object
+     *
+     * The errors won't be copied, all counters and errors will be put in to
+     * reset state
      * */
-    Deserializer(const Deserializer&) = default;
+    Deserializer(const Deserializer&);
 
     /*!
      * @brief Move parsed JSON values on the stack to new Deserializer object
+     *
+     * The errors won't be copied, all counters and errors will be put in to
+     * reset state. The given Deserializer object will contain empty stack and
+     * also set all counters and error code to reset state
      * */
-    Deserializer(Deserializer&&) = default;
+    Deserializer(Deserializer&&);
 
     /*!
      * @brief Start parsing null-terminated character array that contains JSON
@@ -133,27 +140,73 @@ public:
     Deserializer& operator>>(Value& value);
 
     /*!
-     * @brief Copy parsed JSON values on the stack to new Deserializer object
+     * @brief Replaces the contents of the stack with new entries from given
+     * Deserializer object
+     *
+     * The errors won't be copied, all counters and errors will be put in to
+     * reset state
      * */
-    Deserializer& operator=(const Deserializer&) = default;
+    Deserializer& operator=(const Deserializer&);
 
     /*!
-     * @brief Move parsed JSON values on the stack to new Deserializer object
+     * @brief Replaces the contents of the stack with new entries from given
+     * Deserializer object using moving semantics
+     *
+     * The errors won't be copied, all counters and errors will be put in to
+     * reset state. The given Deserializer object will contain empty stack and
+     * also all counters and error code to reset state
      * */
-    Deserializer& operator=(Deserializer&&) = default;
+    Deserializer& operator=(Deserializer&&);
 
-    friend Deserializer operator>>(const char* str, Value& val);
-    friend Deserializer operator>>(const String& str, Value& val);
+    /*!
+     * @brief Parsing given null-terminated character array and store all parsed
+     * JSON objects {} or arrays [] on the stack
+     *
+     * Because this use stack to store all parsed JSON objects, only last
+     * parsed data will be pop from stack and stored to given value output.
+     * operator>>() behave like input stream and may be used in the chain:
+     *
+     * @code
+     * R"({"key1":1, "key2":2}[1, 2])" >> value2 >> value1;
+     * @endcode
+     *
+     * @param[in]   str     String contains JSON objects {} or arrays [].
+     *                      It may contains whitespaces (spaces, newlines,
+     *                      tabulations or carriage returns)
+     *
+     * @param[out]  value   JSON value to store from the stack
+     * */
+    friend Deserializer operator>>(const char* str, Value& value);
+
+    /*!
+     * @brief Parsing given String object and store all parsed JSON objects {}
+     * or arrays [] on the stack
+     *
+     * Because this use stack to store all parsed JSON objects, only last
+     * parsed data will be pop from stack and stored to given value output.
+     * operator>>() behave like input stream and may be used in the chain:
+     *
+     * @code
+     * R"({"key1":1, "key2":2}[1, 2])" >> value2 >> value1;
+     * @endcode
+     *
+     * @param[in]   str     String contains JSON objects {} or arrays [].
+     *                      It may contains whitespaces (spaces, newlines,
+     *                      tabulations or carriage returns)
+     *
+     * @param[out]  value   JSON value to store from the stack
+     * */
+    friend Deserializer operator>>(const String& str, Value& value);
 
     /*!
      * @brief Set maximum characters to parse per JSON object or array
      *
      * This limitation protect application stack from reach out of the
-     * memory. Also from stack attack
+     * memory or from stack attack
      *
      * @param[in]   limit   Set maximum characters to parse per one valid
-     *                      JSON object or array. Without any argument
-     *                      set default limitation
+     *                      JSON object or array. Invoking method without
+     *                      any argument, set default limitation
      * */
     void set_limit(size_t limit = MAX_LIMIT_PER_OBJECT);
 
@@ -197,16 +250,38 @@ public:
             INVALID_NUMBER_EXPONENT
         };
 
+        /*! Error parsing code */
         Code code;
+        /*! Line position indicative error */
         size_t line;
+        /*! Column number indicative error */
         size_t column;
+        /*! Parsed stream size in bytes/characters */
         size_t size;
+        /*! Offset in the parsed stream that indicative error */
         size_t offset;
 
+        /*!
+         * @brief Try to decode error code
+         *
+         * @return  When success return decoded error code as a human readable
+         *          message, otherwise return empty string ""
+         * */
         const char* decode();
     };
 
+    /*!
+     * @brief Check if Deserializer accour any errors while parsing stream
+     *
+     * @return  true when invalid, otherwise false
+     * */
     bool is_invalid() const;
+
+    /*!
+     * @brief Get error information
+     *
+     * @return  Error information
+     * */
     Error get_error() const;
 private:
     /*! Stack protection */

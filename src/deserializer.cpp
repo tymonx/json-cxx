@@ -47,10 +47,16 @@
 #include <cstring>
 
 using namespace json;
+
+/*! Error parsing code */
 using Code = Deserializer::Error::Code;
+
+/*! UTF-16 surrogate pair */
 using Surrogate = std::pair<unsigned, unsigned>;
 
+/*! Maximu characters to parse per single JSON value. Stack protection */
 const size_t Deserializer::MAX_LIMIT_PER_OBJECT = 8096;
+
 static constexpr char JSON_NULL[] = "null";
 static constexpr char JSON_TRUE[] = "true";
 static constexpr char JSON_FALSE[] = "false";
@@ -58,9 +64,17 @@ static constexpr size_t ESCAPE_HEX_DIGITS_SIZE = 6;
 static constexpr Surrogate SURROGATE_MIN(0xD800, 0xDC00);
 static constexpr Surrogate SURROGATE_MAX(0xDBFF, 0xDFFF);
 
+/*!
+ * @brief   Get string length without null termination '\0'
+ * @return  String length
+ * */
 template<size_t N>
 constexpr size_t length(const char (&)[N]) { return (N - 1); }
 
+/*!
+ * @brief   Get array size based on the type of given object
+ * @return  Array size, number of elements in the array
+ * */
 template<class T, size_t N>
 constexpr size_t array_size(T (&)[N]) { return N; }
 
@@ -72,12 +86,58 @@ Deserializer::Deserializer() :
     m_limit(MAX_LIMIT_PER_OBJECT),
     m_error_code(Error::Code::NONE) { }
 
+Deserializer::Deserializer(const Deserializer& deserializer) : Deserializer() {
+    m_array = deserializer.m_array;
+}
+
+Deserializer::Deserializer(Deserializer&& deserializer) : Deserializer() {
+    m_array = std::move(deserializer.m_array);
+    deserializer.m_array.clear();
+
+    deserializer.m_begin = nullptr;
+    deserializer.m_pos = nullptr;
+    deserializer.m_end = nullptr;
+    deserializer.m_error_code = Error::Code::NONE;
+}
+
 Deserializer::Deserializer(const char* str) : Deserializer() {
     (*this) << str;
 }
 
 Deserializer::Deserializer(const String& str) : Deserializer() {
     (*this) << str.c_str();
+}
+
+Deserializer& Deserializer::operator=(const Deserializer& deserializer) {
+    if (this == &deserializer) { return *this; }
+
+    m_array = deserializer.m_array;
+
+    m_begin = nullptr;
+    m_pos = nullptr;
+    m_end = nullptr;
+    m_error_code = Error::Code::NONE;
+
+    return *this;
+}
+
+Deserializer& Deserializer::operator=(Deserializer&& deserializer) {
+    if (this == &deserializer) { return *this; }
+
+    m_array = std::move(deserializer.m_array);
+    deserializer.m_array.clear();
+
+    m_begin = nullptr;
+    m_pos = nullptr;
+    m_end = nullptr;
+    m_error_code = Error::Code::NONE;
+
+    deserializer.m_begin = nullptr;
+    deserializer.m_pos = nullptr;
+    deserializer.m_end = nullptr;
+    deserializer.m_error_code = Error::Code::NONE;
+
+    return *this;
 }
 
 Deserializer& Deserializer::operator<<(const char* str) {
@@ -695,9 +755,10 @@ void Deserializer::set_error(Error::Code error_code) {
     }
 }
 
+/*! Internal error codes message */
 struct ErrorCodes {
-    Deserializer::Error::Code code;
-    const char* message;
+    Deserializer::Error::Code code; /*!< Error parsing code */
+    const char* message;            /*!< Error parsing message */
 };
 
 static const struct ErrorCodes g_error_codes[] = {
