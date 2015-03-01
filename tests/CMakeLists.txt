@@ -27,19 +27,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-cmake_minimum_required(VERSION 2.8)
-project(json-cxx CXX)
+set(SOURCES
+    test_runner.cpp
+    test_deserializer.cpp
+)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
-
-include(config/AddGoogleTest.cmake)
-include(config/AddGnuCompiler.cmake)
-include(config/AddClangCompiler.cmake)
-
-include_directories(include)
-
-add_subdirectory(src)
-add_subdirectory(tests)
-add_subdirectory(examples)
+add_gtest(test_json "${SOURCES}")
+target_link_libraries(test_json json-cxx)

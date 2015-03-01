@@ -18,3 +18,4 @@ bin/*
 lib/*
 doc/*
 build*/*
+gtest/*

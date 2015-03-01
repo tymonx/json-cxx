@@ -206,7 +206,7 @@ public:
      *
      * @param[in]   limit   Set maximum characters to parse per one valid
      *                      JSON object or array. Invoking method without
-     *                      any argument set default limitation
+     *                      any argument sets default limitation
      * */
     void set_limit(size_t limit = MAX_LIMIT_PER_OBJECT);
 

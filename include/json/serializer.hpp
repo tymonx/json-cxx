@@ -166,6 +166,12 @@ public:
      * */
     friend std::ostream& operator<<(std::ostream&, Serializer&&);
 private:
+    Serializer(const Serializer&) = delete;
+    Serializer(Serializer&&) = delete;
+
+    Serializer& operator=(const Serializer&) = delete;
+    Serializer& operator=(Serializer&&) = delete;
+
     String m_serialized;
     size_t m_level;
     size_t m_indent;
