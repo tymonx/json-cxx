@@ -50,41 +50,128 @@ using Uint = unsigned int;
 using Int = int;
 using Double = double;
 
+/*!
+ * @brief JSON number that contains unsigned, signed or double number
+ * representation
+ * */
 class Number {
 public:
+    /*! JSON number type */
     enum class Type {
         INT,
         UINT,
         DOUBLE
     };
 
+    /*!
+     * @brief Default constructor
+     *
+     * On default JSON number will be created as signed integer number
+     * with initialized to zero
+     * */
     Number();
 
+    /*!
+     * @brief Create JSON number as signed integer number
+     *
+     * @param[in]  value    Value initialization
+     * */
     Number(Int value);
 
+    /*!
+     * @brief Create JSON number as unsigned integer number
+     *
+     * @param[in]  value    Value initialization
+     * */
     Number(Uint value);
 
+    /*!
+     * @brief Create JSON number as double number
+     *
+     * @param[in]  value    Value initialization
+     * */
     Number(Double value);
 
+    /*!
+     * @brief Add value
+     *
+     * This operation does't change number type. Be aware that, when adding
+     * double to integer value, fractional part will be lost
+     *
+     * @param[in]   number  The value that will be added
+     *
+     * @return Actual JSON number object
+     * */
     Number& operator+=(const Number& number);
 
+    /*!
+     * @brief Convert JSON number to signed integer value
+     *
+     * @note
+     * Converting from double to integer, fractional part will be rounded to
+     * integer before conversion. When converting to unsigned integer and
+     * stored JSON number value is negative, conversion returns 0
+     * */
     explicit operator Int() const;
 
+    /*!
+     * @brief Convert JSON number to unsigned integer value
+     *
+     * @note
+     * Converting from double to integer, fractional part will be rounded to
+     * integer before conversion. When converting to signed integer and
+     * stored JSON number is greater than maximum allowed value in signed
+     * integer, conversion returns maximum allowed positive value of the signed
+     * number
+     * */
     explicit operator Uint() const;
 
+    /*!
+     * @brief Convert JSON number to double
+     * */
     explicit operator Double() const;
 
+    /*!
+     * @brief Check if JSON number is signed integer
+     *
+     * @return  When success return true, otherwise false
+     * */
     bool is_int() const;
 
+    /*!
+     * @brief Check if JSON number is unsigned integer
+     *
+     * @return  When success return true, otherwise false
+     * */
     bool is_uint() const;
 
+    /*!
+     * @brief Check if JSON number is double
+     *
+     * @return  When success return true, otherwise false
+     * */
     bool is_double() const;
 
+    /*!
+     * @brief Get JSON number type
+     *
+     * @return JSON number type
+     * */
     Type get_type() const;
 
-    friend bool operator==(const Number& num1, const Number& num2);
+    /*!
+     * @brief Comparison between two JSON numbers
+     *
+     * @return When equal return true, otherwise false
+     * */
+    friend bool operator==(const Number&, const Number&);
 
-    friend bool operator!=(const Number& num1, const Number& num2);
+    /*!
+     * @brief Comparison between two JSON numbers
+     *
+     * @return When equal return false, otherwise true
+     * */
+    friend bool operator!=(const Number&, const Number&);
 private:
     enum Type m_type;
 
