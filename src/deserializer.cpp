@@ -272,7 +272,7 @@ Deserializer::Error Deserializer::get_error() const {
 }
 
 bool Deserializer::is_invalid() const {
-    return m_pos < m_end;
+    return Error::Code::NONE != m_error_code;
 }
 
 bool Deserializer::read_object_or_array(Value& value) {

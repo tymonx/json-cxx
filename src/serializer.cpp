@@ -75,7 +75,7 @@ Serializer::Serializer(const Value& value, Mode mode) :
     m_colon_stop {}
 {
     set_mode(mode);
-    operator<<(value);
+    (*this)<<(value);
 }
 
 Serializer& Serializer::operator<<(const Value& value) {
@@ -90,13 +90,32 @@ Serializer& Serializer::operator<<(const Value& value) {
     return *this;
 }
 
-std::ostream& json::operator<<(std::ostream& os,
-        const Serializer& serializer) {
-    return os << serializer.m_serialized;
+std::ostream& json::operator<<(std::ostream& os, Serializer& serializer) {
+    os << serializer.m_serialized;
+    serializer.clear();
+    return os;
 }
 
-String& json::operator<<(String& str, const Serializer& serializer) {
-    return str += serializer.m_serialized;
+std::ostream& json::operator<<(std::ostream& os, Serializer&& serializer) {
+    os << std::move(serializer.m_serialized);
+    serializer.clear();
+    return os;
+}
+
+String& json::operator<<(String& str, Serializer& serializer) {
+    str += serializer.m_serialized;
+    serializer.clear();
+    return str;
+}
+
+String& json::operator<<(String& str, Serializer&& serializer) {
+    str += std::move(serializer.m_serialized);
+    serializer.clear();
+    return str;
+}
+
+void Serializer::clear() {
+    m_serialized.clear();
 }
 
 void Serializer::set_mode(Mode mode) {

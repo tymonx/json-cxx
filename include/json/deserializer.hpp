@@ -66,7 +66,7 @@ public:
      * to JSON C++ object or array
      *
      * This constructor will start parsing string and store valid JSON
-     * object {} or array [] on the stack. To pop from stack use operator>>
+     * object {} or array [] on the stack. To pop from stack use operator>>()
      *
      * @param[in]   str     String contains JSON objects {} or arrays [].
      *                      It may contains whitespaces (spaces, newlines,
@@ -79,7 +79,7 @@ public:
      *
      * This constructor will start parsing string and store valid JSON
      * objects {} or arrays [] on the stack. To pop from stack
-     * use operator>>
+     * use operator>>()
      *
      * @param[in]   str     String contains JSON objects {} or arrays [].
      *                      It may contains whitespaces (spaces, newlines,
@@ -109,7 +109,7 @@ public:
      * objects {} or arrays []
      *
      * All parsed and valid JSON values are stored on the stack. To pop from
-     * stack use operator>>
+     * stack use operator>>()
      *
      * @param[in]   str     String contains JSON objects {} or arrays [].
      *                      It may contains whitespaces (spaces, newlines,
@@ -121,7 +121,7 @@ public:
      * @brief Start parsing String that constains JSON objects {} or arrays []
      *
      * All parsed and valid JSON values are stored on the stack.
-     * To pop from stack use operator>>
+     * To pop from stack use operator>>()
      *
      * @param[in]   str     String contains JSON objects {} or arrays [].
      *                      It may contains whitespaces (spaces, newlines,
@@ -206,7 +206,7 @@ public:
      *
      * @param[in]   limit   Set maximum characters to parse per one valid
      *                      JSON object or array. Invoking method without
-     *                      any argument, set default limitation
+     *                      any argument set default limitation
      * */
     void set_limit(size_t limit = MAX_LIMIT_PER_OBJECT);
 

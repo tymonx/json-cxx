@@ -46,8 +46,13 @@
 
 namespace json {
 
+/*! Unsigned integer */
 using Uint = unsigned int;
+
+/*! Signed integer */
 using Int = int;
+
+/*! Double */
 using Double = double;
 
 /*!
@@ -58,9 +63,9 @@ class Number {
 public:
     /*! JSON number type */
     enum class Type {
-        INT,
-        UINT,
-        DOUBLE
+        INT,        /*!< Signed integer number */
+        UINT,       /*!< Unsigned integer number */
+        DOUBLE      /*!< Double number */
     };
 
     /*!
@@ -182,8 +187,8 @@ private:
     };
 };
 
-bool operator==(const Number& num1, const Number& num2);
-bool operator!=(const Number& num1, const Number& num2);
+bool operator==(const Number&, const Number&);
+bool operator!=(const Number&, const Number&);
 
 } /* namespace json */
 
