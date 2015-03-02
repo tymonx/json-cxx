@@ -55,7 +55,7 @@ using Code = Deserializer::Error::Code;
 using Surrogate = std::pair<unsigned, unsigned>;
 
 /*! Maximu characters to parse per single JSON value. Stack protection */
-const size_t Deserializer::MAX_LIMIT_PER_OBJECT = 8096;
+const size_t Deserializer::MAX_LIMIT_PER_OBJECT = 0xFFFFFFFF;
 
 static constexpr char JSON_NULL[] = "null";
 static constexpr char JSON_TRUE[] = "true";
@@ -105,7 +105,7 @@ Deserializer::Deserializer(const char* str) : Deserializer() {
 }
 
 Deserializer::Deserializer(const String& str) : Deserializer() {
-    (*this) << str.c_str();
+    (*this) << str;
 }
 
 Deserializer& Deserializer::operator=(const Deserializer& deserializer) {
@@ -159,7 +159,15 @@ Deserializer& Deserializer::operator<<(const char* str) {
 }
 
 Deserializer& Deserializer::operator<<(const String& str) {
-    return (*this) << str.c_str();
+    clear_error();
+
+    m_begin = str.cbegin().base();
+    m_pos = m_begin;
+    m_end = str.cend().base();
+
+    parsing();
+
+    return *this;
 }
 
 Deserializer& Deserializer::operator>>(Value& value) {
@@ -230,10 +238,12 @@ char Deserializer::get_char() const {
     return *m_pos;
 }
 
+inline
 const char* Deserializer::get_position() const {
     return m_pos;
 }
 
+inline
 bool Deserializer::is_end() const {
     return m_pos >= m_end;
 }
@@ -654,6 +664,10 @@ bool Deserializer::read_number_exponent(String& str) {
     return read_number_digit(str);
 }
 
+#include <iostream>
+
+using namespace std;
+
 bool Deserializer::read_number(Value& value) {
     using std::pow;
     using std::stol;
@@ -678,9 +692,9 @@ bool Deserializer::read_number(Value& value) {
         return false;
     }
 
-    long integer = stol(str_integer);
+    long integer = long(stoull(str_integer));
     Double fractional = str_fractional.empty() ? 0.0 : stod(str_fractional);
-    long exponent = str_exponent.empty() ? 0 : stol(str_exponent);
+    long exponent = str_exponent.empty() ? 0 : stoll(str_exponent);
 
     if (str_fractional.empty()) {
         if (signbit(exponent)) {
@@ -732,6 +746,7 @@ bool Deserializer::read_false(Value& value) {
     return true;
 }
 
+inline
 bool Deserializer::read_null(Value& value) {
     if (is_outbound(length(JSON_NULL))) {
         set_error(Code::END_OF_FILE);

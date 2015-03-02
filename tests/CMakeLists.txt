@@ -33,4 +33,4 @@ set(SOURCES
 )
 
 add_gtest(test_json "${SOURCES}")
-target_link_libraries(test_json json-cxx)
+target_link_libraries(test_json json-cxx jsoncpp)
