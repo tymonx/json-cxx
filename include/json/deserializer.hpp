@@ -299,7 +299,7 @@ private:
 
     bool read_object_or_array(Value& value);
     bool read_object(Value& value);
-    bool read_string(Value& value);
+    bool read_string(String& str);
     bool read_value(Value& value);
     bool read_array(Value& value);
     bool read_curly_open();
@@ -321,6 +321,10 @@ private:
     bool read_string_escape_code(String& str);
     bool read_unicode(uint32_t& code);
     bool read_whitespaces();
+
+    bool count_array_values(size_t& count);
+    bool count_object_members(size_t& count);
+    bool count_string_chars(size_t& count);
 
     void prev_char();
     void next_char();

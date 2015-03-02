@@ -218,41 +218,39 @@ void Deserializer::parsing() {
     m_end = store_end;
 }
 
-void Deserializer::prev_char() {
+inline void Deserializer::prev_char() {
     --m_pos;
 }
 
-void Deserializer::next_char() {
+inline void Deserializer::next_char() {
     ++m_pos;
 }
 
-void Deserializer::back_chars(size_t count) {
+inline void Deserializer::back_chars(size_t count) {
     m_pos -= count;
 }
 
-void Deserializer::skip_chars(size_t count) {
+inline void Deserializer::skip_chars(size_t count) {
     m_pos += count;
 }
 
-char Deserializer::get_char() const {
+inline char Deserializer::get_char() const {
     return *m_pos;
 }
 
-inline
-const char* Deserializer::get_position() const {
+inline const char* Deserializer::get_position() const {
     return m_pos;
 }
 
-inline
-bool Deserializer::is_end() const {
+inline bool Deserializer::is_end() const {
     return m_pos >= m_end;
 }
 
-bool Deserializer::is_outbound(size_t offset) {
+inline bool Deserializer::is_outbound(size_t offset) {
     return (m_pos + offset) > m_end;
 }
 
-void Deserializer::clear_error() {
+inline void Deserializer::clear_error() {
     m_error_code = Error::Code::NONE;
 }
 
@@ -285,7 +283,7 @@ bool Deserializer::is_invalid() const {
     return Error::Code::NONE != m_error_code;
 }
 
-bool Deserializer::read_object_or_array(Value& value) {
+inline bool Deserializer::read_object_or_array(Value& value) {
     if (!read_whitespaces()) { return false; }
 
     bool ok = false;
@@ -307,25 +305,35 @@ bool Deserializer::read_object_or_array(Value& value) {
 }
 
 bool Deserializer::read_object(Value& value) {
+    size_t capacity = 0;
+
     if (!read_curly_open()) { return false; }
-    value = Value::Type::OBJECT;
+    if (!count_object_members(capacity)) { return false; }
+
+    value.m_type = Value::Type::OBJECT;
+    new (&value.m_object) Object();
+    value.reserve(capacity);
+
     if (read_curly_close()) { return true; }
     clear_error();
 
-    Value key;
+    String key;
 
     do {
         if (!read_string(key)) { return false; }
         if (!read_colon()) { return false; }
-        if (!read_value(value[String(key)])) { return false; }
+        if (!read_value(value[key])) { return false; }
         if (!read_comma()) { clear_error(); return read_curly_close(); }
     } while (true);
 }
 
-bool Deserializer::read_string(Value& value) {
-    if (!read_quote()) { return false; }
+bool Deserializer::read_string(String& str) {
+    size_t capacity = 1;
 
-    String str;
+    if (!read_quote()) { return false; }
+    if (!count_string_chars(capacity)) { return false; }
+
+    str.reserve(capacity);
 
     while (!is_end()) {
         if ('\\' == get_char()) {
@@ -337,7 +345,6 @@ bool Deserializer::read_string(Value& value) {
             next_char();
         }
         else {
-            value = std::move(str);
             next_char();
             return true;
         }
@@ -397,7 +404,7 @@ uint32_t decode_utf16_surrogate_pair(const Surrogate& surrogate) {
         |  (0x3FF & surrogate.second);
 }
 
-bool Deserializer::read_string_escape_code(String& str) {
+inline bool Deserializer::read_string_escape_code(String& str) {
     Surrogate surrogate;
     uint32_t code;
 
@@ -434,7 +441,7 @@ bool Deserializer::read_string_escape_code(String& str) {
     return true;
 }
 
-bool Deserializer::read_unicode(uint32_t& code) {
+inline bool Deserializer::read_unicode(uint32_t& code) {
     if (is_outbound(ESCAPE_HEX_DIGITS_SIZE)) {
         set_error(Code::END_OF_FILE);
         return false;
@@ -461,12 +468,15 @@ bool Deserializer::read_unicode(uint32_t& code) {
 
 bool Deserializer::read_value(Value& value) {
     bool ok = false;
+    String str;
 
     if (!read_whitespaces()) { return false; }
 
     switch (get_char()) {
     case '"':
-        ok = read_string(value);
+        ok = read_string(str);
+        value.m_type = Value::Type::STRING;
+        new (&value.m_string) String(std::move(str));
         break;
     case '{':
         ok = read_object(value);
@@ -497,24 +507,34 @@ bool Deserializer::read_value(Value& value) {
 }
 
 bool Deserializer::read_array(Value& value) {
+    size_t capacity = 0;
+
     if (!read_square_open()) { return false; }
-    value = Value::Type::ARRAY;
+    if (!count_array_values(capacity)) { return false; }
+
+    value.m_type = Value::Type::ARRAY;
+    new (&value.m_array) Array();
+    m_array.reserve(capacity);
+
     if (read_square_close()) { return true; }
     clear_error();
 
     Value array_value;
+    bool processing = true;
 
     do {
         if (!read_value(array_value)) { return false; }
-        value.push_back(std::move(array_value));
+        m_array.push_back(std::move(array_value));
         if (!read_comma()) {
             clear_error();
-            return read_square_close();
+            processing = false;
         }
-    } while (true);
+    } while (processing);
+
+    return read_square_close();
 }
 
-bool Deserializer::read_colon() {
+inline bool Deserializer::read_colon() {
     if (!read_whitespaces()) { return false; }
     if (':' != get_char()) {
         set_error(Code::MISS_COLON);
@@ -524,7 +544,7 @@ bool Deserializer::read_colon() {
     return true;
 }
 
-bool Deserializer::read_quote() {
+inline bool Deserializer::read_quote() {
     if (!read_whitespaces()) { return false; }
     if ('"' != get_char()) {
         set_error(Code::MISS_QUOTE);
@@ -534,7 +554,7 @@ bool Deserializer::read_quote() {
     return true;
 }
 
-bool Deserializer::read_curly_open() {
+inline bool Deserializer::read_curly_open() {
     if (!read_whitespaces()) { return false; }
     if ('{' != get_char()) {
         set_error(Code::MISS_CURLY_OPEN);
@@ -544,7 +564,7 @@ bool Deserializer::read_curly_open() {
     return true;
 }
 
-bool Deserializer::read_curly_close() {
+inline bool Deserializer::read_curly_close() {
     if (!read_whitespaces()) { return false; }
     if ('}' != get_char()) {
         set_error(Code::MISS_CURLY_CLOSE);
@@ -554,7 +574,7 @@ bool Deserializer::read_curly_close() {
     return true;
 }
 
-bool Deserializer::read_square_open() {
+inline bool Deserializer::read_square_open() {
     if (!read_whitespaces()) { return false; }
     if ('[' != get_char()) {
         set_error(Code::MISS_SQUARE_OPEN);
@@ -564,7 +584,7 @@ bool Deserializer::read_square_open() {
     return true;
 }
 
-bool Deserializer::read_square_close() {
+inline bool Deserializer::read_square_close() {
     if (!read_whitespaces()) { return false; }
     if (']' != get_char()) {
         set_error(Code::MISS_SQUARE_CLOSE);
@@ -574,7 +594,7 @@ bool Deserializer::read_square_close() {
     return true;
 }
 
-bool Deserializer::read_comma() {
+inline bool Deserializer::read_comma() {
     if (!read_whitespaces()) { return false; }
     if (',' != get_char()) {
         set_error(Code::MISS_COMMA);
@@ -584,7 +604,7 @@ bool Deserializer::read_comma() {
     return true;
 }
 
-bool Deserializer::read_whitespaces() {
+inline bool Deserializer::read_whitespaces() {
     while (!is_end()) {
         switch (get_char()) {
         case ' ':
@@ -602,7 +622,7 @@ bool Deserializer::read_whitespaces() {
     return false;
 }
 
-bool Deserializer::read_number_digit(String& str) {
+inline bool Deserializer::read_number_digit(String& str) {
     bool ok = false;
 
     while (!is_end()) {
@@ -616,7 +636,7 @@ bool Deserializer::read_number_digit(String& str) {
     return ok;
 }
 
-bool Deserializer::read_number_integer(String& str) {
+inline bool Deserializer::read_number_integer(String& str) {
     if (is_end()) { set_error(Code::END_OF_FILE); return false; }
 
     if ('-' == get_char()) {
@@ -634,7 +654,7 @@ bool Deserializer::read_number_integer(String& str) {
     return read_number_digit(str);
 }
 
-bool Deserializer::read_number_fractional(String& str) {
+inline bool Deserializer::read_number_fractional(String& str) {
     if (is_end()) { set_error(Code::END_OF_FILE); return false; }
 
     bool ok = true;
@@ -648,7 +668,7 @@ bool Deserializer::read_number_fractional(String& str) {
     return ok;
 }
 
-bool Deserializer::read_number_exponent(String& str) {
+inline bool Deserializer::read_number_exponent(String& str) {
     if (is_end()) { set_error(Code::END_OF_FILE); return false; }
 
     if (('e' != get_char()) && ('E' != get_char())) { return true; }
@@ -663,10 +683,6 @@ bool Deserializer::read_number_exponent(String& str) {
 
     return read_number_digit(str);
 }
-
-#include <iostream>
-
-using namespace std;
 
 bool Deserializer::read_number(Value& value) {
     using std::pow;
@@ -712,7 +728,7 @@ bool Deserializer::read_number(Value& value) {
     return true;
 }
 
-bool Deserializer::read_true(Value& value) {
+inline bool Deserializer::read_true(Value& value) {
     if (is_outbound(length(JSON_TRUE))) {
         set_error(Code::END_OF_FILE);
         return false;
@@ -729,7 +745,7 @@ bool Deserializer::read_true(Value& value) {
     return true;
 }
 
-bool Deserializer::read_false(Value& value) {
+inline bool Deserializer::read_false(Value& value) {
     if (is_outbound(length(JSON_FALSE))) {
         set_error(Code::END_OF_FILE);
         return false;
@@ -746,8 +762,7 @@ bool Deserializer::read_false(Value& value) {
     return true;
 }
 
-inline
-bool Deserializer::read_null(Value& value) {
+inline bool Deserializer::read_null(Value& value) {
     if (is_outbound(length(JSON_NULL))) {
         set_error(Code::END_OF_FILE);
         return false;
@@ -764,7 +779,89 @@ bool Deserializer::read_null(Value& value) {
     return true;
 }
 
-void Deserializer::set_error(Error::Code error_code) {
+inline bool Deserializer::count_array_values(size_t& count) {
+    const char* pos = get_position();
+
+    bool ok = false;
+    bool processing = true;
+    size_t braces = 0;
+
+    while ((pos < m_end) && processing) {
+        switch (*pos) {
+        case '[':
+            ++braces;
+            break;
+        case ',':
+            if (0 == braces) { ++count; }
+            break;
+        case ']':
+            if (0 == braces) { ok = true; processing = false; }
+            else { --braces; }
+            break;
+        default:
+            break;
+        }
+        ++pos;
+    }
+
+    return ok;
+}
+
+inline bool Deserializer::count_object_members(size_t& count) {
+    const char* pos = get_position();
+
+    bool ok = false;
+    bool processing = true;
+    size_t braces = 0;
+
+    while ((pos < m_end) && processing) {
+        switch (*pos) {
+        case '{':
+            ++braces;
+            break;
+        case ':':
+            if (0 == braces) { ++count; }
+            break;
+        case '}':
+            if (0 == braces) { ok = true; processing = false; }
+            else { --braces; }
+            break;
+        default:
+            break;
+        }
+        ++pos;
+    }
+
+    return ok;
+}
+
+inline bool Deserializer::count_string_chars(size_t& count) {
+    const char* pos = get_position();
+
+    bool ok = false;
+    bool processing = true;
+
+    while ((pos < m_end) && processing) {
+        switch (*pos) {
+        case '"':
+            ok = true;
+            processing = false;
+            break;
+        case '\\':
+            count += 2;
+            ++pos;
+            break;
+        default:
+            ++count;
+            break;
+        }
+        ++pos;
+    }
+
+    return ok;
+}
+
+inline void Deserializer::set_error(Error::Code error_code) {
     if (Error::Code::NONE == m_error_code) {
         m_error_code = error_code;
     }

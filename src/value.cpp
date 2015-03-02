@@ -408,6 +408,15 @@ bool Value::empty() const {
     return !size();
 }
 
+
+void Value::reserve(size_t new_capacity) {
+    if (is_array()) {
+        m_array.resize(new_capacity);
+    } else if (is_object()) {
+        m_object.resize(new_capacity);
+    }
+}
+
 size_t Value::erase(const char* key) {
     if (!is_object()) { return 0; }
 
@@ -624,7 +633,7 @@ Value& Value::Value::operator[](const char* key) {
         }
     }
 
-    m_object.emplace_back(key, std::move(Value()));
+    m_object.emplace_back(key, Value());
 
     return m_object.back().second;
 }

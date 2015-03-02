@@ -66,6 +66,8 @@ using Null = std::nullptr_t;
 
 class Value {
 public:
+    friend class Deserializer;
+
     using iterator = base_iterator<false>;
     using const_iterator = base_iterator<true>;
 
@@ -141,6 +143,8 @@ public:
     void clear();
 
     bool empty() const;
+
+    void reserve(size_t new_capacity);
 
     size_t erase(const String& key);
 
