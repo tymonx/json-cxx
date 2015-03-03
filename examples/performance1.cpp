@@ -6,7 +6,7 @@
 
 using namespace std;
 
-static const uint32_t ntimes = 10;
+static const uint32_t ntimes = 1;
 
 int main(int argc, char** argv) {
 

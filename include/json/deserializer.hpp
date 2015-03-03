@@ -46,6 +46,8 @@
 
 #include "json.hpp"
 
+#include <array>
+
 namespace json {
 
 /*!

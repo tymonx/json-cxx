@@ -304,17 +304,7 @@ inline bool Deserializer::read_object_or_array(Value& value) {
     return ok;
 }
 
-
 inline Value& Deserializer::add_member(const String& key, Value& value) {
-    /*
-    for (auto& pair : value.m_object) {
-        if (pair.first == key) {
-            pair.second.~Value();
-            new (&pair.second) Value();
-            return pair.second;
-        }
-    }
-*/
     value.m_object.emplace_back(key, nullptr);
     return value.m_object.back().second;
 }
@@ -323,7 +313,10 @@ bool Deserializer::read_object(Value& value) {
     size_t capacity = 0;
 
     if (!read_curly_open()) { return false; }
-    if (!count_object_members(capacity)) { return false; }
+    if (!count_object_members(capacity)) {
+        set_error(Error::Code::END_OF_FILE);
+        return false;
+    }
 
     value.m_type = Value::Type::OBJECT;
     new (&value.m_object) Object();
@@ -333,21 +326,27 @@ bool Deserializer::read_object(Value& value) {
     clear_error();
 
     String key;
+    bool processing = true;
 
     do {
         if (!read_string(key)) { return false; }
         if (!read_colon()) { return false; }
         if (!read_value(add_member(key, value))) { return false; }
-        if (!read_comma()) { clear_error(); return read_curly_close(); }
-        key.clear();
-    } while (true);
+        if (!read_comma()) { processing = false; }
+        else { key.clear(); }
+    } while (processing);
+
+    return read_curly_close();
 }
 
 bool Deserializer::read_string(String& str) {
     size_t capacity = 1;
 
     if (!read_quote()) { return false; }
-    if (!count_string_chars(capacity)) { return false; }
+    if (!count_string_chars(capacity)) {
+        set_error(Error::Code::END_OF_FILE);
+        return false;
+    }
 
     str.reserve(capacity);
 
@@ -526,7 +525,10 @@ bool Deserializer::read_array(Value& value) {
     size_t capacity = 0;
 
     if (!read_square_open()) { return false; }
-    if (!count_array_values(capacity)) { return false; }
+    if (!count_array_values(capacity)) {
+        set_error(Error::Code::END_OF_FILE);
+        return false;
+    }
 
     value.m_type = Value::Type::ARRAY;
     new (&value.m_array) Array();
@@ -541,10 +543,7 @@ bool Deserializer::read_array(Value& value) {
     do {
         if (!read_value(array_value)) { return false; }
         value.m_array.push_back(std::move(array_value));
-        if (!read_comma()) {
-            clear_error();
-            processing = false;
-        }
+        if (!read_comma()) { processing = false; }
     } while (processing);
 
     return read_square_close();
@@ -612,10 +611,7 @@ inline bool Deserializer::read_square_close() {
 
 inline bool Deserializer::read_comma() {
     if (!read_whitespaces()) { return false; }
-    if (',' != get_char()) {
-        set_error(Code::MISS_COMMA);
-        return false;
-    }
+    if (',' != get_char()) { return false; }
     next_char();
     return true;
 }
@@ -641,16 +637,14 @@ inline bool Deserializer::read_whitespaces() {
 inline bool Deserializer::read_number_digit(Uint64& value) {
     using std::isdigit;
 
-    char ch;
     bool ok = false;
     bool processing = true;
 
     value = 0;
 
     while (!is_end() && processing) {
-        ch = get_char();
-        if (isdigit(ch)) {
-            value = (10 * value) + Uint64(ch - 0x30);
+        if (isdigit(get_char())) {
+            value = (10 * value) + Uint64(get_char() - 0x30);
             ok = true;
             next_char();
         } else {
@@ -680,16 +674,14 @@ inline bool Deserializer::read_number_integer(Number& number) {
 inline bool Deserializer::read_number_fractional(Number& number) {
     using std::isdigit;
 
-    char ch;
     bool ok = false;
     bool processing = true;
     Double step = 0.1;
     Double fractional = 0;
 
     while (!is_end() && processing) {
-        ch = get_char();
-        if (isdigit(ch)) {
-            fractional += (step * (ch - 0x30));
+        if (isdigit(get_char())) {
+            fractional += (step * (get_char() - 0x30));
             step = 0.1 * step;
             ok = true;
             next_char();
@@ -712,13 +704,12 @@ inline bool Deserializer::read_number_fractional(Number& number) {
 inline bool Deserializer::read_number_exponent(Number& number) {
     using std::pow;
 
-    bool is_negative = false;
-    char ch = get_char();
     Uint64 value;
+    bool is_negative = false;
 
-    if ('+' == ch) {
+    if ('+' == get_char()) {
         next_char();
-    } else if ('-' == ch) {
+    } else if ('-' == get_char()) {
         is_negative = true;
         next_char();
     }
@@ -762,10 +753,12 @@ inline bool Deserializer::read_number_exponent(Number& number) {
 inline bool Deserializer::read_number(Value& value) {
     using std::isdigit;
 
+    /* Prepare JSON number */
     value.m_type = Value::Type::NUMBER;
     new (&value.m_number) Number();
 
-    if (get_char() == '-') {
+    /* Processing signs */
+    if ('-' == get_char()) {
         value.m_number.m_type = Number::Type::INT;
         value.m_number.m_int = 0;
         next_char();
@@ -774,20 +767,35 @@ inline bool Deserializer::read_number(Value& value) {
         value.m_number.m_uint = 0;
     }
 
-    if (get_char() == '0') {
+    /* Process integer part */
+    if ('0' == get_char()) {
         next_char();
     } else if (isdigit(get_char())) {
-        if (!read_number_integer(value.m_number)) { return false; }
-    } else { return false; }
-
-    if (get_char() == '.') {
-        next_char();
-        if (!read_number_fractional(value.m_number)) { return false; }
+        if (!read_number_integer(value.m_number)) {
+            set_error(Error::Code::INVALID_NUMBER_INTEGER);
+            return false;
+        }
+    } else {
+        set_error(Error::Code::INVALID_NUMBER_INTEGER);
+        return false;
     }
 
-    if ((get_char() == 'E') || (get_char() == 'e')) {
+    /* Processing fractional part */
+    if ('.' == get_char()) {
         next_char();
-        if (!read_number_exponent(value.m_number)) { return false; }
+        if (!read_number_fractional(value.m_number)) {
+            set_error(Error::Code::INVALID_NUMBER_FRACTION);
+            return false;
+        }
+    }
+
+    /* Processing exponent part */
+    if (('E' == get_char()) || ('e' == get_char())) {
+        next_char();
+        if (!read_number_exponent(value.m_number)) {
+            set_error(Error::Code::INVALID_NUMBER_EXPONENT);
+            return false;
+        }
     }
 
     return true;
@@ -915,8 +923,13 @@ inline bool Deserializer::count_string_chars(size_t& count) {
             processing = false;
             break;
         case '\\':
-            count += 2;
             ++pos;
+            if ('u' == *pos) {
+                pos += 4;
+                count += 4;
+            } else {
+                ++count;
+            }
             break;
         default:
             ++count;
