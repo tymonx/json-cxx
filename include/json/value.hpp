@@ -144,8 +144,6 @@ public:
 
     bool empty() const;
 
-    void reserve(size_t new_capacity);
-
     size_t erase(const String& key);
 
     size_t erase(const char* key);

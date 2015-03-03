@@ -312,7 +312,7 @@ bool Deserializer::read_object(Value& value) {
 
     value.m_type = Value::Type::OBJECT;
     new (&value.m_object) Object();
-    value.reserve(capacity);
+    value.m_object.reserve(capacity);
 
     if (read_curly_close()) { return true; }
     clear_error();
@@ -324,6 +324,7 @@ bool Deserializer::read_object(Value& value) {
         if (!read_colon()) { return false; }
         if (!read_value(value[key])) { return false; }
         if (!read_comma()) { clear_error(); return read_curly_close(); }
+        key.clear();
     } while (true);
 }
 
@@ -514,7 +515,7 @@ bool Deserializer::read_array(Value& value) {
 
     value.m_type = Value::Type::ARRAY;
     new (&value.m_array) Array();
-    m_array.reserve(capacity);
+    value.m_array.reserve(capacity);
 
     if (read_square_close()) { return true; }
     clear_error();
@@ -524,7 +525,7 @@ bool Deserializer::read_array(Value& value) {
 
     do {
         if (!read_value(array_value)) { return false; }
-        m_array.push_back(std::move(array_value));
+        value.m_array.push_back(std::move(array_value));
         if (!read_comma()) {
             clear_error();
             processing = false;

@@ -142,7 +142,7 @@ function (gnu_compiler_processing)
     string(REGEX REPLACE ";" " " LD_FLAGS   "${LD_FLAGS}")
 
     set(COMPILER_DEBUG      "-O0 -g3 -ggdb")
-    set(COMPILER_RELEASE    "-pg -O3 -DNDEBUG -fdata-sections -ffunction-sections")
+    set(COMPILER_RELEASE    "-O3 -DNDEBUG -fdata-sections -ffunction-sections")
     set(COMPILER_COVERAGE   "-O0 -g --coverage")
 
     set(LINKER_DEBUG        "")
