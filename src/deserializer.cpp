@@ -740,7 +740,8 @@ inline bool Deserializer::read_true(Value& value) {
         return false;
     }
 
-    value = true;
+    value.m_type = Value::Type::BOOLEAN;
+    value.m_boolean = true;
 
     skip_chars(length(JSON_TRUE));
     return true;
@@ -757,7 +758,8 @@ inline bool Deserializer::read_false(Value& value) {
         return false;
     }
 
-    value = false;
+    value.m_type = Value::Type::BOOLEAN;
+    value.m_boolean = false;
 
     skip_chars(length(JSON_FALSE));
     return true;
@@ -774,7 +776,7 @@ inline bool Deserializer::read_null(Value& value) {
         return false;
     }
 
-    value = nullptr;
+    value.m_type = Value::Type::NIL;
 
     skip_chars(length(JSON_NULL));
     return true;
