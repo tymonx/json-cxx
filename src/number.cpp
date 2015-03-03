@@ -57,50 +57,57 @@ Number::Number(Uint value) : m_type(Type::UINT), m_uint(value) { }
 Number::Number(Double value) : m_type(Type::DOUBLE), m_double(value) { }
 
 Number::operator Uint() const {
-    Uint value;
+    Uint64 value = 0;
 
     switch (m_type) {
     case Type::INT:
-        value = std::signbit(m_int) ? 0 : Uint(m_int);
+        value = std::signbit(m_int) ? 0 : Uint64(m_int);
         break;
     case Type::UINT:
         value = m_uint;
         break;
     case Type::DOUBLE:
-        value = std::signbit(m_double) ? 0 : Uint(std::round(m_double));
+        value = std::signbit(m_double) ? 0 : Uint64(std::round(m_double));
         break;
     default:
-        value = 0;
         break;
     }
 
-    return value;
+    value = std::numeric_limits<Uint>::max() < value ?
+        std::numeric_limits<Uint>::max() : value;
+
+    return Uint(value);
 }
 
 Number::operator Int() const {
-    Int value;
+    Int64 value = 0;
 
     switch (m_type) {
     case Type::INT:
         value = m_int;
         break;
     case Type::UINT:
-        value = (std::numeric_limits<Int>::max() < m_uint) ?
-            std::numeric_limits<Int>::max() : Int(m_uint);
+        value = (std::numeric_limits<Int64>::max() < m_uint) ?
+            std::numeric_limits<Int64>::max() : Int64(m_uint);
         break;
     case Type::DOUBLE:
-        value = Int(std::round(m_double));
+        value = Int64(std::round(m_double));
         break;
     default:
-        value = 0;
         break;
     }
 
-    return value;
+    value = (std::numeric_limits<Int>::min() > value) ?
+        std::numeric_limits<Int>::min() : value;
+
+    value = (std::numeric_limits<Int>::max() < value) ?
+        std::numeric_limits<Int>::max() : value;
+
+    return Int(value);
 }
 
 Number::operator Double() const {
-    Double value;
+    Double value = 0;
 
     switch (m_type) {
     case Type::INT:
@@ -113,7 +120,6 @@ Number::operator Double() const {
         value = m_double;
         break;
     default:
-        value = 0.0;
         break;
     }
 

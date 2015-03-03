@@ -44,6 +44,8 @@
 #ifndef _JSON_NUMBER_HPP_
 #define _JSON_NUMBER_HPP_
 
+#include <cstdint>
+
 namespace json {
 
 /*! Unsigned integer */
@@ -51,6 +53,12 @@ using Uint = unsigned int;
 
 /*! Signed integer */
 using Int = int;
+
+/*! Unsigned integer */
+using Uint64 = std::uint64_t;
+
+/*! Signed integer */
+using Int64 = std::int64_t;
 
 /*! Double */
 using Double = double;
@@ -181,8 +189,8 @@ private:
     enum Type m_type;
 
     union {
-        Int m_int;
-        Uint m_uint;
+        Int64 m_int;
+        Uint64 m_uint;
         Double m_double;
     };
 };
