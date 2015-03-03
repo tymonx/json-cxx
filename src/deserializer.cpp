@@ -623,107 +623,160 @@ inline bool Deserializer::read_whitespaces() {
     return false;
 }
 
-inline bool Deserializer::read_number_digit(String& str) {
+inline bool Deserializer::read_number_digit(Uint64& value) {
+    using std::isdigit;
+
+    char ch;
     bool ok = false;
+    bool processing = true;
+    Uint64 step = 1;
 
-    while (!is_end()) {
-        if (std::isdigit(get_char())) {
-            str.push_back(get_char());
-            next_char();
+    value = 0;
+
+    while (!is_end() && processing) {
+        ch = get_char();
+        if (isdigit(ch)) {
+            value = (value * step) + Uint64(ch - 0x30);
+            step = 10 * step;
             ok = true;
-        } else { return ok; }
+            next_char();
+        } else {
+            processing = false;
+        }
     }
 
     return ok;
 }
 
-inline bool Deserializer::read_number_integer(String& str) {
-    if (is_end()) { set_error(Code::END_OF_FILE); return false; }
+inline bool Deserializer::read_number_integer(Number& number) {
+    using std::isdigit;
 
-    if ('-' == get_char()) {
-        str.push_back(get_char());
-        next_char();
-        if (is_end()) { set_error(Code::END_OF_FILE); return false; }
+    Uint64 value;
+
+    if (!read_number_digit(value)) { return false; }
+
+    if (Number::Type::UINT == number.m_type) {
+        number.m_uint = value;
+    } else {
+        number.m_int = Int64(-value);
     }
 
-    if ('0' == get_char()) {
-        str.push_back(get_char());
-        next_char();
-        return true;
-    }
-
-    return read_number_digit(str);
+    return true;
 }
 
-inline bool Deserializer::read_number_fractional(String& str) {
-    if (is_end()) { set_error(Code::END_OF_FILE); return false; }
+inline bool Deserializer::read_number_fractional(Number& number) {
+    using std::isdigit;
 
-    bool ok = true;
+    char ch;
+    bool ok = false;
+    bool processing = true;
+    Double step = 0.1;
+    Double fractional = 0;
 
-    if ('.' == get_char()) {
-        str += "0.";
-        next_char();
-        ok = read_number_digit(str);
+    while (!is_end() && processing) {
+        ch = get_char();
+        if (isdigit(ch)) {
+            fractional += (step * (ch - 0x30));
+            step = 0.1 * step;
+            ok = true;
+            next_char();
+        } else {
+            if (Number::Type::UINT == number.m_type) {
+                Uint64 tmp = number.m_uint;
+                number.m_double = tmp + fractional;
+            } else {
+                Int64 tmp = number.m_int;
+                number.m_double = tmp - fractional;
+            }
+            number.m_type = Number::Type::DOUBLE;
+            processing = false;
+        }
     }
 
     return ok;
 }
 
-inline bool Deserializer::read_number_exponent(String& str) {
-    if (is_end()) { set_error(Code::END_OF_FILE); return false; }
+inline bool Deserializer::read_number_exponent(Number& number) {
+    using std::pow;
 
-    if (('e' != get_char()) && ('E' != get_char())) { return true; }
+    bool is_negative = false;
+    char ch = get_char();
+    Uint64 value;
 
-    next_char();
-    if (is_end()) { set_error(Code::END_OF_FILE); return false; }
-
-    if (('+' == get_char()) || ('-' == get_char())) {
-        str.push_back(get_char());
+    if ('+' == ch) {
+        next_char();
+    } else if ('-' == ch) {
+        is_negative = true;
         next_char();
     }
 
-    return read_number_digit(str);
+    if (!read_number_digit(value)) { return false; }
+
+    switch (number.m_type) {
+    case Number::Type::INT:
+        if (is_negative) {
+            Int64 tmp = number.m_int;
+            number.m_double = tmp;
+            number.m_double *= Double(pow(10, -value));
+            number.m_type = Number::Type::DOUBLE;
+        } else {
+            number.m_int *= Uint64(pow(10, value));
+        }
+        break;
+    case Number::Type::UINT:
+        if (is_negative) {
+            Uint64 tmp = number.m_uint;
+            number.m_double = tmp;
+            number.m_double *= Double(pow(10, -value));
+            number.m_type = Number::Type::DOUBLE;
+        } else {
+            number.m_uint *= Uint64(pow(10, value));
+        }
+        break;
+    case Number::Type::DOUBLE:
+        if (is_negative) {
+            number.m_double *= Double(pow(10, -value));
+        }
+        else {
+            number.m_double *= Double(pow(10, value));
+        }
+        break;
+    default:
+        break;
+    }
+
+    return true;
 }
 
 bool Deserializer::read_number(Value& value) {
-    using std::pow;
-    using std::stol;
-    using std::stod;
-    using std::signbit;
+    using std::isdigit;
 
-    String str_integer;
-    String str_fractional;
-    String str_exponent;
+    value.m_type = Value::Type::NUMBER;
+    new (&value.m_number) Number();
 
-    read_whitespaces();
-    if (!read_number_integer(str_integer)) {
-        set_error(Code::INVALID_NUMBER_INTEGER);
-        return false;
-    }
-    if (!read_number_fractional(str_fractional)) {
-        set_error(Code::INVALID_NUMBER_FRACTION);
-        return false;
-    }
-    if (!read_number_exponent(str_exponent)) {
-        set_error(Code::INVALID_NUMBER_EXPONENT);
-        return false;
-    }
-
-    long integer = long(stoull(str_integer));
-    Double fractional = str_fractional.empty() ? 0.0 : stod(str_fractional);
-    long exponent = str_exponent.empty() ? 0 : stoll(str_exponent);
-
-    if (str_fractional.empty()) {
-        if (signbit(exponent)) {
-            value = Double(integer) * pow(10, exponent);
-        } else {
-            integer *= Int(pow(10, exponent));
-            if (signbit(integer)) { value = Int(integer); }
-            else { value = Uint(integer); }
-        }
+    if (get_char() == '-') {
+        value.m_number.m_type = Number::Type::INT;
+        value.m_number.m_int = 0;
+        next_char();
     } else {
-        fractional = ('-' == str_integer[0]) ? -fractional : fractional;
-        value = (Double(integer) + fractional) * pow(10, exponent);
+        value.m_number.m_type = Number::Type::UINT;
+        value.m_number.m_uint = 0;
+    }
+
+    if (get_char() == '0') {
+        next_char();
+    } else if (isdigit(get_char())) {
+        if (!read_number_integer(value.m_number)) { return false; }
+    } else { return false; }
+
+    if (get_char() == '.') {
+        next_char();
+        if (!read_number_fractional(value.m_number)) { return false; }
+    }
+
+    if ((get_char() == 'E') || (get_char() == 'e')) {
+        next_char();
+        if (!read_number_exponent(value.m_number)) { return false; }
     }
 
     return true;

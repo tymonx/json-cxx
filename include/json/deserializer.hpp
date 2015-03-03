@@ -313,10 +313,10 @@ private:
     bool read_false(Value& value);
     bool read_null(Value& value);
     bool read_number(Value& value);
-    bool read_number_digit(String& str);
-    bool read_number_integer(String& str);
-    bool read_number_fractional(String& str);
-    bool read_number_exponent(String& str);
+    bool read_number_digit(Uint64& str);
+    bool read_number_integer(Number& number);
+    bool read_number_fractional(Number& number);
+    bool read_number_exponent(Number& number);
     bool read_string_escape(String& str);
     bool read_string_escape_code(String& str);
     bool read_unicode(uint32_t& code);

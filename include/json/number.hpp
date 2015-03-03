@@ -69,6 +69,8 @@ using Double = double;
  * */
 class Number {
 public:
+    friend class Deserializer;
+
     /*! JSON number type */
     enum class Type {
         INT,        /*!< Signed integer number */

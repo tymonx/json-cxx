@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     to_parse.assign((std::istreambuf_iterator<char>(inputfile)),
                                  std::istreambuf_iterator<char>());
 
-/*
+
     cout << "Start parsing" << endl;
 
     chrono::steady_clock::time_point start_time = chrono::steady_clock::now();
@@ -36,16 +36,16 @@ int main(int argc, char** argv) {
     chrono::microseconds us = chrono::duration_cast<chrono::microseconds>(
                                            end_time - start_time);
     cout << "[+] Finished successfully with an average of: " << (us.count() / ntimes) << " us\n" << endl;
-*/
+
     cout << "Start parsing" << endl;
 
-    auto start_time = chrono::steady_clock::now();
+    start_time = chrono::steady_clock::now();
     for (size_t i = 0; i < ntimes; ++i) {
             json::Value value;
             json::Deserializer(to_parse) >> value;
         }
-    auto end_time = chrono::steady_clock::now();
-    auto us = chrono::duration_cast<chrono::microseconds>(
+    end_time = chrono::steady_clock::now();
+    us = chrono::duration_cast<chrono::microseconds>(
                                            end_time - start_time);
 
     cout << "[+] Finished successfully with an average of: " << (us.count() / ntimes) << " us\n" << endl;
