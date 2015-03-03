@@ -111,10 +111,10 @@ Number::operator Double() const {
 
     switch (m_type) {
     case Type::INT:
-        value = m_int;
+        value = Double(m_int);
         break;
     case Type::UINT:
-        value = m_uint;
+        value = Double(m_uint);
         break;
     case Type::DOUBLE:
         value = m_double;

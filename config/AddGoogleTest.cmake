@@ -106,7 +106,7 @@ if (NOT GTEST_FOUND)
 
         if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
             set_target_properties(${test_target} PROPERTIES
-                COMPILE_FLAGS "-Wno-useless-cast -Wno-effc++ -Wno-inline"
+                COMPILE_FLAGS "-Wno-useless-cast -Wno-effc++ -Wno-inline -Wno-zero-as-null-pointer-constant"
             )
         endif()
 

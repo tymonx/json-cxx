@@ -629,15 +629,13 @@ inline bool Deserializer::read_number_digit(Uint64& value) {
     char ch;
     bool ok = false;
     bool processing = true;
-    Uint64 step = 1;
 
     value = 0;
 
     while (!is_end() && processing) {
         ch = get_char();
         if (isdigit(ch)) {
-            value = (value * step) + Uint64(ch - 0x30);
-            step = 10 * step;
+            value = (10 * value) + Uint64(ch - 0x30);
             ok = true;
             next_char();
         } else {
@@ -682,10 +680,10 @@ inline bool Deserializer::read_number_fractional(Number& number) {
             next_char();
         } else {
             if (Number::Type::UINT == number.m_type) {
-                Uint64 tmp = number.m_uint;
+                Double tmp = Double(number.m_uint);
                 number.m_double = tmp + fractional;
             } else {
-                Int64 tmp = number.m_int;
+                Double tmp = Double(number.m_int);
                 number.m_double = tmp - fractional;
             }
             number.m_type = Number::Type::DOUBLE;
@@ -715,19 +713,17 @@ inline bool Deserializer::read_number_exponent(Number& number) {
     switch (number.m_type) {
     case Number::Type::INT:
         if (is_negative) {
-            Int64 tmp = number.m_int;
+            Double tmp = Double(number.m_int) * pow(10, -value);
             number.m_double = tmp;
-            number.m_double *= Double(pow(10, -value));
             number.m_type = Number::Type::DOUBLE;
         } else {
-            number.m_int *= Uint64(pow(10, value));
+            number.m_int *= Int64(pow(10, value));
         }
         break;
     case Number::Type::UINT:
         if (is_negative) {
-            Uint64 tmp = number.m_uint;
+            Double tmp = Double(number.m_uint) * pow(10, -value);
             number.m_double = tmp;
-            number.m_double *= Double(pow(10, -value));
             number.m_type = Number::Type::DOUBLE;
         } else {
             number.m_uint *= Uint64(pow(10, value));
@@ -735,10 +731,10 @@ inline bool Deserializer::read_number_exponent(Number& number) {
         break;
     case Number::Type::DOUBLE:
         if (is_negative) {
-            number.m_double *= Double(pow(10, -value));
+            number.m_double *= pow(10, -value);
         }
         else {
-            number.m_double *= Double(pow(10, value));
+            number.m_double *= pow(10, value);
         }
         break;
     default:
@@ -748,7 +744,7 @@ inline bool Deserializer::read_number_exponent(Number& number) {
     return true;
 }
 
-bool Deserializer::read_number(Value& value) {
+inline bool Deserializer::read_number(Value& value) {
     using std::isdigit;
 
     value.m_type = Value::Type::NUMBER;
