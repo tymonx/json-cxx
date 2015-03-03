@@ -304,6 +304,21 @@ inline bool Deserializer::read_object_or_array(Value& value) {
     return ok;
 }
 
+
+inline Value& Deserializer::add_member(const String& key, Value& value) {
+    /*
+    for (auto& pair : value.m_object) {
+        if (pair.first == key) {
+            pair.second.~Value();
+            new (&pair.second) Value();
+            return pair.second;
+        }
+    }
+*/
+    value.m_object.emplace_back(key, nullptr);
+    return value.m_object.back().second;
+}
+
 bool Deserializer::read_object(Value& value) {
     size_t capacity = 0;
 
@@ -322,7 +337,7 @@ bool Deserializer::read_object(Value& value) {
     do {
         if (!read_string(key)) { return false; }
         if (!read_colon()) { return false; }
-        if (!read_value(value[key])) { return false; }
+        if (!read_value(add_member(key, value))) { return false; }
         if (!read_comma()) { clear_error(); return read_curly_close(); }
         key.clear();
     } while (true);

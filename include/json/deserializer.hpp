@@ -326,6 +326,8 @@ private:
     bool count_object_members(size_t& count);
     bool count_string_chars(size_t& count);
 
+    Value& add_member(const String& key, Value& value);
+
     void prev_char();
     void next_char();
     void back_chars(size_t count);
