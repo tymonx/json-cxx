@@ -690,9 +690,18 @@ inline bool Deserializer::read_number_fractional(Number& number) {
     return ok;
 }
 
-inline bool Deserializer::read_number_exponent(Number& number) {
-    using std::pow;
+static inline Double pow10_negative(Double value, Uint64 exp) {
+    while (exp-- > 0) { value *= 0.1; }
+    return value;
+}
 
+template<typename T>
+static inline T pow10_positive(T value, Uint64 exp) {
+    while (exp-- > 0) { value *= 10; }
+    return value;
+}
+
+inline bool Deserializer::read_number_exponent(Number& number) {
     bool is_negative = false;
     char ch = get_char();
     Uint64 value;
@@ -709,28 +718,30 @@ inline bool Deserializer::read_number_exponent(Number& number) {
     switch (number.m_type) {
     case Number::Type::INT:
         if (is_negative) {
-            Double tmp = Double(number.m_int) * pow(10, -value);
-            number.m_double = tmp;
+            number.m_double =
+                std::move(pow10_negative(Double(number.m_int), value));
             number.m_type = Number::Type::DOUBLE;
         } else {
-            number.m_int *= Int64(pow(10, value));
+            number.m_int = std::move(pow10_positive(number.m_int, value));
         }
         break;
     case Number::Type::UINT:
         if (is_negative) {
-            Double tmp = Double(number.m_uint) * pow(10, -value);
-            number.m_double = tmp;
+            number.m_double =
+                std::move(pow10_negative(Double(number.m_uint), value));
             number.m_type = Number::Type::DOUBLE;
         } else {
-            number.m_uint *= Uint64(pow(10, value));
+            number.m_uint = std::move(pow10_positive(number.m_uint, value));
         }
         break;
     case Number::Type::DOUBLE:
         if (is_negative) {
-            number.m_double *= pow(10, -value);
+            number.m_double =
+                std::move(pow10_negative(number.m_double, value));
         }
         else {
-            number.m_double *= pow(10, value);
+            number.m_double =
+                std::move(pow10_positive(number.m_double, value));
         }
         break;
     default:
