@@ -304,17 +304,7 @@ inline bool Deserializer::read_object_or_array(Value& value) {
     return ok;
 }
 
-
 inline Value& Deserializer::add_member(const String& key, Value& value) {
-    /*
-    for (auto& pair : value.m_object) {
-        if (pair.first == key) {
-            pair.second.~Value();
-            new (&pair.second) Value();
-            return pair.second;
-        }
-    }
-*/
     value.m_object.emplace_back(key, nullptr);
     return value.m_object.back().second;
 }
@@ -338,7 +328,7 @@ bool Deserializer::read_object(Value& value) {
         if (!read_string(key)) { return false; }
         if (!read_colon()) { return false; }
         if (!read_value(add_member(key, value))) { return false; }
-        if (!read_comma()) { clear_error(); return read_curly_close(); }
+        if (!read_comma()) { return read_curly_close(); }
         key.clear();
     } while (true);
 }
@@ -536,18 +526,12 @@ bool Deserializer::read_array(Value& value) {
     clear_error();
 
     Value array_value;
-    bool processing = true;
 
     do {
         if (!read_value(array_value)) { return false; }
         value.m_array.push_back(std::move(array_value));
-        if (!read_comma()) {
-            clear_error();
-            processing = false;
-        }
-    } while (processing);
-
-    return read_square_close();
+        if (!read_comma()) { return read_square_close(); }
+    } while (true);
 }
 
 inline bool Deserializer::read_colon() {
@@ -612,10 +596,7 @@ inline bool Deserializer::read_square_close() {
 
 inline bool Deserializer::read_comma() {
     if (!read_whitespaces()) { return false; }
-    if (',' != get_char()) {
-        set_error(Code::MISS_COMMA);
-        return false;
-    }
+    if (',' != get_char()) { return false; }
     next_char();
     return true;
 }
@@ -765,7 +746,7 @@ inline bool Deserializer::read_number(Value& value) {
     value.m_type = Value::Type::NUMBER;
     new (&value.m_number) Number();
 
-    if (get_char() == '-') {
+    if ('-' == get_char()) {
         value.m_number.m_type = Number::Type::INT;
         value.m_number.m_int = 0;
         next_char();
@@ -774,20 +755,32 @@ inline bool Deserializer::read_number(Value& value) {
         value.m_number.m_uint = 0;
     }
 
-    if (get_char() == '0') {
+    if ('0' == get_char()) {
         next_char();
     } else if (isdigit(get_char())) {
-        if (!read_number_integer(value.m_number)) { return false; }
-    } else { return false; }
-
-    if (get_char() == '.') {
-        next_char();
-        if (!read_number_fractional(value.m_number)) { return false; }
+        if (!read_number_integer(value.m_number)) {
+            set_error(Error::Code::INVALID_NUMBER_INTEGER);
+            return false;
+        }
+    } else {
+        set_error(Error::Code::INVALID_NUMBER_INTEGER);
+        return false;
     }
 
-    if ((get_char() == 'E') || (get_char() == 'e')) {
+    if ('.' == get_char()) {
         next_char();
-        if (!read_number_exponent(value.m_number)) { return false; }
+        if (!read_number_fractional(value.m_number)) {
+            set_error(Error::Code::INVALID_NUMBER_FRACTION);
+            return false;
+        }
+    }
+
+    if ('E' == (get_char()) || ('e' == get_char())) {
+        next_char();
+        if (!read_number_exponent(value.m_number)) {
+            set_error(Error::Code::INVALID_NUMBER_EXPONENT);
+            return false;
+        }
     }
 
     return true;
@@ -915,8 +908,13 @@ inline bool Deserializer::count_string_chars(size_t& count) {
             processing = false;
             break;
         case '\\':
-            count += 2;
             ++pos;
+            if ('u' == *pos) {
+                pos += 4;
+                count += 4;
+            } else {
+                ++count;
+            }
             break;
         default:
             ++count;
