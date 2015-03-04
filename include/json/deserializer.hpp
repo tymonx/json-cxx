@@ -247,6 +247,7 @@ public:
             NOT_MATCH_FALSE,
             INVALID_ESCAPE,
             INVALID_UNICODE,
+            INVALID_OPENING,
             INVALID_NUMBER_INTEGER,
             INVALID_NUMBER_FRACTION,
             INVALID_NUMBER_EXPONENT

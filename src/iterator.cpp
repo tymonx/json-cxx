@@ -35,10 +35,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * @file iterator.cpp
- *
- * @brief JSON iterator implementation
  * */
 
 #include "json/iterator.hpp"
@@ -340,29 +336,33 @@ base_iterator<is_const> json::operator-(const base_iterator<is_const>& it,
     return tmp -= n;
 }
 
+namespace json {
+
 template
-base_iterator<> json::operator+(const base_iterator<>& it,
+base_iterator<> operator+(const base_iterator<>& it,
         base_iterator<>::difference_type n);
 
 template
-base_iterator<> json::operator+(base_iterator<>::difference_type n,
+base_iterator<> operator+(base_iterator<>::difference_type n,
         const base_iterator<>& it);
 
 template
-base_iterator<> json::operator-(const base_iterator<>& it,
+base_iterator<> operator-(const base_iterator<>& it,
         base_iterator<>::difference_type n);
 
 template
-base_iterator<true> json::operator+(const base_iterator<true>& it,
+base_iterator<true> operator+(const base_iterator<true>& it,
         base_iterator<true>::difference_type n);
 
 template
-base_iterator<true> json::operator+(base_iterator<true>::difference_type n,
+base_iterator<true> operator+(base_iterator<true>::difference_type n,
         const base_iterator<true>& it);
 
 template
-base_iterator<true> json::operator-(const base_iterator<true>& it,
+base_iterator<true> operator-(const base_iterator<true>& it,
         base_iterator<true>::difference_type n);
 
-template class json::base_iterator<>;
-template class json::base_iterator<true>;
+template class base_iterator<>;
+template class base_iterator<true>;
+
+}

@@ -64,6 +64,11 @@ using Array = std::vector<Value>;
 using Bool = bool;
 using Null = std::nullptr_t;
 
+/*!
+ * @brief JSON value
+ *
+ * JSON value class that can contain JSON object, array, number, boolen or null
+ * */
 class Value {
 public:
     friend class Deserializer;
@@ -165,20 +170,52 @@ public:
 
     void swap(Value& value);
 
+    /*!
+     * @fn Value::operator[](size_t index)
+     * @brief Get key
+     * */
     Value& operator[](size_t index);
 
+    /*!
+     * @fn Value::operator[](size_t index) const
+     * @brief Get key
+     * */
     const Value& operator[](size_t index) const;
 
+    /*!
+     * @fn Value::operator[](int index)
+     * @brief Get key
+     * */
     Value& operator[](int index);
 
+    /*!
+     * @fn Value::operator[](int index) const
+     * @brief Get key
+     * */
     const Value& operator[](int index) const;
 
+    /*!
+     * @fn Value::operator[](const char*)
+     * @brief Get key
+     * */
     Value& operator[](const char* key);
 
+    /*!
+     * @fn Value::operator[](const char*) const
+     * @brief Get key
+     * */
     const Value& operator[](const char* key) const;
 
+    /*!
+     * @fn Value::operator[](const String&)
+     * @brief Get key
+     * */
     Value& operator[](const String& key);
 
+    /*!
+     * @fn Value::operator[](const String&) const
+     * @brief Get key
+     * */
     const Value& operator[](const String& key) const;
 
     Type get_type() const;

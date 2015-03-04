@@ -304,6 +304,7 @@ inline bool Deserializer::read_object_or_array(Value& value) {
         ok = read_array(value);
         break;
     default:
+        set_error(Error::Code::INVALID_OPENING);
         break;
     }
 
@@ -994,11 +995,13 @@ static const struct ErrorCodes g_error_codes[] = {
     { Code::MISS_COLON,         "Missing colon ':' in member pair"},
     { Code::MISS_CURLY_OPEN,    "Missing curly '{' for object"},
     { Code::MISS_CURLY_CLOSE,   "Missing curly '}' for object"},
-    { Code::MISS_SQUARE_OPEN,   "Missing curly '[' for array"},
-    { Code::MISS_SQUARE_CLOSE,  "Missing curly ']' for array"},
+    { Code::MISS_SQUARE_OPEN,   "Missing square '[' for array"},
+    { Code::MISS_SQUARE_CLOSE,  "Missing sqaure ']' for array"},
     { Code::NOT_MATCH_NULL,     "Did you mean 'null'?"},
     { Code::NOT_MATCH_TRUE,     "Did you mean 'true'?"},
     { Code::NOT_MATCH_FALSE,    "Did you mean 'false'?"},
+    { Code::INVALID_OPENING,    "Invalid opening."
+        " Must be '{' for object or '[' for array"},
     { Code::MISS_VALUE,         "Missing value in array/member"},
     { Code::INVALID_ESCAPE,     "Invalid escape character"},
     { Code::INVALID_UNICODE,    "Invalid unicode"},
