@@ -332,11 +332,9 @@ bool Deserializer::read_object(Value& value) {
         if (!read_string(key)) { return false; }
         if (!read_colon()) { return false; }
         if (!read_value(add_member(key, value))) { return false; }
-        if (!read_comma()) { processing = false; }
-        else { key.clear(); }
-    } while (processing);
-
-    return read_curly_close();
+        if (!read_comma()) { return read_curly_close(); }
+        key.clear();
+    } while (true);
 }
 
 bool Deserializer::read_string(String& str) {
@@ -419,7 +417,7 @@ uint32_t decode_utf16_surrogate_pair(const Surrogate& surrogate) {
         |  (0x3FF & surrogate.second);
 }
 
-inline bool Deserializer::read_string_escape_code(String& str) {
+bool Deserializer::read_string_escape_code(String& str) {
     Surrogate surrogate;
     uint32_t code;
 
@@ -456,7 +454,7 @@ inline bool Deserializer::read_string_escape_code(String& str) {
     return true;
 }
 
-inline bool Deserializer::read_unicode(uint32_t& code) {
+bool Deserializer::read_unicode(uint32_t& code) {
     if (is_outbound(ESCAPE_HEX_DIGITS_SIZE)) {
         set_error(Code::END_OF_FILE);
         return false;
@@ -538,18 +536,15 @@ bool Deserializer::read_array(Value& value) {
     clear_error();
 
     Value array_value;
-    bool processing = true;
 
     do {
         if (!read_value(array_value)) { return false; }
         value.m_array.push_back(std::move(array_value));
-        if (!read_comma()) { processing = false; }
-    } while (processing);
-
-    return read_square_close();
+        if (!read_comma()) { return read_square_close(); }
+    } while (true);
 }
 
-inline bool Deserializer::read_colon() {
+bool Deserializer::read_colon() {
     if (!read_whitespaces()) { return false; }
     if (':' != get_char()) {
         set_error(Code::MISS_COLON);
@@ -559,7 +554,7 @@ inline bool Deserializer::read_colon() {
     return true;
 }
 
-inline bool Deserializer::read_quote() {
+bool Deserializer::read_quote() {
     if (!read_whitespaces()) { return false; }
     if ('"' != get_char()) {
         set_error(Code::MISS_QUOTE);
@@ -569,7 +564,7 @@ inline bool Deserializer::read_quote() {
     return true;
 }
 
-inline bool Deserializer::read_curly_open() {
+bool Deserializer::read_curly_open() {
     if (!read_whitespaces()) { return false; }
     if ('{' != get_char()) {
         set_error(Code::MISS_CURLY_OPEN);
@@ -579,7 +574,7 @@ inline bool Deserializer::read_curly_open() {
     return true;
 }
 
-inline bool Deserializer::read_curly_close() {
+bool Deserializer::read_curly_close() {
     if (!read_whitespaces()) { return false; }
     if ('}' != get_char()) {
         set_error(Code::MISS_CURLY_CLOSE);
@@ -589,7 +584,7 @@ inline bool Deserializer::read_curly_close() {
     return true;
 }
 
-inline bool Deserializer::read_square_open() {
+bool Deserializer::read_square_open() {
     if (!read_whitespaces()) { return false; }
     if ('[' != get_char()) {
         set_error(Code::MISS_SQUARE_OPEN);
@@ -599,7 +594,7 @@ inline bool Deserializer::read_square_open() {
     return true;
 }
 
-inline bool Deserializer::read_square_close() {
+bool Deserializer::read_square_close() {
     if (!read_whitespaces()) { return false; }
     if (']' != get_char()) {
         set_error(Code::MISS_SQUARE_CLOSE);
@@ -609,14 +604,14 @@ inline bool Deserializer::read_square_close() {
     return true;
 }
 
-inline bool Deserializer::read_comma() {
+bool Deserializer::read_comma() {
     if (!read_whitespaces()) { return false; }
     if (',' != get_char()) { return false; }
     next_char();
     return true;
 }
 
-inline bool Deserializer::read_whitespaces() {
+bool Deserializer::read_whitespaces() {
     while (!is_end()) {
         switch (get_char()) {
         case ' ':
@@ -634,7 +629,7 @@ inline bool Deserializer::read_whitespaces() {
     return false;
 }
 
-inline bool Deserializer::read_number_digit(Uint64& value) {
+bool Deserializer::read_number_digit(Uint64& value) {
     using std::isdigit;
 
     bool ok = false;
@@ -701,9 +696,20 @@ inline bool Deserializer::read_number_fractional(Number& number) {
     return ok;
 }
 
-inline bool Deserializer::read_number_exponent(Number& number) {
-    using std::pow;
+static inline Double pow10_negative(Double value, Uint64 exp) {
+    while (exp-- > 0) { value *= 0.1; }
+    return value;
+}
 
+template<typename T>
+static inline T pow10_positive(T value, Uint64 exp) {
+    while (exp-- > 0) { value *= 10; }
+    return value;
+}
+
+inline bool Deserializer::read_number_exponent(Number& number) {
+    bool is_negative = false;
+    char ch = get_char();
     Uint64 value;
     bool is_negative = false;
 
@@ -719,28 +725,30 @@ inline bool Deserializer::read_number_exponent(Number& number) {
     switch (number.m_type) {
     case Number::Type::INT:
         if (is_negative) {
-            Double tmp = Double(number.m_int) * pow(10, -value);
-            number.m_double = tmp;
+            number.m_double =
+                std::move(pow10_negative(Double(number.m_int), value));
             number.m_type = Number::Type::DOUBLE;
         } else {
-            number.m_int *= Int64(pow(10, value));
+            number.m_int = std::move(pow10_positive(number.m_int, value));
         }
         break;
     case Number::Type::UINT:
         if (is_negative) {
-            Double tmp = Double(number.m_uint) * pow(10, -value);
-            number.m_double = tmp;
+            number.m_double =
+                std::move(pow10_negative(Double(number.m_uint), value));
             number.m_type = Number::Type::DOUBLE;
         } else {
-            number.m_uint *= Uint64(pow(10, value));
+            number.m_uint = std::move(pow10_positive(number.m_uint, value));
         }
         break;
     case Number::Type::DOUBLE:
         if (is_negative) {
-            number.m_double *= pow(10, -value);
+            number.m_double =
+                std::move(pow10_negative(number.m_double, value));
         }
         else {
-            number.m_double *= pow(10, value);
+            number.m_double =
+                std::move(pow10_positive(number.m_double, value));
         }
         break;
     default:
@@ -750,14 +758,13 @@ inline bool Deserializer::read_number_exponent(Number& number) {
     return true;
 }
 
-inline bool Deserializer::read_number(Value& value) {
+bool Deserializer::read_number(Value& value) {
     using std::isdigit;
 
     /* Prepare JSON number */
     value.m_type = Value::Type::NUMBER;
     new (&value.m_number) Number();
 
-    /* Processing signs */
     if ('-' == get_char()) {
         value.m_number.m_type = Number::Type::INT;
         value.m_number.m_int = 0;
@@ -767,7 +774,6 @@ inline bool Deserializer::read_number(Value& value) {
         value.m_number.m_uint = 0;
     }
 
-    /* Process integer part */
     if ('0' == get_char()) {
         next_char();
     } else if (isdigit(get_char())) {
@@ -780,7 +786,6 @@ inline bool Deserializer::read_number(Value& value) {
         return false;
     }
 
-    /* Processing fractional part */
     if ('.' == get_char()) {
         next_char();
         if (!read_number_fractional(value.m_number)) {
@@ -789,8 +794,7 @@ inline bool Deserializer::read_number(Value& value) {
         }
     }
 
-    /* Processing exponent part */
-    if (('E' == get_char()) || ('e' == get_char())) {
+    if ('E' == (get_char()) || ('e' == get_char())) {
         next_char();
         if (!read_number_exponent(value.m_number)) {
             set_error(Error::Code::INVALID_NUMBER_EXPONENT);

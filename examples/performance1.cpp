@@ -6,7 +6,7 @@
 
 using namespace std;
 
-static const uint32_t ntimes = 1;
+static const uint32_t ntimes = 100;
 
 int main(int argc, char** argv) {
 
@@ -22,7 +22,6 @@ int main(int argc, char** argv) {
 
     to_parse.assign((std::istreambuf_iterator<char>(inputfile)),
                                  std::istreambuf_iterator<char>());
-
 
 
     cout << "Start parsing" << endl;

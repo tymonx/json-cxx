@@ -44,7 +44,6 @@
 #include "json/value.hpp"
 #include "json/iterator.hpp"
 
-#include <cmath>
 #include <limits>
 #include <type_traits>
 #include <functional>
