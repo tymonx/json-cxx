@@ -324,6 +324,8 @@ private:
     bool read_unicode(uint32_t& code);
     bool read_whitespaces();
 
+    bool read_unicode_hexdigits(const char* pos, uint32_t& code);
+
     bool count_array_values(size_t& count);
     bool count_object_members(size_t& count);
     bool count_string_chars(size_t& count);

@@ -326,14 +326,23 @@ bool Deserializer::read_object(Value& value) {
     clear_error();
 
     String key;
+    bool processing = true;
 
     do {
         if (!read_string(key)) { return false; }
         if (!read_colon()) { return false; }
         if (!read_value(add_member(key, value))) { return false; }
+<<<<<<< HEAD
+        if (!read_comma()) { processing = false; }
+        else { key.clear(); }
+    } while (processing);
+
+    return read_curly_close();
+=======
         if (!read_comma()) { return read_curly_close(); }
         key.clear();
     } while (true);
+>>>>>>> eb37f6591e59789f4c46d64336b553a566fec764
 }
 
 bool Deserializer::read_string(String& str) {
@@ -453,37 +462,6 @@ bool Deserializer::read_string_escape_code(String& str) {
     return true;
 }
 
-#include <iostream>
-using std::cout;
-using std::endl;
-
-inline bool Deserializer::read_unicode_hexdigits(const char* pos,
-        uint32_t& code) {
-    static constexpr size_t HEX_LENGTH = 4;
-    char ch;
-
-    code = 0;
-
-    for (size_t i = 0; i < HEX_LENGTH; ++i) {
-        code <<= 4;
-        ch = pos[i];
-        if ('0' <= ch && ch <= '9') {
-            code |= (0xF & (('0' + 0x0) - ch));
-        } else if ('A' <= ch && ch <= 'F') {
-            code |= (0xF & (('A' + 0xA) - ch));
-        } else if ('a' <= ch && ch <= 'f') {
-            code |= (0xF & (('a' + 0xA) - ch));
-        } else {
-            set_error(Error::Code::INVALID_UNICODE);
-            return false;
-        }
-    }
-
-    //cout << "Code: " << std::hex << code << endl;
-
-    return true;
-}
-
 bool Deserializer::read_unicode(uint32_t& code) {
     if (is_outbound(ESCAPE_HEX_DIGITS_SIZE)) {
         set_error(Code::END_OF_FILE);
@@ -493,9 +471,16 @@ bool Deserializer::read_unicode(uint32_t& code) {
     const char* ch = get_position();
     if ('\\' != ch[0]) { return false; }
     if ('u'  != ch[1]) { return false; }
-    if (!read_unicode_hexdigits(&ch[2], code)) { return false; }
 
-    cout << "Code: " << std::hex << code << endl;
+    for (size_t i = 2; i < ESCAPE_HEX_DIGITS_SIZE; i++) {
+        if (!std::isxdigit(ch[i])) {
+            set_error(Code::INVALID_UNICODE);
+            return false;
+        }
+    }
+
+    size_t unused;
+    code = unsigned(std::stoul(ch + 2, &unused, 16));
 
     skip_chars(ESCAPE_HEX_DIGITS_SIZE);
 
@@ -563,8 +548,15 @@ bool Deserializer::read_array(Value& value) {
     do {
         if (!read_value(array_value)) { return false; }
         value.m_array.push_back(std::move(array_value));
+<<<<<<< HEAD
+        if (!read_comma()) { processing = false; }
+    } while (processing);
+
+    return read_square_close();
+=======
         if (!read_comma()) { return read_square_close(); }
     } while (true);
+>>>>>>> eb37f6591e59789f4c46d64336b553a566fec764
 }
 
 bool Deserializer::read_colon() {
@@ -662,7 +654,7 @@ bool Deserializer::read_number_digit(Uint64& value) {
 
     while (!is_end() && processing) {
         if (isdigit(get_char())) {
-            value = (10 * value) + Uint64(get_char() - '0');
+            value = (10 * value) + Uint64(get_char() - 0x30);
             ok = true;
             next_char();
         } else {
@@ -699,7 +691,7 @@ inline bool Deserializer::read_number_fractional(Number& number) {
 
     while (!is_end() && processing) {
         if (isdigit(get_char())) {
-            fractional += (step * (get_char() - '0'));
+            fractional += (step * (get_char() - 0x30));
             step = 0.1 * step;
             ok = true;
             next_char();
@@ -719,15 +711,25 @@ inline bool Deserializer::read_number_fractional(Number& number) {
     return ok;
 }
 
-template<typename T>
-static inline T pow(T value, T base, Uint64 exp) {
-    while (exp-- > 0) { value *= base; }
+static inline Double pow10_negative(Double value, Uint64 exp) {
+    while (exp-- > 0) { value *= 0.1; }
     return value;
 }
 
+template<typename T>
+static inline T pow10_positive(T value, Uint64 exp) {
+    while (exp-- > 0) { value *= 10; }
+    return value;
+}
+
+<<<<<<< HEAD
+=======
 inline bool Deserializer::read_number_exponent(Number& number) {
     bool is_negative = false;
+    char ch = get_char();
+>>>>>>> eb37f6591e59789f4c46d64336b553a566fec764
     Uint64 value;
+    bool is_negative = false;
 
     if ('+' == get_char()) {
         next_char();
@@ -742,29 +744,29 @@ inline bool Deserializer::read_number_exponent(Number& number) {
     case Number::Type::INT:
         if (is_negative) {
             number.m_double =
-                std::move(pow(Double(number.m_int), 0.1, value));
+                std::move(pow10_negative(Double(number.m_int), value));
             number.m_type = Number::Type::DOUBLE;
         } else {
-            number.m_int = std::move(pow<Int64>(number.m_int, 10, value));
+            number.m_int = std::move(pow10_positive(number.m_int, value));
         }
         break;
     case Number::Type::UINT:
         if (is_negative) {
             number.m_double =
-                std::move(pow(Double(number.m_uint), 0.1, value));
+                std::move(pow10_negative(Double(number.m_uint), value));
             number.m_type = Number::Type::DOUBLE;
         } else {
-            number.m_uint = std::move(pow<Uint64>(number.m_uint, 10, value));
+            number.m_uint = std::move(pow10_positive(number.m_uint, value));
         }
         break;
     case Number::Type::DOUBLE:
         if (is_negative) {
             number.m_double =
-                std::move(pow(number.m_double, 0.1, value));
+                std::move(pow10_negative(number.m_double, value));
         }
         else {
             number.m_double =
-                std::move(pow(number.m_double, 10.0, value));
+                std::move(pow10_positive(number.m_double, value));
         }
         break;
     default:
@@ -781,6 +783,10 @@ bool Deserializer::read_number(Value& value) {
     value.m_type = Value::Type::NUMBER;
     new (&value.m_number) Number();
 
+<<<<<<< HEAD
+    /* Processing signs */
+=======
+>>>>>>> eb37f6591e59789f4c46d64336b553a566fec764
     if ('-' == get_char()) {
         value.m_number.m_type = Number::Type::INT;
         value.m_number.m_int = 0;
@@ -790,6 +796,10 @@ bool Deserializer::read_number(Value& value) {
         value.m_number.m_uint = 0;
     }
 
+<<<<<<< HEAD
+    /* Process integer part */
+=======
+>>>>>>> eb37f6591e59789f4c46d64336b553a566fec764
     if ('0' == get_char()) {
         next_char();
     } else if (isdigit(get_char())) {
@@ -802,6 +812,10 @@ bool Deserializer::read_number(Value& value) {
         return false;
     }
 
+<<<<<<< HEAD
+    /* Processing fractional part */
+=======
+>>>>>>> eb37f6591e59789f4c46d64336b553a566fec764
     if ('.' == get_char()) {
         next_char();
         if (!read_number_fractional(value.m_number)) {
@@ -810,7 +824,12 @@ bool Deserializer::read_number(Value& value) {
         }
     }
 
+<<<<<<< HEAD
+    /* Processing exponent part */
+    if (('E' == get_char()) || ('e' == get_char())) {
+=======
     if ('E' == (get_char()) || ('e' == get_char())) {
+>>>>>>> eb37f6591e59789f4c46d64336b553a566fec764
         next_char();
         if (!read_number_exponent(value.m_number)) {
             set_error(Error::Code::INVALID_NUMBER_EXPONENT);
@@ -945,29 +964,17 @@ inline bool Deserializer::count_string_chars(size_t& count) {
         case '\\':
             ++pos;
             if ('u' == *pos) {
-                uint32_t code;
-                ++pos;
-                if (!read_unicode_hexdigits(pos, code)) {
-                    processing = false;
-                }
-                if (code < 0x80) { ++count; }
-                else if (code < 0x800) { count += 2; }
-                else {
-                    if ((SURROGATE_MIN.first <= code)
-                     && (SURROGATE_MAX.first >= code)) { count += 4; }
-                    else { count += 3; }
-                }
                 pos += 4;
+                count += 4;
             } else {
                 ++count;
-                ++pos;
             }
             break;
         default:
             ++count;
-            ++pos;
             break;
         }
+        ++pos;
     }
 
     return ok;
