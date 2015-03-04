@@ -410,7 +410,7 @@ uint32_t decode_utf16_surrogate_pair(const Surrogate& surrogate) {
         |  (0x3FF & surrogate.second);
 }
 
-inline bool Deserializer::read_string_escape_code(String& str) {
+bool Deserializer::read_string_escape_code(String& str) {
     Surrogate surrogate;
     uint32_t code;
 
@@ -447,7 +447,7 @@ inline bool Deserializer::read_string_escape_code(String& str) {
     return true;
 }
 
-inline bool Deserializer::read_unicode(uint32_t& code) {
+bool Deserializer::read_unicode(uint32_t& code) {
     if (is_outbound(ESCAPE_HEX_DIGITS_SIZE)) {
         set_error(Code::END_OF_FILE);
         return false;
@@ -534,7 +534,7 @@ bool Deserializer::read_array(Value& value) {
     } while (true);
 }
 
-inline bool Deserializer::read_colon() {
+bool Deserializer::read_colon() {
     if (!read_whitespaces()) { return false; }
     if (':' != get_char()) {
         set_error(Code::MISS_COLON);
@@ -544,7 +544,7 @@ inline bool Deserializer::read_colon() {
     return true;
 }
 
-inline bool Deserializer::read_quote() {
+bool Deserializer::read_quote() {
     if (!read_whitespaces()) { return false; }
     if ('"' != get_char()) {
         set_error(Code::MISS_QUOTE);
@@ -554,7 +554,7 @@ inline bool Deserializer::read_quote() {
     return true;
 }
 
-inline bool Deserializer::read_curly_open() {
+bool Deserializer::read_curly_open() {
     if (!read_whitespaces()) { return false; }
     if ('{' != get_char()) {
         set_error(Code::MISS_CURLY_OPEN);
@@ -564,7 +564,7 @@ inline bool Deserializer::read_curly_open() {
     return true;
 }
 
-inline bool Deserializer::read_curly_close() {
+bool Deserializer::read_curly_close() {
     if (!read_whitespaces()) { return false; }
     if ('}' != get_char()) {
         set_error(Code::MISS_CURLY_CLOSE);
@@ -574,7 +574,7 @@ inline bool Deserializer::read_curly_close() {
     return true;
 }
 
-inline bool Deserializer::read_square_open() {
+bool Deserializer::read_square_open() {
     if (!read_whitespaces()) { return false; }
     if ('[' != get_char()) {
         set_error(Code::MISS_SQUARE_OPEN);
@@ -584,7 +584,7 @@ inline bool Deserializer::read_square_open() {
     return true;
 }
 
-inline bool Deserializer::read_square_close() {
+bool Deserializer::read_square_close() {
     if (!read_whitespaces()) { return false; }
     if (']' != get_char()) {
         set_error(Code::MISS_SQUARE_CLOSE);
@@ -594,14 +594,14 @@ inline bool Deserializer::read_square_close() {
     return true;
 }
 
-inline bool Deserializer::read_comma() {
+bool Deserializer::read_comma() {
     if (!read_whitespaces()) { return false; }
     if (',' != get_char()) { return false; }
     next_char();
     return true;
 }
 
-inline bool Deserializer::read_whitespaces() {
+bool Deserializer::read_whitespaces() {
     while (!is_end()) {
         switch (get_char()) {
         case ' ':
@@ -619,7 +619,7 @@ inline bool Deserializer::read_whitespaces() {
     return false;
 }
 
-inline bool Deserializer::read_number_digit(Uint64& value) {
+bool Deserializer::read_number_digit(Uint64& value) {
     using std::isdigit;
 
     char ch;
@@ -751,7 +751,7 @@ inline bool Deserializer::read_number_exponent(Number& number) {
     return true;
 }
 
-inline bool Deserializer::read_number(Value& value) {
+bool Deserializer::read_number(Value& value) {
     using std::isdigit;
 
     value.m_type = Value::Type::NUMBER;
