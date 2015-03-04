@@ -611,7 +611,7 @@ bool Value::operator!() const {
     return is_null();
 }
 
-Value& Value::Value::operator[](const char* key) {
+Value& Value::operator[](const char* key) {
     if (!is_object()) {
         if (is_null()) { *this = Type::OBJECT; }
         else { return *this; }
@@ -628,7 +628,7 @@ Value& Value::Value::operator[](const char* key) {
     return m_object.back().second;
 }
 
-const Value& Value::Value::operator[](const char* key) const {
+const Value& Value::operator[](const char* key) const {
     if (!is_object()) { return *this; }
 
     for (const auto& pair : m_object) {
@@ -640,7 +640,7 @@ const Value& Value::Value::operator[](const char* key) const {
     return g_null_value;
 }
 
-Value& Value::Value::operator[](const size_t index) {
+Value& Value::operator[](const size_t index) {
     if (is_null()) { *this = Type::ARRAY; }
 
     Value* ptr;
@@ -661,7 +661,7 @@ Value& Value::Value::operator[](const size_t index) {
     return *ptr;
 }
 
-const Value& Value::Value::operator[](const size_t index) const {
+const Value& Value::operator[](const size_t index) const {
     const Value* ptr;
 
     if (is_array()) {
