@@ -106,6 +106,47 @@ Number::operator Int() const {
     return Int(value);
 }
 
+Number::operator Uint64() const {
+    Uint64 value = 0;
+
+    switch (m_type) {
+    case Type::INT:
+        value = std::signbit(m_int) ? 0 : Uint64(m_int);
+        break;
+    case Type::UINT:
+        value = m_uint;
+        break;
+    case Type::DOUBLE:
+        value = std::signbit(m_double) ? 0 : Uint64(std::round(m_double));
+        break;
+    default:
+        break;
+    }
+
+    return Uint(value);
+}
+
+Number::operator Int64() const {
+    Int64 value = 0;
+
+    switch (m_type) {
+    case Type::INT:
+        value = m_int;
+        break;
+    case Type::UINT:
+        value = (std::numeric_limits<Int64>::max() < m_uint) ?
+            std::numeric_limits<Int64>::max() : Int64(m_uint);
+        break;
+    case Type::DOUBLE:
+        value = Int64(std::round(m_double));
+        break;
+    default:
+        break;
+    }
+
+    return value;
+}
+
 Number::operator Double() const {
     Double value = 0;
 

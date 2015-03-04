@@ -148,7 +148,7 @@ public:
      * @brief Constructor that convert normal iterator to const_iterator
      *
      * This constructor is enabled only for const_iterator instance,
-     * in other way base_iterator with is_cnst set to true
+     * in other way base_iterator with is_const set to true
      * */
     template<typename = typename std::enable_if<is_const>>
     base_iterator(const base_iterator<>&);
@@ -189,7 +189,7 @@ public:
      * @brief Copy assignment that convert normal iterator to const_iterator
      *
      * This operator is enabled only for const_iterator instance,
-     * in other way base_iterator with is_cnst set to true
+     * in other way base_iterator with is_const set to true
      * */
     template<typename = typename std::enable_if<is_const>>
     base_iterator& operator=(const base_iterator<>& it);
