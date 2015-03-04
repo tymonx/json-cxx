@@ -284,7 +284,13 @@ bool Deserializer::is_invalid() const {
 }
 
 inline bool Deserializer::read_object_or_array(Value& value) {
-    if (!read_whitespaces()) { return false; }
+    if (!read_whitespaces()) {
+        /* All whitespaces removed, no extra chars to parse.
+         * Clear end of file error.
+         * */
+        clear_error();
+        return false;
+    }
 
     bool ok = false;
 
@@ -453,10 +459,6 @@ bool Deserializer::read_string_escape_code(String& str) {
     return true;
 }
 
-#include <iostream>
-using std::cout;
-using std::endl;
-
 inline bool Deserializer::read_unicode_hexdigits(const char* pos,
         uint32_t& code) {
     static constexpr size_t HEX_LENGTH = 4;
@@ -467,19 +469,20 @@ inline bool Deserializer::read_unicode_hexdigits(const char* pos,
     for (size_t i = 0; i < HEX_LENGTH; ++i) {
         code <<= 4;
         ch = pos[i];
-        if ('0' <= ch && ch <= '9') {
-            code |= (0xF & (('0' + 0x0) - ch));
-        } else if ('A' <= ch && ch <= 'F') {
-            code |= (0xF & (('A' + 0xA) - ch));
-        } else if ('a' <= ch && ch <= 'f') {
-            code |= (0xF & (('a' + 0xA) - ch));
-        } else {
+        if (('0' <= ch) && (ch <= '9')) {
+            code |= (0xF & (ch - ('0' - 0x0)));
+        }
+        else if (('A' <= ch) && (ch <= 'F')) {
+            code |= (0xF & (ch - ('A' - 0xA)));
+        }
+        else if (('a' <= ch) && (ch <= 'f')) {
+            code |= (0xF & (ch - ('a' - 0xA)));
+        }
+        else {
             set_error(Error::Code::INVALID_UNICODE);
             return false;
         }
     }
-
-    //cout << "Code: " << std::hex << code << endl;
 
     return true;
 }
@@ -494,8 +497,6 @@ bool Deserializer::read_unicode(uint32_t& code) {
     if ('\\' != ch[0]) { return false; }
     if ('u'  != ch[1]) { return false; }
     if (!read_unicode_hexdigits(&ch[2], code)) { return false; }
-
-    cout << "Code: " << std::hex << code << endl;
 
     skip_chars(ESCAPE_HEX_DIGITS_SIZE);
 

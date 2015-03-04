@@ -41,8 +41,8 @@
  * @brief JSON number interface
  * */
 
-#ifndef _JSON_NUMBER_HPP_
-#define _JSON_NUMBER_HPP_
+#ifndef JSON_CXX_NUMBER_HPP
+#define JSON_CXX_NUMBER_HPP
 
 #include <cstdint>
 
@@ -202,4 +202,4 @@ bool operator!=(const Number&, const Number&);
 
 } /* namespace json */
 
-#endif /* _JSON_NUMBER_HPP_ */
+#endif /* _JSON_CXX_NUMBER_HPP_ */

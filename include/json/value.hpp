@@ -41,8 +41,8 @@
  * @brief JSON value interface
  * */
 
-#ifndef _JSON_VALUE_HPP_
-#define _JSON_VALUE_HPP_
+#ifndef JSON_CXX_VALUE_HPP
+#define JSON_CXX_VALUE_HPP
 
 #include "number.hpp"
 
@@ -275,4 +275,4 @@ bool operator>=(const Value&, const Value&);
 
 } /* namespace json */
 
-#endif /* _JSON_VALUE_HPP_ */
+#endif /* JSON_CXX_VALUE_HPP */

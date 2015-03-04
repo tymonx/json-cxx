@@ -41,8 +41,8 @@
  * @brief JSON iterator interface
  * */
 
-#ifndef _JSON_ITERATOR_HPP_
-#define _JSON_ITERATOR_HPP_
+#ifndef JSON_CXX_ITERATOR_HPP
+#define JSON_CXX_ITERATOR_HPP
 
 #include "value.hpp"
 
@@ -199,4 +199,4 @@ void swap(base_iterator<>&, base_iterator<>&);
 
 } /* namespace json */
 
-#endif /* _JSON_ITERATOR_HPP_ */
+#endif /* JSON_CXX_ITERATOR_HPP */

@@ -235,8 +235,7 @@ int main(void) {
 0.1e1,
 1e-1,
 1e00,2e+00,2e-00
-,"rosebud"]}
-)";
+,"rosebud"]})";
 
     if (deserializer.is_invalid()) {
         auto error = deserializer.get_error();

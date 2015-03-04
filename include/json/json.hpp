@@ -41,8 +41,8 @@
  * @brief JSON interface
  * */
 
-#ifndef _JSON_HPP_
-#define _JSON_HPP_
+#ifndef JSON_CXX_HPP
+#define JSON_CXX_HPP
 
 #include "value.hpp"
 #include "number.hpp"
@@ -50,4 +50,4 @@
 #include "serializer.hpp"
 #include "deserializer.hpp"
 
-#endif /* _JSON_HPP_ */
+#endif /* JSON_CXX_HPP */

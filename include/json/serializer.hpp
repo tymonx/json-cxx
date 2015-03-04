@@ -41,8 +41,8 @@
  * @brief JSON serializer interface
  * */
 
-#ifndef _JSON_SERIALIZER_HPP_
-#define _JSON_SERIALIZER_HPP_
+#ifndef JSON_CXX_SERIALIZER_HPP
+#define JSON_CXX_SERIALIZER_HPP
 
 #include "json.hpp"
 
@@ -196,4 +196,4 @@ std::ostream& operator<<(std::ostream&, Serializer&&);
 
 }
 
-#endif /* _JSON_SERIALIZER_HPP_ */
+#endif /* _JSON_CXX_SERIALIZER_HPP_ */

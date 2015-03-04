@@ -41,8 +41,8 @@
  * @brief JSON deserializer interface
  * */
 
-#ifndef _JSON_DESERIALIZER_HPP_
-#define _JSON_DESERIALIZER_HPP_
+#ifndef JSON_CXX_DESERIALIZER_HPP
+#define JSON_CXX_DESERIALIZER_HPP
 
 #include "json.hpp"
 
@@ -351,4 +351,4 @@ Deserializer operator>>(const String& str, Value& val);
 
 }
 
-#endif /* _JSON_DESERIALIZER_HPP_ */
+#endif /* JSON_CXX_DESERIALIZER_HPP */
