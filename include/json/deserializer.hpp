@@ -293,7 +293,7 @@ private:
     Array m_array;
 
     const char* m_begin;
-    const char* m_pos;
+    const char* m_current;
     const char* m_end;
     size_t m_limit;
     Error::Code m_error_code;
@@ -302,14 +302,13 @@ private:
 
     bool read_object_or_array(Value& value);
     bool read_object(Value& value);
+    bool read_object_member(Value& value, size_t& count);
     bool read_string(String& str);
+    bool read_string_unicode(String& str);
+    bool read_string_escape(String& str);
     bool read_value(Value& value);
     bool read_array(Value& value);
-    bool read_curly_open();
-    bool read_curly_close();
-    bool read_square_open();
-    bool read_square_close();
-    bool read_comma();
+    bool read_array_element(Value& value, size_t& count);
     bool read_colon();
     bool read_quote();
     bool read_true(Value& value);
@@ -320,27 +319,10 @@ private:
     bool read_number_integer(Number& number);
     bool read_number_fractional(Number& number);
     bool read_number_exponent(Number& number);
-    bool read_string_escape(String& str);
-    bool read_string_escape_code(String& str);
-    bool read_unicode(uint32_t& code);
+    bool read_unicode(const char** pos, uint32_t& code);
     bool read_whitespaces();
 
-    bool read_unicode_hexdigits(const char* pos, uint32_t& code);
-
-    bool count_values(size_t& count);
     bool count_string_chars(size_t& count);
-
-    Value& add_member(const String& key, Value& value);
-
-    void prev_char();
-    void next_char();
-    void back_chars(size_t count);
-    void skip_chars(size_t count);
-
-    char get_char() const;
-    const char* get_position() const;
-    bool is_end() const;
-    bool is_outbound(size_t offset);
 
     void clear_error();
     void set_error(Error::Code error_code);
