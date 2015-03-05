@@ -325,7 +325,7 @@ private:
     bool count_string_chars(size_t& count);
 
     void clear_error();
-    void set_error(Error::Code error_code);
+    bool set_error(Error::Code error_code);
 };
 
 Deserializer operator>>(const char* str, Value& value);
