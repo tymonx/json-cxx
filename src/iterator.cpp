@@ -50,6 +50,11 @@ base_iterator<is_const>::base_iterator() :
 
 namespace json {
 
+/*!
+ * @brief Convert nnon-const iterator to const_iterator
+ *
+ * @param[in]   it  Non-const iterator
+ * */
 template<>
 template<>
 base_iterator<true>::base_iterator(const base_iterator<false>& it) :
@@ -66,6 +71,13 @@ base_iterator<true>::base_iterator(const base_iterator<false>& it) :
     }
 }
 
+/*!
+ * @brief New const_iterator that is assignment from non-const iterator
+ *
+ * @param[in]   it  Non-const iterator
+ *
+ * @return New const_iterator based on non-const iterator assignment
+ * */
 template<>
 template<>
 base_iterator<true>&
@@ -338,26 +350,32 @@ base_iterator<is_const> json::operator-(const base_iterator<is_const>& it,
 
 namespace json {
 
+/*! Get normal iterator with added offset */
 template
 base_iterator<> operator+(const base_iterator<>& it,
         base_iterator<>::difference_type n);
 
+/*! Get normal iterator with added offset */
 template
 base_iterator<> operator+(base_iterator<>::difference_type n,
         const base_iterator<>& it);
 
+/*! Get normal iterator with subtracted offset */
 template
 base_iterator<> operator-(const base_iterator<>& it,
         base_iterator<>::difference_type n);
 
+/*! Get const_iterator with added offset */
 template
 base_iterator<true> operator+(const base_iterator<true>& it,
         base_iterator<true>::difference_type n);
 
+/*! Get const_iterator with added offset */
 template
 base_iterator<true> operator+(base_iterator<true>::difference_type n,
         const base_iterator<true>& it);
 
+/*! Get const_iterator with subtracted offset */
 template
 base_iterator<true> operator-(const base_iterator<true>& it,
         base_iterator<true>::difference_type n);

@@ -327,8 +327,7 @@ private:
 
     bool read_unicode_hexdigits(const char* pos, uint32_t& code);
 
-    bool count_array_values(size_t& count);
-    bool count_object_members(size_t& count);
+    bool count_values(size_t& count);
     bool count_string_chars(size_t& count);
 
     Value& add_member(const String& key, Value& value);
@@ -347,8 +346,8 @@ private:
     void set_error(Error::Code error_code);
 };
 
-Deserializer operator>>(const char* str, Value& val);
-Deserializer operator>>(const String& str, Value& val);
+Deserializer operator>>(const char* str, Value& value);
+Deserializer operator>>(const String& str, Value& value);
 
 }
 

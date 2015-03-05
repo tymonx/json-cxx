@@ -46,6 +46,10 @@
 #include <cmath>
 #include <cstring>
 
+#include <iostream>
+using std::cout;
+using std::endl;
+
 using namespace json;
 
 /*! Error parsing code */
@@ -312,26 +316,27 @@ inline bool Deserializer::read_object_or_array(Value& value) {
 }
 
 inline Value& Deserializer::add_member(const String& key, Value& value) {
-    value.m_object.emplace_back(key, nullptr);
+    value.m_object.push_back(std::move(Pair(std::move(key), nullptr)));
     return value.m_object.back().second;
 }
 
 bool Deserializer::read_object(Value& value) {
-    size_t capacity = 0;
+    size_t capacity = 16;
 
     if (!read_curly_open()) { return false; }
-    if (!count_object_members(capacity)) {
+    /*
+    if (!count_values(capacity)) {
         set_error(Error::Code::END_OF_FILE);
         return false;
     }
-
+*/
     value.m_type = Value::Type::OBJECT;
     new (&value.m_object) Object();
-    value.m_object.reserve(capacity);
 
     if (read_curly_close()) { return true; }
     clear_error();
 
+    value.m_object.reserve(capacity);
     String key;
 
     do {
@@ -344,14 +349,15 @@ bool Deserializer::read_object(Value& value) {
 }
 
 bool Deserializer::read_string(String& str) {
-    size_t capacity = 1;
+    size_t capacity = 16;
 
     if (!read_quote()) { return false; }
+    /*
     if (!count_string_chars(capacity)) {
         set_error(Error::Code::END_OF_FILE);
         return false;
     }
-
+*/
     str.reserve(capacity);
 
     while (!is_end()) {
@@ -545,27 +551,31 @@ bool Deserializer::read_value(Value& value) {
 }
 
 bool Deserializer::read_array(Value& value) {
-    size_t capacity = 0;
+    size_t capacity = 16;
 
     if (!read_square_open()) { return false; }
-    if (!count_array_values(capacity)) {
+    /*
+    if (!count_values(capacity)) {
         set_error(Error::Code::END_OF_FILE);
         return false;
     }
-
+*/
     value.m_type = Value::Type::ARRAY;
     new (&value.m_array) Array();
-    value.m_array.reserve(capacity);
 
     if (read_square_close()) { return true; }
     clear_error();
 
+    value.m_array.reserve(capacity);
     Value array_value;
 
     do {
         if (!read_value(array_value)) { return false; }
         value.m_array.push_back(std::move(array_value));
-        if (!read_comma()) { return read_square_close(); }
+        if (!read_comma()) {
+            //value.m_array.shrink_to_fit();
+            return read_square_close();
+        }
     } while (true);
 }
 
@@ -657,22 +667,19 @@ bool Deserializer::read_whitespaces() {
 bool Deserializer::read_number_digit(Uint64& value) {
     using std::isdigit;
 
-    bool ok = false;
-    bool processing = true;
+    if (!is_end() && isdigit(get_char())) {
+        value = Uint64(get_char() - '0');
+        next_char();
+    } else { return false; }
 
-    value = 0;
-
-    while (!is_end() && processing) {
+    while (!is_end()) {
         if (isdigit(get_char())) {
             value = (10 * value) + Uint64(get_char() - '0');
-            ok = true;
             next_char();
-        } else {
-            processing = false;
-        }
+        } else { return true; }
     }
 
-    return ok;
+    return true;
 }
 
 inline bool Deserializer::read_number_integer(Number& number) {
@@ -743,30 +750,26 @@ inline bool Deserializer::read_number_exponent(Number& number) {
     switch (number.m_type) {
     case Number::Type::INT:
         if (is_negative) {
-            number.m_double =
-                std::move(pow(Double(number.m_int), 0.1, value));
+            number.m_double = pow(Double(number.m_int), 0.1, value);
             number.m_type = Number::Type::DOUBLE;
         } else {
-            number.m_int = std::move(pow<Int64>(number.m_int, 10, value));
+            number.m_int = pow<Int64>(number.m_int, 10, value);
         }
         break;
     case Number::Type::UINT:
         if (is_negative) {
-            number.m_double =
-                std::move(pow(Double(number.m_uint), 0.1, value));
+            number.m_double = pow(Double(number.m_uint), 0.1, value);
             number.m_type = Number::Type::DOUBLE;
         } else {
-            number.m_uint = std::move(pow<Uint64>(number.m_uint, 10, value));
+            number.m_uint = pow<Uint64>(number.m_uint, 10, value);
         }
         break;
     case Number::Type::DOUBLE:
         if (is_negative) {
-            number.m_double =
-                std::move(pow(number.m_double, 0.1, value));
+            number.m_double = pow(number.m_double, 0.1, value);
         }
         else {
-            number.m_double =
-                std::move(pow(number.m_double, 10.0, value));
+            number.m_double = pow(number.m_double, 10.0, value);
         }
         break;
     default:
@@ -794,12 +797,7 @@ bool Deserializer::read_number(Value& value) {
 
     if ('0' == get_char()) {
         next_char();
-    } else if (isdigit(get_char())) {
-        if (!read_number_integer(value.m_number)) {
-            set_error(Error::Code::INVALID_NUMBER_INTEGER);
-            return false;
-        }
-    } else {
+    } else if (!read_number_integer(value.m_number)) {
         set_error(Error::Code::INVALID_NUMBER_INTEGER);
         return false;
     }
@@ -876,7 +874,7 @@ inline bool Deserializer::read_null(Value& value) {
     return true;
 }
 
-inline bool Deserializer::count_array_values(size_t& count) {
+inline bool Deserializer::count_values(size_t& count) {
     const char* pos = get_position();
 
     bool ok = false;
@@ -885,41 +883,15 @@ inline bool Deserializer::count_array_values(size_t& count) {
 
     while ((pos < m_end) && processing) {
         switch (*pos) {
-        case '[':
-            ++braces;
-            break;
         case ',':
             if (0 == braces) { ++count; }
             break;
-        case ']':
-            if (0 == braces) { ok = true; processing = false; }
-            else { --braces; }
-            break;
-        default:
-            break;
-        }
-        ++pos;
-    }
-
-    return ok;
-}
-
-inline bool Deserializer::count_object_members(size_t& count) {
-    const char* pos = get_position();
-
-    bool ok = false;
-    bool processing = true;
-    size_t braces = 0;
-
-    while ((pos < m_end) && processing) {
-        switch (*pos) {
         case '{':
+        case '[':
             ++braces;
             break;
-        case ':':
-            if (0 == braces) { ++count; }
-            break;
         case '}':
+        case ']':
             if (0 == braces) { ok = true; processing = false; }
             else { --braces; }
             break;

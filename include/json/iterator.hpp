@@ -245,8 +245,10 @@ public:
      * */
     base_iterator& operator-=(difference_type);
 
+    /*! JSON value friend */
     friend Value;
 
+    /*! const_iterator is friend for normal iterator */
     friend base_iterator<true>;
 
     /*! Compare two iterators. It1 position is less than it2 position */
