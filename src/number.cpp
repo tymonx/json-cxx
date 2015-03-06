@@ -61,20 +61,17 @@ Number::operator Uint() const {
 
     switch (m_type) {
     case Type::INT:
-        value = std::signbit(m_int) ? 0 : Uint64(m_int);
+        value = Uint64(m_int);
         break;
     case Type::UINT:
         value = m_uint;
         break;
     case Type::DOUBLE:
-        value = std::signbit(m_double) ? 0 : Uint64(std::round(m_double));
+        value = Uint64(std::round(m_double));
         break;
     default:
         break;
     }
-
-    value = std::numeric_limits<Uint>::max() < value ?
-        std::numeric_limits<Uint>::max() : value;
 
     return Uint(value);
 }
@@ -87,8 +84,7 @@ Number::operator Int() const {
         value = m_int;
         break;
     case Type::UINT:
-        value = (std::numeric_limits<Int64>::max() < m_uint) ?
-            std::numeric_limits<Int64>::max() : Int64(m_uint);
+        value = Int64(m_uint);
         break;
     case Type::DOUBLE:
         value = Int64(std::round(m_double));
@@ -96,12 +92,6 @@ Number::operator Int() const {
     default:
         break;
     }
-
-    value = (std::numeric_limits<Int>::min() > value) ?
-        std::numeric_limits<Int>::min() : value;
-
-    value = (std::numeric_limits<Int>::max() < value) ?
-        std::numeric_limits<Int>::max() : value;
 
     return Int(value);
 }
@@ -111,13 +101,13 @@ Number::operator Uint64() const {
 
     switch (m_type) {
     case Type::INT:
-        value = std::signbit(m_int) ? 0 : Uint64(m_int);
+        value = Uint64(m_int);
         break;
     case Type::UINT:
         value = m_uint;
         break;
     case Type::DOUBLE:
-        value = std::signbit(m_double) ? 0 : Uint64(std::round(m_double));
+        value = Uint64(std::round(m_double));
         break;
     default:
         break;
@@ -134,8 +124,7 @@ Number::operator Int64() const {
         value = m_int;
         break;
     case Type::UINT:
-        value = (std::numeric_limits<Int64>::max() < m_uint) ?
-            std::numeric_limits<Int64>::max() : Int64(m_uint);
+        value = Int64(m_uint);
         break;
     case Type::DOUBLE:
         value = Int64(std::round(m_double));

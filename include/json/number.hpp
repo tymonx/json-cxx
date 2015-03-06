@@ -121,46 +121,21 @@ public:
 
     /*!
      * @brief Convert JSON number to signed integer value
-     *
-     * @note
-     * Converting from double to integer, fractional part will be rounded to
-     * integer before conversion. When converting to unsigned integer and
-     * stored JSON number value is negative, conversion returns 0
      * */
     explicit operator Int() const;
 
     /*!
      * @brief Convert JSON number to unsigned integer value
-     *
-     * @note
-     * Converting from double to integer, fractional part will be rounded to
-     * integer before conversion. When converting to signed integer and
-     * stored JSON number is greater than maximum allowed value in signed
-     * integer, conversion returns maximum allowed positive value of the signed
-     * number
      * */
     explicit operator Uint() const;
 
     /*!
-     * @brief Convert JSON number to 64-bit unsigned integer
-     *
-     * @note
-     * Lower saturation to zero (0), it avoids underflow from signed conversion
-     * to unsigned representation. In other words when signed number is
-     * negative, will be converted to zero. Converting from double will cause
-     * rounding and truncation before conversion
+     * @brief Convert JSON number to 64-bit signed integer
      * */
     explicit operator Int64() const;
 
     /*!
-     * @brief Convert JSON number to 64-bit signed integer
-     *
-     * @note
-     * Upper saturation to MAX(Int64), it avoids overflow from unsigned
-     * conversion to signed representation. In other words when unsigned number
-     * is larger than maximum allowed signed positive value, it will be
-     * converted to MAX(Int64). Converting from double will cause rounding and
-     * truncation before conversion
+     * @brief Convert JSON number to 64-bit unsigned integer
      * */
     explicit operator Uint64() const;
 

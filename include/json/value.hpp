@@ -48,6 +48,7 @@
 
 #include <string>
 #include <vector>
+#include <stdexcept>
 #include <utility>
 
 namespace json {
@@ -98,6 +99,32 @@ public:
         STRING,
         NUMBER,
         BOOLEAN
+    };
+
+    /*!
+     * @brief JSON value exception
+     * */
+    class Exception : public std::runtime_error {
+    public:
+        /*!
+         * @brief JSON value exception constructor
+         *
+         * @param[in]   str JSON value exception message
+         * */
+        Exception(const char* str);
+
+        /*!
+         * @brief JSON value exception constructor
+         *
+         * @param[in]   str JSON value exception message
+         * */
+        Exception(const std::string& str);
+
+        /*! Exception copy constructor */
+        Exception(const Exception&) = default;
+
+        /*! Exception destructor */
+        ~Exception();
     };
 
     /*!

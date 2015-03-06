@@ -66,6 +66,12 @@ static const void* g_null_value_ref = &g_null_value_raw;
 /*! Now we can cast raw memory to JSON value object */
 static const Value& g_null_value = *static_cast<const Value*>(g_null_value_ref);
 
+Value::Exception::Exception(const char* str) : runtime_error(str) { }
+
+Value::Exception::Exception(const std::string& str) : runtime_error(str) { }
+
+Value::Exception::~Exception() { }
+
 Value::Value(Type type) : m_type(type) {
     create_container(type);
 }
@@ -556,54 +562,93 @@ bool Value::is_double() const {
 }
 
 Value::operator String&() {
+    if (Type::STRING != m_type) {
+        throw Value::Exception("JSON isn't a string");
+    }
     return m_string;
 }
 
 Value::operator const String&() const {
+    if (Type::STRING != m_type) {
+        throw Value::Exception("JSON isn't a string");
+    }
     return m_string;
 }
 
 Value::operator const char*() const {
+    if (Type::STRING != m_type) {
+        throw Value::Exception("JSON isn't a string");
+    }
     return m_string.c_str();
 }
 
 Value::operator Bool() const {
+    if (Type::BOOLEAN != m_type) {
+        throw Value::Exception("JSON isn't a boolean");
+    }
     return m_boolean;
 }
 
 Value::operator Null() const {
+    if (Type::NIL != m_type) {
+        throw Value::Exception("JSON isn't a null");
+    }
     return nullptr;
 }
 
 Value::operator Int() const {
+    if (Type::NUMBER != m_type) {
+        throw Value::Exception("JSON isn't a number");
+    }
     return Int(m_number);
 }
 
 Value::operator Uint() const {
+    if (Type::NUMBER != m_type) {
+        throw Value::Exception("JSON isn't a number");
+    }
     return Uint(m_number);
 }
 
 Value::operator Double() const {
+    if (Type::NUMBER != m_type) {
+        throw Value::Exception("JSON isn't a number");
+    }
     return Double(m_number);
 }
 
 Value::operator Array&() {
+    if (Type::ARRAY != m_type) {
+        throw Value::Exception("JSON isn't an array");
+    }
     return m_array;
 }
 
 Value::operator Number&() {
+    if (Type::NUMBER != m_type) {
+        throw Value::Exception("JSON isn't a number");
+    }
     return m_number;
 }
 
 Value::operator const Array&() const {
+    if (Type::ARRAY != m_type) {
+        throw Value::Exception("JSON isn't an array");
+    }
     return m_array;
 }
 
 Value::operator const Object&() const {
+    if (Type::OBJECT != m_type) {
+        throw Value::Exception("JSON isn't an object");
+    }
     return m_object;
 }
 
 Value::operator const Number&() const {
+    if (Type::NUMBER != m_type) {
+        throw Value::Exception("JSON isn't a number");
+    }
     return m_number;
 }
 
