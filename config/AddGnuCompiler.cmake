@@ -128,6 +128,8 @@ function (gnu_compiler_processing)
         -Wstrict-null-sentinel
         -Wuseless-cast
         -Wzero-as-null-pointer-constant
+        -Wstack-protector
+        -fstack-protector-all
     )
 
     set(C_FLAGS     ${C_FLAGS}   ${COMMON_WARNINGS} ${C_WARNINGS})

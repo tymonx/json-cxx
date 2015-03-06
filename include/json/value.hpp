@@ -424,19 +424,81 @@ public:
      * */
     size_t erase(const char* key);
 
+    /*!
+     * @brief Erase JSON value from JSON object or array
+     *
+     * @param[in]   pos Iterator to the JSON value to remove
+     *
+     * @return Iterator following the last removed element. If the iterator
+     * pos refers to the last element, the end() iterator is returned
+     * */
     iterator erase(const_iterator pos);
 
+    /*!
+     * @brief Erase JSON values from JSON object or array
+     *
+     * @param[in]   first   First iterator for range removing
+     * @param[in]   last    Last iterator for range removing
+     *
+     * @return Iterator following the last removed element. If the iterator
+     * pos refers to the last element, the end() iterator is returned
+     * */
     iterator erase(const_iterator first, const_iterator last);
 
+    /*!
+     * @brief Insert new JSON value for JSON array
+     *
+     * @param[in]   pos     Iterator before which the content will be inserted
+     * @param[in]   value   JSON value to insert
+     *
+     * @return Iterator pointing to the inserted JSON value
+     * */
     iterator insert(const_iterator pos, const Value& value);
 
+    /*!
+     * @brief Insert new JSON value for JSON array
+     *
+     * @param[in]   pos     Iterator before which the content will be inserted
+     * @param[in]   value   JSON value to insert using move semantic
+     *
+     * @return Iterator pointing to the inserted JSON value
+     * */
     iterator insert(const_iterator pos, Value&& value);
 
+    /*!
+     * @brief Insert new JSON values for JSON array
+     *
+     * @param[in]   pos     Iterator before which the content will be inserted
+     * @param[in]   count   Repeat insertion
+     * @param[in]   value   JSON value to insert using
+     *
+     * @return Iterator pointing to the inserted JSON value
+     * */
     iterator insert(const_iterator pos, size_t count, const Value& value);
 
+    /*!
+     * @brief Insert new JSON values for JSON array
+     *
+     * @param[in]   pos     Iterator before which the content will be inserted
+     * @param[in]   first   First iterator for range insertion
+     * @param[in]   last    Last iterator for range insertion
+     *
+     * @return Iterator pointing to the first inserted JSON value or pos if
+     * first == last
+     * */
     iterator insert(const_iterator pos,
             const_iterator first, const_iterator last);
 
+    /*!
+     * @brief Insert new JSON values for JSON array
+     *
+     * @param[in]   pos         Iterator before which the content will be
+     *                          inserted
+     * @param[in]   init_list   Initializer list to insert the JSON values from
+     *
+     * @return Iterator pointing to the first inserted JSON value or pos if
+     * initialize list is empty
+     * */
     iterator insert(const_iterator pos, std::initializer_list<Value> init_list);
 
     /*!
@@ -479,11 +541,10 @@ public:
     const Value& operator[](size_t index) const;
 
     /*!
-     * @brief Array access to JSON value in JSON array or JSON member in JSON
-     * object
+     * @brief Array access to JSON value in JSON array or object
      *
      * When object is null type, after calling operator[] change type to JSON
-     * array. When index is equal to size(), append only JSON array with new
+     * array. When index is equal to size(), append JSON array with new
      * JSON null element at the end
      *
      * @code
@@ -499,8 +560,7 @@ public:
     Value& operator[](int index);
 
     /*!
-     * @brief Array access to JSON value in JSON array or JSON member in JSON
-     * object
+     * @brief Array access to JSON value in JSON array or object
      *
      * When object is neither array or object, return myself
      *
@@ -511,100 +571,211 @@ public:
     const Value& operator[](int index) const;
 
     /*!
-     * @fn Value::operator[](const char*)
-     * @brief Get key
+     * @brief Array access to JSON value in JSON object
+     *
+     * Only valid for JSON object or null type. When object is a JSON null, it
+     * will be converted to JSON object with one JSON member that contains
+     * given key and value as JSON null. When operator[] cannot find member
+     * with given key, create new JSON member at the end with given key and
+     * value as JSON null. For other JSON types return myself
+     *
+     * @param[in]   key     JSON key member that identify JSON value in object
+     * @return      JSON value from JSON object
      * */
     Value& operator[](const char* key);
 
     /*!
-     * @fn Value::operator[](const char*) const
-     * @brief Get key
+     * @brief Array access to JSON value in JSON object
+     *
+     * Only valid for JSON object. When operator[] cannot find member
+     * with given key, it returns global const JSON null. For other JSON types
+     * return myself
+     *
+     * @param[in]   key     JSON key member that identify JSON value in object
+     * @return      JSON value from JSON object
      * */
     const Value& operator[](const char* key) const;
 
     /*!
-     * @fn Value::operator[](const String&)
-     * @brief Get key
+     * @brief Array access to JSON value in JSON object
+     *
+     * Only valid for JSON object or null type. When object is a JSON null, it
+     * will be converted to JSON object with one JSON member that contains
+     * given key and value as JSON null. When operator[] cannot find member
+     * with given key, create new JSON member at the end with given key and
+     * value as JSON null. For other JSON types return myself
+     *
+     * @param[in]   key     JSON key member that identify JSON value in object
+     * @return      JSON value from JSON object
      * */
     Value& operator[](const String& key);
 
     /*!
-     * @fn Value::operator[](const String&) const
-     * @brief Get key
+     * @brief Array access to JSON value in JSON object
+     *
+     * Only valid for JSON object. When operator[] cannot find member
+     * with given key, it returns global const JSON null. For other JSON types
+     * return myself
+     *
+     * @param[in]   key     JSON key member that identify JSON value in object
+     * @return      JSON value from JSON object
      * */
     const Value& operator[](const String& key) const;
 
+    /*!
+     * @brief Get JSON type
+     * */
     Type get_type() const;
 
+    /*!
+     * @brief Check if JSON member with given key exist in JSON object
+     *
+     * @param[in]   key     key string to identify JSON member in JSON object
+     *
+     * @return true when member exist otherwise false
+     * */
     bool is_member(const std::string& key) const;
 
+    /*!
+     * @brief Check if JSON member with given key exist in JSON object
+     *
+     * @param[in]   key     key string to identify JSON member in JSON object
+     *
+     * @return true when member exist otherwise false
+     * */
     bool is_member(const char* key) const;
 
+    /*!
+     * @brief Check if JSON value is a string
+     * @return true when is otherwise false
+     * */
     bool is_string() const;
 
+    /*!
+     * @brief Check if JSON value is a object
+     * @return true when is otherwise false
+     * */
     bool is_object() const;
 
+    /*!
+     * @brief Check if JSON value is a array
+     * @return true when is otherwise false
+     * */
     bool is_array() const;
 
+    /*!
+     * @brief Check if JSON value is a number
+     * @return true when is otherwise false
+     * */
     bool is_number() const;
 
+    /*!
+     * @brief Check if JSON value is a boolean
+     * @return true when is otherwise false
+     * */
     bool is_boolean() const;
 
+    /*!
+     * @brief Check if JSON value is a null
+     * @return true when is otherwise false
+     * */
     bool is_null() const;
 
+    /*!
+     * @brief Check if JSON value is a signed integer
+     * @return true when is otherwise false
+     * */
     bool is_int() const;
 
+    /*!
+     * @brief Check if JSON value is a unsigned integer
+     * @return true when is otherwise false
+     * */
     bool is_uint() const;
 
+    /*!
+     * @brief Check if JSON value is a double
+     * @return true when is otherwise false
+     * */
     bool is_double() const;
 
+    /*! Convert JSON value to string */
     explicit operator String&();
 
+    /*! Convert JSON value to string */
     explicit operator const String&() const;
 
+    /*! Convert JSON value to string */
     explicit operator const char*() const;
 
+    /*! Convert JSON value to boolean */
     explicit operator Bool() const;
 
+    /*! Convert JSON value to null */
     explicit operator Null() const;
 
+    /*! Convert JSON value to signed integer */
     explicit operator Int() const;
 
+    /*! Convert JSON value to unsigned integer */
     explicit operator Uint() const;
 
+    /*! Convert JSON value to double */
     explicit operator Double() const;
 
+    /*! Convert JSON value to array */
     explicit operator Array&();
 
+    /*! Convert JSON value to number */
     explicit operator Number&();
 
+    /*! Convert JSON value to array */
     explicit operator const Array&() const;
 
+    /*! Convert JSON value to object */
     explicit operator const Object&() const;
 
+    /*! Convert JSON value to number */
     explicit operator const Number&() const;
 
+    /*! Equivalent to is_null() */
     bool operator!() const;
 
+    /*! JSON values comparison */
     friend bool operator==(const Value&, const Value&);
+
+    /*! JSON values comparison */
     friend bool operator!=(const Value&, const Value&);
+
+    /*! JSON values comparison */
     friend bool operator<(const Value&, const Value&);
+
+    /*! JSON values comparison */
     friend bool operator>(const Value&, const Value&);
+
+    /*! JSON values comparison */
     friend bool operator<=(const Value&, const Value&);
+
+    /*! JSON values comparison */
     friend bool operator>=(const Value&, const Value&);
 
+    /*! Begin iterator */
     iterator begin();
 
+    /*! End iterator */
     iterator end();
 
+    /*! Begin const iterator */
     const_iterator begin() const;
 
+    /*! End const iterator */
     const_iterator end() const;
 
+    /*! Begin const iterator */
     const_iterator cbegin() const;
 
+    /*! End const iterator */
     const_iterator cend() const;
-
 private:
     enum Type m_type;
 
@@ -619,11 +790,22 @@ private:
     void create_container(Type type);
 };
 
+/*! JSON values comparison */
 bool operator==(const Value&, const Value&);
+
+/*! JSON values comparison */
 bool operator!=(const Value&, const Value&);
+
+/*! JSON values comparison */
 bool operator< (const Value&, const Value&);
+
+/*! JSON values comparison */
 bool operator> (const Value&, const Value&);
+
+/*! JSON values comparison */
 bool operator<=(const Value&, const Value&);
+
+/*! JSON values comparison */
 bool operator>=(const Value&, const Value&);
 
 } /* namespace json */

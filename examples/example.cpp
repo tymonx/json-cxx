@@ -143,11 +143,19 @@ int main(void) {
 
     deserializer << (R"({"ad":true}   
          
-    {"face1": "\uD83D\uDE02"} [2, 4, 5] [{}] {} [] {  
+    {"face1": "\uD83D\uDE02"} [2, 4, 5] [{"":5}] {} [] {  
                                                    }
     {"face2":"😂" }
     {"face3": "\u01EC"}
 )");
+
+    if (deserializer.is_invalid()) {
+        auto error = deserializer.get_error();
+        cout << "Line: " << error.line << " column: " << error.column
+             << " offset: " << error.offset
+             << " size: " << error.size << std::endl;
+        cout << "Error: " << error.decode() << std::endl;
+    }
 
     deserializer << R"(
     {

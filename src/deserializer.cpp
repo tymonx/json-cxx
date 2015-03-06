@@ -46,10 +46,6 @@
 #include <cmath>
 #include <cstring>
 
-#include <iostream>
-using std::cout;
-using std::endl;
-
 using namespace json;
 
 /*! Error parsing code */
@@ -77,7 +73,7 @@ constexpr size_t length(const char (&)[N]) { return (N - 1); }
 
 /*!
  * @brief   Get array size based on the type of given object
- * @return  Array size, number of elements in the array
+ * @return  Number of elements in the array
  * */
 template<class T, size_t N>
 constexpr size_t array_size(T (&)[N]) { return N; }
@@ -87,6 +83,7 @@ Deserializer::Deserializer() :
     m_begin(nullptr),
     m_current(nullptr),
     m_end(nullptr),
+    m_end_of_the_world(nullptr),
     m_limit(MAX_LIMIT_PER_OBJECT),
     m_error_code(Code::NONE) { }
 
@@ -101,6 +98,7 @@ Deserializer::Deserializer(Deserializer&& deserializer) : Deserializer() {
     deserializer.m_begin = nullptr;
     deserializer.m_current = nullptr;
     deserializer.m_end = nullptr;
+    deserializer.m_end_of_the_world = nullptr;
     deserializer.m_error_code = Code::NONE;
 }
 
@@ -120,6 +118,7 @@ Deserializer& Deserializer::operator=(const Deserializer& deserializer) {
     m_begin = nullptr;
     m_current = nullptr;
     m_end = nullptr;
+    m_end_of_the_world = nullptr;
     m_error_code = Code::NONE;
 
     return *this;
@@ -134,11 +133,13 @@ Deserializer& Deserializer::operator=(Deserializer&& deserializer) {
     m_begin = nullptr;
     m_current = nullptr;
     m_end = nullptr;
+    m_end_of_the_world = nullptr;
     m_error_code = Code::NONE;
 
     deserializer.m_begin = nullptr;
     deserializer.m_current = nullptr;
     deserializer.m_end = nullptr;
+    deserializer.m_end_of_the_world = nullptr;
     deserializer.m_error_code = Code::NONE;
 
     return *this;
@@ -154,8 +155,9 @@ Deserializer& Deserializer::operator<<(const char* str) {
     }
 
     m_begin = str;
-    m_current = str;
+    m_current = m_begin;
     m_end = str + str_size;
+    m_end_of_the_world = m_end;
 
     parsing();
 
@@ -168,6 +170,7 @@ Deserializer& Deserializer::operator<<(const String& str) {
     m_begin = str.cbegin().base();
     m_current = m_begin;
     m_end = str.cend().base();
+    m_end_of_the_world = m_end;
 
     parsing();
 
@@ -206,20 +209,13 @@ void Deserializer::set_limit(size_t limit) {
     m_limit = limit;
 }
 
-void Deserializer::parsing() {
+inline void Deserializer::parsing() {
     Value root;
+    size_t count = m_array.size();
 
-    const char* store_end = m_end;
-
-    m_end = m_begin + m_limit;
-    while (read_object_or_array(root)) {
-        m_array.push_back(std::move(root));
-
-        const char* tmp_end = m_current + m_limit;
-        m_end = tmp_end < store_end ? tmp_end : store_end;
+    if (read_object_or_array(root, count)) {
+        m_array[--count] = std::move(root);
     }
-
-    m_end = store_end;
 }
 
 inline void Deserializer::clear_error() {
@@ -255,7 +251,10 @@ bool Deserializer::is_invalid() const {
     return Code::NONE != m_error_code;
 }
 
-inline bool Deserializer::read_object_or_array(Value& value) {
+bool Deserializer::read_object_or_array(Value& value, size_t& count) {
+    m_end = m_current + m_limit;
+    m_end = m_end < m_end_of_the_world ? m_end : m_end_of_the_world;
+
     if (!read_whitespaces()) {
         /* All whitespaces removed, no extra chars to parse.
          * Clear end of file error.
@@ -278,6 +277,16 @@ inline bool Deserializer::read_object_or_array(Value& value) {
     default:
         set_error(Code::INVALID_OPENING);
         break;
+    }
+
+    if (true == ok) {
+        Value root;
+        if (read_object_or_array(root, ++count)) {
+            m_array[--count] = std::move(root);
+        }
+        else {
+            m_array.resize(count);
+        }
     }
 
     return ok;
@@ -833,17 +842,16 @@ static const struct ErrorCodes g_error_codes[] = {
     { Code::NONE,               "No error"},
     { Code::END_OF_FILE,        "End of file reached"},
     { Code::MISS_QUOTE,         "Missing quote '\"' for string"},
-    { Code::MISS_COMMA,         "Missing comma ',' in array/members"},
     { Code::MISS_COLON,         "Missing colon ':' in member pair"},
-    { Code::MISS_CURLY_OPEN,    "Missing curly '{' for object"},
-    { Code::MISS_CURLY_CLOSE,   "Missing curly '}' for object"},
-    { Code::MISS_SQUARE_OPEN,   "Missing square '[' for array"},
-    { Code::MISS_SQUARE_CLOSE,  "Missing sqaure ']' for array"},
+    { Code::MISS_CURLY_CLOSE,   "Missing comma ','"
+        " or closing curly '}' for object"},
+    { Code::MISS_SQUARE_CLOSE,  "Missing comma ','"
+        " or closing square ']' for array"},
     { Code::NOT_MATCH_NULL,     "Did you mean 'null'?"},
     { Code::NOT_MATCH_TRUE,     "Did you mean 'true'?"},
     { Code::NOT_MATCH_FALSE,    "Did you mean 'false'?"},
-    { Code::INVALID_OPENING,    "Invalid opening."
-        " Must be '{' for object or '[' for array"},
+    { Code::INVALID_OPENING,    "Opening must start with '{' for object"
+        " or '[' for array"},
     { Code::MISS_VALUE,         "Missing value in array/member"},
     { Code::INVALID_ESCAPE,     "Invalid escape character"},
     { Code::INVALID_UNICODE,    "Invalid unicode"},

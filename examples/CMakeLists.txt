@@ -31,7 +31,4 @@ add_executable(example example.cpp)
 target_link_libraries(example json-cxx)
 
 add_executable(performance performance.cpp)
-target_link_libraries(performance json-cxx jsoncpp)
-
-add_executable(performance1 performance1.cpp)
-target_link_libraries(performance1 json-cxx jsoncpp)
+target_link_libraries(performance json-cxx)

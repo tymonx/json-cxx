@@ -236,11 +236,8 @@ public:
             END_OF_FILE,
             MISS_VALUE,
             MISS_QUOTE,
-            MISS_COMMA,
             MISS_COLON,
-            MISS_CURLY_OPEN,
             MISS_CURLY_CLOSE,
-            MISS_SQUARE_OPEN,
             MISS_SQUARE_CLOSE,
             NOT_MATCH_NULL,
             NOT_MATCH_TRUE,
@@ -295,12 +292,13 @@ private:
     const char* m_begin;
     const char* m_current;
     const char* m_end;
+    const char* m_end_of_the_world;
     size_t m_limit;
     Error::Code m_error_code;
 
     void parsing();
 
-    bool read_object_or_array(Value& value);
+    bool read_object_or_array(Value& value, size_t& count);
     bool read_object(Value& value);
     bool read_object_member(Value& value, size_t& count);
     bool read_string(String& str);
