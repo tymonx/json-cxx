@@ -81,11 +81,7 @@ Serializer::Serializer(const Value& value, Mode mode) :
 Serializer& Serializer::operator<<(const Value& value) {
     m_level = 0;
 
-    if (value.is_object() || value.is_null()) {
-        write_object(value);
-    } else if (value.is_array()) {
-        write_array(value);
-    }
+    write_value(value);
 
     return *this;
 }

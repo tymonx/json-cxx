@@ -242,9 +242,9 @@ public:
             NOT_MATCH_NULL,
             NOT_MATCH_TRUE,
             NOT_MATCH_FALSE,
+            INVALID_WHITESPACE,
             INVALID_ESCAPE,
             INVALID_UNICODE,
-            INVALID_OPENING,
             INVALID_NUMBER_INTEGER,
             INVALID_NUMBER_FRACTION,
             INVALID_NUMBER_EXPONENT
@@ -292,13 +292,9 @@ private:
     const char* m_begin;
     const char* m_current;
     const char* m_end;
-    const char* m_end_of_the_world;
     size_t m_limit;
     Error::Code m_error_code;
 
-    void parsing();
-
-    bool read_object_or_array(Value& value, size_t& count);
     bool read_object(Value& value);
     bool read_object_member(Value& value, size_t& count);
     bool read_string(String& str);

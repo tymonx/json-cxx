@@ -83,7 +83,6 @@ Deserializer::Deserializer() :
     m_begin(nullptr),
     m_current(nullptr),
     m_end(nullptr),
-    m_end_of_the_world(nullptr),
     m_limit(MAX_LIMIT_PER_OBJECT),
     m_error_code(Code::NONE) { }
 
@@ -98,7 +97,6 @@ Deserializer::Deserializer(Deserializer&& deserializer) : Deserializer() {
     deserializer.m_begin = nullptr;
     deserializer.m_current = nullptr;
     deserializer.m_end = nullptr;
-    deserializer.m_end_of_the_world = nullptr;
     deserializer.m_error_code = Code::NONE;
 }
 
@@ -118,7 +116,6 @@ Deserializer& Deserializer::operator=(const Deserializer& deserializer) {
     m_begin = nullptr;
     m_current = nullptr;
     m_end = nullptr;
-    m_end_of_the_world = nullptr;
     m_error_code = Code::NONE;
 
     return *this;
@@ -133,13 +130,11 @@ Deserializer& Deserializer::operator=(Deserializer&& deserializer) {
     m_begin = nullptr;
     m_current = nullptr;
     m_end = nullptr;
-    m_end_of_the_world = nullptr;
     m_error_code = Code::NONE;
 
     deserializer.m_begin = nullptr;
     deserializer.m_current = nullptr;
     deserializer.m_end = nullptr;
-    deserializer.m_end_of_the_world = nullptr;
     deserializer.m_error_code = Code::NONE;
 
     return *this;
@@ -157,9 +152,16 @@ Deserializer& Deserializer::operator<<(const char* str) {
     m_begin = str;
     m_current = m_begin;
     m_end = str + str_size;
-    m_end_of_the_world = m_end;
 
-    parsing();
+    Value value;
+    if (read_value(value)) {
+        if (!read_whitespaces()) {
+            clear_error();
+            m_array.push_back(std::move(value));
+        } else {
+            set_error(Code::INVALID_WHITESPACE);
+        }
+    }
 
     return *this;
 }
@@ -170,9 +172,16 @@ Deserializer& Deserializer::operator<<(const String& str) {
     m_begin = str.cbegin().base();
     m_current = m_begin;
     m_end = str.cend().base();
-    m_end_of_the_world = m_end;
 
-    parsing();
+    Value value;
+    if (read_value(value)) {
+        if (!read_whitespaces()) {
+            clear_error();
+            m_array.push_back(std::move(value));
+        } else {
+            set_error(Code::INVALID_WHITESPACE);
+        }
+    }
 
     return *this;
 }
@@ -209,15 +218,6 @@ void Deserializer::set_limit(size_t limit) {
     m_limit = limit;
 }
 
-inline void Deserializer::parsing() {
-    Value root;
-    size_t count = m_array.size();
-
-    if (read_object_or_array(root, count)) {
-        m_array[--count] = std::move(root);
-    }
-}
-
 inline void Deserializer::clear_error() {
     m_error_code = Code::NONE;
 }
@@ -249,47 +249,6 @@ Deserializer::Error Deserializer::get_error() const {
 
 bool Deserializer::is_invalid() const {
     return Code::NONE != m_error_code;
-}
-
-bool Deserializer::read_object_or_array(Value& value, size_t& count) {
-    m_end = m_current + m_limit;
-    m_end = m_end < m_end_of_the_world ? m_end : m_end_of_the_world;
-
-    if (!read_whitespaces()) {
-        /* All whitespaces removed, no extra chars to parse.
-         * Clear end of file error.
-         * */
-        clear_error();
-        return false;
-    }
-
-    bool ok = false;
-
-    switch (*m_current) {
-    case '{':
-        ++m_current;
-        ok = read_object(value);
-        break;
-    case '[':
-        ++m_current;
-        ok = read_array(value);
-        break;
-    default:
-        set_error(Code::INVALID_OPENING);
-        break;
-    }
-
-    if (true == ok) {
-        Value root;
-        if (read_object_or_array(root, ++count)) {
-            m_array[--count] = std::move(root);
-        }
-        else {
-            m_array.resize(count);
-        }
-    }
-
-    return ok;
 }
 
 bool Deserializer::read_object(Value& value) {
@@ -850,9 +809,8 @@ static const struct ErrorCodes g_error_codes[] = {
     { Code::NOT_MATCH_NULL,     "Did you mean 'null'?"},
     { Code::NOT_MATCH_TRUE,     "Did you mean 'true'?"},
     { Code::NOT_MATCH_FALSE,    "Did you mean 'false'?"},
-    { Code::INVALID_OPENING,    "Opening must start with '{' for object"
-        " or '[' for array"},
     { Code::MISS_VALUE,         "Missing value in array/member"},
+    { Code::INVALID_WHITESPACE, "Invalid whitespace character"},
     { Code::INVALID_ESCAPE,     "Invalid escape character"},
     { Code::INVALID_UNICODE,    "Invalid unicode"},
     { Code::INVALID_NUMBER_INTEGER, "Invalid number integer part"},

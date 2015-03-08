@@ -135,19 +135,21 @@ int main(void) {
     cout << "Test3: " << (test1.is_member("test1")) << endl;
     cout << "Test4: " << (test2.is_member("test2")) << endl;
 
-    json::Deserializer deserializer(R"({"key1":true, "key3": 
+    json::Deserializer deserializer(R"({
+        "key1":true, "key3": 
         
         false  , "ke5": [ {"a": 4}, [], 5,
                
                [2, true, 6], true, false  ], "key7":0.3e+4 })");
 
-    deserializer << (R"({"ad":true}   
-         
-    {"face1": "\uD83D\uDE02"} [2, 4, 5] [{"":5}] {} [] {  
-                                                   }
-    {"face2":"😂" }
-    {"face3": "\u01EC"}
-)");
+    deserializer << R"({"ad":true})";
+    deserializer << R"({"face1": "\uD83D\uDE02"})";
+    deserializer << R"([2, 4, 5])";
+    deserializer << R"([{"":5}])";
+    deserializer << R"({"face2":"😂" })";
+    deserializer << R"({"face3": "\u01EC"})";
+    deserializer << R"(4)";
+    deserializer << R"("Simple string")";
 
     if (deserializer.is_invalid()) {
         auto error = deserializer.get_error();
@@ -182,7 +184,6 @@ int main(void) {
             true
         ]
     }
-    {} {  }
 )";
 
     deserializer << R"(
