@@ -30,13 +30,16 @@
 cmake_minimum_required(VERSION 2.8)
 project(json-cxx CXX)
 
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/config)
+
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
-include(config/AddGoogleTest.cmake)
-include(config/AddGnuCompiler.cmake)
-include(config/AddClangCompiler.cmake)
+include(AddGnuCompiler)
+include(AddClangCompiler)
+
+find_package(GoogleTest)
 
 include_directories(include)
 

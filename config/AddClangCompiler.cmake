@@ -33,7 +33,7 @@ endif ()
 
 function (clang_compiler_processing)
     set(C_FLAGS   -std=c11)
-    set(CXX_FLAGS -std=c++11 -fno-rtti)
+    set(CXX_FLAGS -std=c++11)
 
     set(C_WARNINGS
         -Werror

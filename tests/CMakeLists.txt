@@ -27,10 +27,14 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+if (NOT GTEST_FOUND)
+    return()
+endif()
+
 set(SOURCES
     test_runner.cpp
     test_deserializer.cpp
 )
 
 add_gtest(test_json "${SOURCES}")
-target_link_libraries(test_json json-cxx jsoncpp)
+target_link_libraries(test_json json-cxx)

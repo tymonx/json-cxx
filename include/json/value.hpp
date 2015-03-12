@@ -765,6 +765,45 @@ public:
     /*! Convert JSON value to number */
     explicit operator const Number&() const;
 
+    /*! Convert JSON value to string */
+    String& as_string() { return operator String&(); }
+
+    /*! Convert JSON value to string */
+    const String& as_string() const { return operator const String&(); }
+
+    /*! Convert JSON value to string */
+    const char* as_char() const { return operator const char*(); }
+
+    /*! Convert JSON value to boolean */
+    Bool as_bool() const { return operator Bool(); }
+
+    /*! Convert JSON value to null */
+    Null as_nul() const { return operator Null(); }
+
+    /*! Convert JSON value to signed integer */
+    Int as_int() const { return operator Int(); }
+
+    /*! Convert JSON value to unsigned integer */
+    Uint as_uint() const { return operator Uint(); }
+
+    /*! Convert JSON value to double */
+    Double as_double() const {return operator Double(); }
+
+    /*! Convert JSON value to array */
+    Array& as_array() { return operator Array&(); }
+
+    /*! Convert JSON value to number */
+    Number& as_number() { return operator Number&(); }
+
+    /*! Convert JSON value to array */
+    const Array& as_array() const { return operator const Array&(); }
+
+    /*! Convert JSON value to object */
+    const Object& as_object() const { return operator const Object&(); }
+
+    /*! Convert JSON value to number */
+    const Number& as_number() const { return operator const Number&(); }
+
     /*! Equivalent to is_null() */
     bool operator!() const;
 
