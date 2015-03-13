@@ -738,7 +738,7 @@ bool Deserializer::read_number(Value& value) {
 }
 
 inline bool Deserializer::read_true(Value& value) {
-    if (m_current + length(JSON_TRUE) >= m_end) {
+    if (m_current + length(JSON_TRUE) > m_end) {
         return set_error(Code::END_OF_FILE);
     }
 
@@ -754,7 +754,7 @@ inline bool Deserializer::read_true(Value& value) {
 }
 
 inline bool Deserializer::read_false(Value& value) {
-    if (m_current + length(JSON_FALSE) >= m_end) {
+    if (m_current + length(JSON_FALSE) > m_end) {
         return set_error(Code::END_OF_FILE);
     }
 
@@ -770,7 +770,7 @@ inline bool Deserializer::read_false(Value& value) {
 }
 
 inline bool Deserializer::read_null(Value& value) {
-    if (m_current + length(JSON_NULL) >= m_end) {
+    if (m_current + length(JSON_NULL) > m_end) {
         return set_error(Code::END_OF_FILE);
     }
 

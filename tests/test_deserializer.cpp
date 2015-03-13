@@ -40,12 +40,136 @@
 #include "gtest/gtest.h"
 #include "json/json.hpp"
 
+#include <iostream>
+
 using namespace json;
 
-TEST(Deserializer, PositiveSimpleObject) {
+class DeserializerTest : public ::testing::Test {
+protected:
+    Deserializer m_deserializer;
+
+    virtual void SetUp() {
+
+    }
+
+    virtual void TearDown() {
+        bool invalid = m_deserializer.is_invalid();
+        EXPECT_FALSE(invalid);
+        if (invalid) {
+            Deserializer::Error error = m_deserializer.get_error();
+            std::cerr << "Parsing invalid " << error.decode() << " at line "
+                << error.line << " in column  " << error.column << std::endl;
+        }
+    }
+
+    ~DeserializerTest();
+};
+
+DeserializerTest::~DeserializerTest() { }
+
+TEST_F(DeserializerTest, PositiveSimpleObject) {
     Value value;
 
-    R"({"key":"test"})" >> value;
+    m_deserializer << R"({"key":"test"})" >> value;
 
-    EXPECT_TRUE(value["key"] == "test");
+    EXPECT_TRUE(value.is_object());
+    EXPECT_EQ(value.size(), 1);
+    EXPECT_EQ(value["key"], "test");
+}
+
+TEST_F(DeserializerTest, PositiveSimpleArray) {
+    Value value;
+
+    m_deserializer << R"([0, 1, 2])" >> value;
+
+    EXPECT_TRUE(value.is_array());
+    EXPECT_EQ(value.size(), 3);
+    EXPECT_EQ(value[0], 0);
+    EXPECT_EQ(value[1], 1);
+    EXPECT_EQ(value[2], 2);
+}
+
+TEST_F(DeserializerTest, PositiveSimpleString) {
+    Value value;
+
+    m_deserializer << R"("test")" >> value;
+
+    EXPECT_TRUE(value.is_string());
+    EXPECT_EQ(value.size(), 0);
+    EXPECT_EQ(value.as_string().size(), 4);
+    EXPECT_EQ(value, "test");
+}
+
+TEST_F(DeserializerTest, PositiveSimpleNumberUnsignedInteger) {
+    Value value;
+
+    m_deserializer << R"(13)" >> value;
+
+    EXPECT_TRUE(value.is_number());
+    EXPECT_TRUE(value.is_uint());
+    EXPECT_EQ(value.size(), 0);
+    EXPECT_EQ(value, 13);
+}
+
+TEST_F(DeserializerTest, PositiveSimpleNumberSignedInteger) {
+    Value value;
+
+    m_deserializer << R"(-13)" >> value;
+
+    EXPECT_TRUE(value.is_number());
+    EXPECT_TRUE(value.is_int());
+    EXPECT_EQ(value.size(), 0);
+    EXPECT_EQ(value, -13);
+}
+
+TEST_F(DeserializerTest, PositiveSimpleNumberUnsignedDouble) {
+    Value value;
+
+    m_deserializer << R"(3.17)" >> value;
+
+    EXPECT_TRUE(value.is_number());
+    EXPECT_TRUE(value.is_double());
+    EXPECT_EQ(value.size(), 0);
+    EXPECT_DOUBLE_EQ(value.as_double(), 3.17);
+}
+
+TEST_F(DeserializerTest, PositiveSimpleNumberSignedDouble) {
+    Value value;
+
+    m_deserializer << R"(-3.17)" >> value;
+
+    EXPECT_TRUE(value.is_number());
+    EXPECT_TRUE(value.is_double());
+    EXPECT_EQ(value.size(), 0);
+    EXPECT_DOUBLE_EQ(value.as_double(), -3.17);
+}
+
+TEST_F(DeserializerTest, PositiveSimpleTrue) {
+    Value value;
+
+    m_deserializer << R"(true)" >> value;
+
+    EXPECT_TRUE(value.is_boolean());
+    EXPECT_EQ(value.size(), 0);
+    EXPECT_EQ(value, true);
+}
+
+TEST_F(DeserializerTest, PositiveSimpleFalse) {
+    Value value;
+
+    m_deserializer << R"(false)" >> value;
+
+    EXPECT_TRUE(value.is_boolean());
+    EXPECT_EQ(value.size(), 0);
+    EXPECT_EQ(value, false);
+}
+
+TEST_F(DeserializerTest, PositiveSimpleNull) {
+    Value value;
+
+    m_deserializer << R"(null)" >> value;
+
+    EXPECT_TRUE(value.is_null());
+    EXPECT_EQ(value.size(), 0);
+    EXPECT_EQ(value, nullptr);
 }
