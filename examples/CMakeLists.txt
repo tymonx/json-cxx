@@ -28,7 +28,15 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 add_executable(example example.cpp)
-target_link_libraries(example json-cxx)
+target_link_libraries(
+    example
+    json-cxx
+    ${SAFESTRING_LIBRARIES}
+    )
 
 add_executable(performance performance.cpp)
-target_link_libraries(performance json-cxx)
+target_link_libraries(
+    performance
+    json-cxx
+    ${SAFESTRING_LIBRARIES}
+    )

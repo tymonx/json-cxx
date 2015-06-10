@@ -36,20 +36,61 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file writter.hpp
  *
- * @brief JSON interface
+ * @brief JSON writter interface
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
+#ifndef JSON_CXX_WRITTER_HPP
+#define JSON_CXX_WRITTER_HPP
 
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
-#include "json/writter.hpp"
-#include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
+#include <string>
 
-#endif /* JSON_CXX_HPP */
+namespace json {
+
+/*!
+ * @brief Writter abstract class
+ * */
+class Writter {
+public:
+    /*!
+     * @brief Get character
+     * */
+    virtual void pop_back() = 0;
+
+    /*!
+     * @brief Put character
+     *
+     * @param[in]   ch      Char character
+     * */
+    virtual void push_back(char ch) = 0;
+
+    /*!
+     * @brief Append with char character repeat count times
+     *
+     * @param[in]   count   Repeat ch character count times
+     * @param[in]   ch      Char character to repeat
+     * */
+    virtual void append(std::size_t count, char ch) = 0;
+
+    /*!
+     * @brief Append with array of characters terminated with '\0'
+     *
+     * @param[in]   str     String array of characters terminated with '\0'
+     * */
+    virtual void append(const char* str) = 0;
+
+    /*!
+     * @brief Append with string
+     *
+     * @param[in]   str     String object
+     * */
+    virtual void append(const std::string& str) = 0;
+
+    /*! Destructor */
+    virtual ~Writter();
+};
+
+}
+
+#endif /* JSON_CXX_WRITTER_HPP */

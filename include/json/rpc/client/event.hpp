@@ -36,20 +36,80 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file json/rpc/client/event.hpp
  *
- * @brief JSON interface
+ * @brief JSON client message interface
+ *
+ * Message used for communication between clients and proactor
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
+#ifndef JSON_CXX_RPC_CLIENT_EVENT_HPP
+#define JSON_CXX_RPC_CLIENT_EVENT_HPP
 
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
-#include "json/writter.hpp"
-#include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
+#include <json/rpc/list.hpp>
 
-#endif /* JSON_CXX_HPP */
+/* Client events */
+#include "event/call_method.hpp"
+
+#include <future>
+
+namespace json {
+namespace rpc {
+
+class Client;
+
+namespace client {
+
+struct Event : public json::rpc::ListItem {
+    using PromiseStatus = std::promise<int>;
+    using FutureStatus = std::future<int>;
+
+    enum class Type {
+        UNDEFINED = 0,
+        CALL_METHOD,
+        CALL_METHOD_ASYNC,
+        CREATE_CONTEXT,
+        DESTROY_CONTEXT,
+        OPEN_CONNECTION,
+        CLOSE_CONNECTION
+    };
+
+    union Request {
+        struct RequestCallMethod call_method;
+        struct RequestCallMethodAsync call_method_async;
+    };
+
+    union Response {
+        struct ResponseCallMethod call_method;
+    };
+
+    union Data {
+        union Request request;
+        union Response response;
+
+        ~Data() { }
+    };
+
+    Client* client;
+    Type type;
+    Data data;
+    PromiseStatus status;
+    struct {
+        unsigned auto_remove : 1;
+    } flag;
+
+    ~Event() {
+    
+    }
+};
+
+static inline
+Event::FutureStatus get_future_status(struct Event& event) {
+    return event.status.get_future();
+}
+
+} /* client */
+} /* rpc */
+} /* json */
+
+#endif /* JSON_CXX_RPC_CLIENT_EVENT_HPP */

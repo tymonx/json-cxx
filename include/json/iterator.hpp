@@ -44,7 +44,7 @@
 #ifndef JSON_CXX_ITERATOR_HPP
 #define JSON_CXX_ITERATOR_HPP
 
-#include "value.hpp"
+#include "json/value.hpp"
 
 #include <utility>
 #include <iterator>

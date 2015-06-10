@@ -33,4 +33,25 @@ add_library(json-cxx STATIC
     iterator.cpp
     serializer.cpp
     deserializer.cpp
+    formatter.cpp
+    formatter/compact.cpp
+    formatter/pretty.cpp
+    writter.cpp
+    writter/counter.cpp
+    writter/string.cpp
+    rpc/client.cpp
+    rpc/list.cpp
+    rpc/client/proactor.cpp
+)
+
+if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
+    set_source_files_properties(value.cpp PROPERTIES
+        COMPILE_FLAGS "-Wno-global-constructors"
+    )
+endif()
+
+install (TARGETS json-cxx
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
 )

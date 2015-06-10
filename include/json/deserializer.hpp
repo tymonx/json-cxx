@@ -44,7 +44,7 @@
 #ifndef JSON_CXX_DESERIALIZER_HPP
 #define JSON_CXX_DESERIALIZER_HPP
 
-#include "json.hpp"
+#include "json/value.hpp"
 
 #include <array>
 

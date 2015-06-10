@@ -36,20 +36,69 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file json/rpc/list.cpp
  *
- * @brief JSON interface
+ * @brief JSON double-linked list interface
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
+#include <json/rpc/list.hpp>
 
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
-#include "json/writter.hpp"
-#include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
+using namespace json::rpc;
 
-#endif /* JSON_CXX_HPP */
+void List::push(ListItem* pitem) {
+    if (nullptr == pitem) { return; }
+
+    if (nullptr == mp_first) {
+        pitem->mp_prev = nullptr;
+        pitem->mp_next = nullptr;
+        mp_first = pitem;
+        mp_last = pitem;
+    }
+    else {
+        mp_last->mp_next = pitem;
+        pitem->mp_prev = mp_last;
+        pitem->mp_next = nullptr;
+        mp_last = pitem;
+    }
+}
+
+ListItem* List::remove(ListItem* pitem) {
+    if (nullptr == pitem) { return nullptr; }
+
+    if ((pitem == mp_first) && (pitem == mp_last)) {
+        mp_first = nullptr;
+        mp_last = nullptr;
+    }
+    else if (pitem == mp_first) {
+        mp_first = pitem->mp_next;
+    }
+    else if (pitem == mp_last) {
+        mp_last = pitem->mp_prev;
+    }
+    else if ((nullptr != pitem->mp_prev) && (nullptr != pitem->mp_next)) {
+        ListItem* pafter = pitem->mp_next;
+        ListItem* pbefore = pitem->mp_prev;
+
+        pafter->mp_prev = pbefore;
+        pbefore->mp_next = pafter;
+    }
+
+    pitem->mp_prev = nullptr;
+    pitem->mp_next = nullptr;
+
+    return pitem;
+}
+
+void List::splice(List& list) {
+    if (nullptr != list.mp_first) {
+        if (nullptr != mp_first) {
+            mp_last->mp_next = list.mp_first;
+            mp_last = list.mp_last;
+        }
+        else {
+            mp_first = list.mp_first;
+            mp_last = list.mp_last;
+        }
+        list.clear();
+    }
+}

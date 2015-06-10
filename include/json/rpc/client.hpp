@@ -36,20 +36,78 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file json/rpc/client.hpp
  *
- * @brief JSON interface
+ * @brief JSON client interface
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
+#ifndef JSON_CXX_RPC_CLIENT_HPP
+#define JSON_CXX_RPC_CLIENT_HPP
 
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
-#include "json/writter.hpp"
-#include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
+#include <json/json.hpp>
 
-#endif /* JSON_CXX_HPP */
+#include <string>
+#include <functional>
+
+namespace json {
+namespace rpc {
+
+/* Forward declaration */
+namespace client { class Proactor; }
+
+/*!
+ * JSON Client class
+ * */
+class Client {
+public:
+    using ResultCallback = std::function<void(const json::Value&)>;
+
+    Client();
+
+    ~Client();
+
+    /*!
+     * @brief Call JSON-RPC method
+     *
+     * @param[in]   name        Method name
+     * @param[in]   params      Method input parameter
+     * @param[out]  result      Method output parameter
+     * */
+    void method(const std::string& name, const json::Value& params,
+            json::Value& result);
+
+    /*!
+     * @brief Call JSON-RPC method
+     *
+     * @param[in]   name        Method name
+     * @param[in]   params      Method input parameter
+     *
+     * @return  JSON-RPC result from method by future
+     * */
+    json::Value method(const std::string& name, const json::Value& params);
+
+    /*!
+     * @brief Call JSON-RPC method
+     *
+     * @param[in]   name        Method name
+     * @param[in]   params      Method input parameter
+     * */
+    void method(const std::string& name, const json::Value& params,
+            ResultCallback result);
+
+    /*!
+     * @brief Call JSON-RPC notification
+     *
+     * @param[in]   name        Method name
+     * @param[in]   params      Method input parameter
+     * */
+    void notification(const std::string& name, const json::Value& params);
+
+private:
+    client::Proactor& m_proactor;
+};
+
+}
+}
+
+#endif /* JSON_CXX_RPC_CLIENT_HPP */

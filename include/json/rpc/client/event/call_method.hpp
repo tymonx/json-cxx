@@ -36,20 +36,41 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file json/rpc/client/message.hpp
  *
- * @brief JSON interface
+ * @brief JSON client message interface
+ *
+ * Message used for communication between clients and proactor
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
+#ifndef JSON_CXX_RPC_CLIENT_EVENT_CALL_METHOD_HPP
+#define JSON_CXX_RPC_CLIENT_EVENT_CALL_METHOD_HPP
 
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
-#include "json/writter.hpp"
-#include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
+#include <json/json.hpp>
 
-#endif /* JSON_CXX_HPP */
+#include <functional>
+
+namespace json {
+namespace rpc {
+namespace client {
+
+using ResultCallback = std::function<void(const json::Value&)>;
+
+struct RequestCallMethod {
+    Value value;
+};
+
+struct RequestCallMethodAsync {
+    Value value;
+    ResultCallback callback;
+};
+
+struct ResponseCallMethod {
+    Value value;
+};
+
+} /* client */
+} /* rpc */
+} /* json */
+
+#endif /* JSON_CXX_RPC_CLIENT_EVENT_CALL_METHOD_HPP */

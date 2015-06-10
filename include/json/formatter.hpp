@@ -36,20 +36,60 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file formatter.hpp
  *
- * @brief JSON interface
+ * @brief JSON formatter interface
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
+#ifndef JSON_CXX_FORMATTER_HPP
+#define JSON_CXX_FORMATTER_HPP
 
 #include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
 #include "json/writter.hpp"
-#include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
 
-#endif /* JSON_CXX_HPP */
+namespace json {
+
+/*!
+ * @brief Abstract class used as JSON serialization formatter
+ * */
+class Formatter {
+public:
+    /*! JSON null  */
+    static constexpr const char JSON_NULL[] = "null";
+
+    /*! JSON boolean true */
+    static constexpr const char JSON_TRUE[] = "true";
+
+    /*! JSON boolean false */
+    static constexpr const char JSON_FALSE[] = "false";
+
+    /*!
+     * @brief Format given JSON value
+     *
+     * @param[in]   value   JSON value
+     * */
+    virtual void execute(const Value& value) = 0;
+
+    /*!
+     * @brief Create string with escaped characters
+     *
+     * Special characters in string '\' and '"' are replaced with
+     * escaped sequence "\\" and "\""
+     *
+     * @return Escaped characters
+     * */
+    static std::string escape_characters(const std::string& str);
+
+    /*! Destructor */
+    virtual ~Formatter();
+protected:
+    Writter* m_writter = nullptr;
+private:
+    friend class Serializer;
+
+    void set_writter(Writter* writter) { m_writter = writter; }
+};
+
+}
+
+#endif /* JSON_CXX_FORMATTER_HPP */

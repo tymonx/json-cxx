@@ -44,7 +44,8 @@
 #ifndef JSON_CXX_SERIALIZER_HPP
 #define JSON_CXX_SERIALIZER_HPP
 
-#include "json.hpp"
+#include "json/value.hpp"
+#include "json/formatter.hpp"
 
 namespace json {
 
@@ -54,24 +55,12 @@ namespace json {
  * */
 class Serializer {
 public:
-    /*! JSON serialization mode */
-    enum class Mode {
-        COMPACT,    /*!< No whitespaces (any spaces, newlines etc.) */
-        PRETTY      /*!< Human readable mode */
-    };
-
-    /*! Default number of spaces for indentation. Default is 4 */
-    static const size_t DEFAULT_INDENT;
-
-    /*! Default serialization mode. Default is Mode::COMPACT */
-    static const Mode DEFAULT_MODE;
-
     /*!
      * @brief Default constructor
      *
      * Create JSON serializer object with default settings
      * */
-    Serializer(Mode mode = DEFAULT_MODE);
+    Serializer(Formatter* formatter = nullptr) : m_formatter{formatter} { }
 
     /*!
      * @brief Serializer JSON C++ object or JSON C++ array
@@ -79,9 +68,11 @@ public:
      * When JSON C++ object is null, store '{}'
      *
      * @param[in]   value   JSON C++ to serialize
-     * @param[in]   mode    Serialization mode
      * */
-    Serializer(const Value& value, Mode mode = DEFAULT_MODE);
+    Serializer(const Value& value, Formatter* formatter = nullptr) :
+        m_formatter{formatter} {
+        (*this)<<(value);
+    }
 
     /*!
      * @brief Serialize JSON C++ object or array
@@ -93,40 +84,7 @@ public:
     /*!
      * @brief Clear serialization content
      * */
-    void clear();
-
-    /*!
-     * @brief Set serialization mode
-     *
-     * @param[in]   mode    Serialization mode
-     * */
-    void set_mode(Mode mode);
-
-    /*!
-     * @brief Enable adding newlines for serializing JSON C++ values
-     *
-     * Newlines are added after new value in JSON array or new member in
-     * JSON object
-     *
-     * @note
-     * This setting may be changed by set_mode()
-     *
-     * @param[in]   enable  Enable adding newlines
-     * */
-    void enable_newline(bool enable = true);
-
-    /*!
-     * @brief Set number of spaces for indentation
-     *
-     * Spaces are added after new value in JSON array or new member in
-     * JSON object
-     *
-     * @note
-     * This setting may be changed by set_mode()
-     *
-     * @param[in]   indent  Number of spaces used for indentation
-     * */
-    void set_indent(size_t indent);
+    void clear() { m_serialized.clear(); }
 
     /*!
      * @brief Flush serialized JSON C++ values to string
@@ -165,6 +123,11 @@ public:
      * @return  Output stream appended with serialized JSON C++ values
      * */
     friend std::ostream& operator<<(std::ostream&, Serializer&&);
+
+    /*!
+     * @brief Get serialized JSON to string
+     * */
+    operator const std::string& () const { return m_serialized; }
 private:
     Serializer(const Serializer&) = delete;
     Serializer(Serializer&&) = delete;
@@ -172,28 +135,15 @@ private:
     Serializer& operator=(const Serializer&) = delete;
     Serializer& operator=(Serializer&&) = delete;
 
-    String m_serialized;
-    size_t m_level;
-    size_t m_indent;
-    bool m_enable_newline;
-    size_t m_colon_start;
-    size_t m_colon_stop;
-
-    void write_object(const Value& value);
-    void write_value(const Value& value);
-    void write_array(const Value& value);
-    void write_number(const Value& value);
-    void write_string(const Value& value);
-    void write_boolean(const Value& value);
-    void write_empty(const Value& value);
+    Formatter* m_formatter = nullptr;
+    String m_serialized {};
 };
 
-String& operator<<(String&, Serializer&);
-std::ostream& operator<<(std::ostream&, Serializer&);
-
-String& operator<<(String&, Serializer&&);
-std::ostream& operator<<(std::ostream&, Serializer&&);
+String& operator<<(String& str, Serializer& serializer);
+std::ostream& operator<<(std::ostream& os, Serializer& serializer);
+String& operator<<(String& str, Serializer&& serializer);
+std::ostream& operator<<(std::ostream& os, Serializer&& serializer);
 
 }
 
-#endif /* _JSON_CXX_SERIALIZER_HPP_ */
+#endif /* JSON_CXX_SERIALIZER_HPP */

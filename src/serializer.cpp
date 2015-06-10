@@ -43,59 +43,29 @@
 
 #include "json/serializer.hpp"
 
-#include <sstream>
+#include "json/formatter/compact.hpp"
+#include "json/writter/counter.hpp"
+#include "json/writter/string.hpp"
 
 using namespace json;
 
-const size_t Serializer::DEFAULT_INDENT = 4;
-const Serializer::Mode Serializer::DEFAULT_MODE = Serializer::Mode::COMPACT;
-
-static constexpr char JSON_NULL[] = "null";
-static constexpr char JSON_TRUE[] = "true";
-static constexpr char JSON_FALSE[] = "false";
-static constexpr char NEWLINE[] = "\n";
-
-Serializer::Serializer(Mode mode) :
-    m_serialized {},
-    m_level {},
-    m_indent {DEFAULT_INDENT},
-    m_enable_newline {false},
-    m_colon_start {},
-    m_colon_stop {}
-{
-    set_mode(mode);
-}
-
-Serializer::Serializer(const Value& value, Mode mode) :
-    m_serialized {},
-    m_level {},
-    m_indent {DEFAULT_INDENT},
-    m_enable_newline {false},
-    m_colon_start {},
-    m_colon_stop {}
-{
-    set_mode(mode);
-    (*this)<<(value);
-}
-
 Serializer& Serializer::operator<<(const Value& value) {
-    m_level = 0;
+    formatter::Compact compact {};
+    Formatter* fmt = m_formatter;
 
-    write_value(value);
+    if (nullptr == fmt) { fmt = &compact; }
+
+    writter::Counter counter {};
+    fmt->set_writter(&counter);
+    fmt->execute(value);
+
+    writter::String str {counter.get_count()};
+    fmt->set_writter(&str);
+    fmt->execute(value);
+
+    m_serialized = str.move_string();
 
     return *this;
-}
-
-std::ostream& json::operator<<(std::ostream& os, Serializer& serializer) {
-    os << serializer.m_serialized;
-    serializer.clear();
-    return os;
-}
-
-std::ostream& json::operator<<(std::ostream& os, Serializer&& serializer) {
-    os << std::move(serializer.m_serialized);
-    serializer.clear();
-    return os;
 }
 
 String& json::operator<<(String& str, Serializer& serializer) {
@@ -104,156 +74,20 @@ String& json::operator<<(String& str, Serializer& serializer) {
     return str;
 }
 
+std::ostream& json::operator<<(std::ostream& os, Serializer& serializer) {
+    os << serializer.m_serialized;
+    serializer.clear();
+    return os;
+}
+
 String& json::operator<<(String& str, Serializer&& serializer) {
     str += std::move(serializer.m_serialized);
     serializer.clear();
     return str;
 }
 
-void Serializer::clear() {
-    m_serialized.clear();
-}
-
-void Serializer::set_mode(Mode mode) {
-    switch (mode) {
-    case Mode::COMPACT:
-        m_enable_newline = false;
-        m_indent = 0;
-        m_colon_start = 1;
-        m_colon_stop = 1;
-        break;
-    case Mode::PRETTY:
-        m_enable_newline = true;
-        m_indent = DEFAULT_INDENT;
-        m_colon_start = 0;
-        m_colon_stop = 3;
-        break;
-    default:
-        break;
-    }
-}
-
-void Serializer::enable_newline(bool enable) {
-    m_enable_newline = enable;
-}
-
-void Serializer::set_indent(size_t indent) {
-    m_indent = indent;
-}
-
-void Serializer::write_object(const Value& value) {
-    if (value.size() > 0) {
-        m_serialized.push_back('{');
-
-        ++m_level;
-
-        size_t indent_length = m_indent * m_level;
-
-        const Object& obj = Object(value);
-        for (auto it = obj.cbegin(); it < obj.cend(); ++it) {
-            m_serialized.append(NEWLINE, m_enable_newline);
-            m_serialized.append(indent_length, ' ');
-            write_string(it->first);
-            m_serialized.append(" : ", m_colon_start, m_colon_stop);
-            write_value(it->second);
-            m_serialized.push_back(',');
-        };
-
-        m_serialized.pop_back();
-        m_serialized.append(NEWLINE, m_enable_newline);
-
-        --m_level;
-
-        m_serialized.append(m_indent * m_level, ' ');
-        m_serialized.push_back('}');
-    }
-    else {
-        m_serialized.append("{}");
-    }
-}
-
-void Serializer::write_value(const Value& value) {
-    switch (value.get_type()) {
-    case Value::Type::OBJECT:
-        write_object(value);
-        break;
-    case Value::Type::ARRAY:
-        write_array(value);
-        break;
-    case Value::Type::STRING:
-        write_string(value);
-        break;
-    case Value::Type::NUMBER:
-        write_number(value);
-        break;
-    case Value::Type::BOOLEAN:
-        write_boolean(value);
-        break;
-    case Value::Type::NIL:
-        write_empty(value);
-        break;
-    default:
-        break;
-    }
-}
-
-void Serializer::write_array(const Value& value) {
-    if (value.size() > 0) {
-        m_serialized.push_back('[');
-
-        ++m_level;
-
-        size_t indent_length = m_indent * m_level;
-
-        for (const auto& val : value) {
-            m_serialized.append(NEWLINE, m_enable_newline);
-            m_serialized.append(indent_length, ' ');
-            write_value(val);
-            m_serialized.push_back(',');
-        }
-
-        m_serialized.pop_back();
-        m_serialized.append(NEWLINE, m_enable_newline);
-
-        --m_level;
-
-        m_serialized.append(m_indent * m_level, ' ');
-        m_serialized.push_back(']');
-    }
-    else {
-        m_serialized.append("[]");
-    }
-}
-
-void Serializer::write_string(const Value& value) {
-    m_serialized.push_back('"');
-    m_serialized.append(String(value));
-    m_serialized.push_back('"');
-}
-
-void Serializer::write_number(const Value& value) {
-    std::stringstream str;
-
-    switch (Number(value).get_type()) {
-    case Number::Type::INT:
-        m_serialized.append(std::to_string(Int(value)));
-        break;
-    case Number::Type::UINT:
-        m_serialized.append(std::to_string(Uint(value)));
-        break;
-    case Number::Type::DOUBLE:
-        str << std::scientific << Double(value);
-        m_serialized.append(str.str());
-        break;
-    default:
-        break;
-    }
-}
-
-void Serializer::write_boolean(const Value& value) {
-    m_serialized.append((true == Bool(value)) ? JSON_TRUE : JSON_FALSE);
-}
-
-void Serializer::write_empty(const Value&) {
-    m_serialized.append(JSON_NULL);
+std::ostream& json::operator<<(std::ostream& os, Serializer&& serializer) {
+    os << std::move(serializer.m_serialized);
+    serializer.clear();
+    return os;
 }

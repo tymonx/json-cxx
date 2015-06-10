@@ -395,10 +395,6 @@ const Value& Value::operator[](const String& key) const {
     return (*this)[key.c_str()];
 }
 
-Value::Type Value::get_type() const {
-    return m_type;
-}
-
 bool Value::is_member(const std::string& key) const {
     return is_member(key.c_str());
 }
@@ -406,11 +402,6 @@ bool Value::is_member(const std::string& key) const {
 bool Value::is_member(const char* key) const {
     if (!is_object()) { return false; }
     return (std::cref((*this)[key]) != g_null_value);
-}
-
-
-bool Value::empty() const {
-    return !size();
 }
 
 size_t Value::erase(const char* key) {
@@ -525,135 +516,95 @@ Value::iterator Value::insert(const_iterator pos,
     return insert(pos, init_list.begin(), init_list.end());
 }
 
-bool Value::is_string() const {
-    return Type::STRING == m_type;
-}
-
-bool Value::is_object() const {
-    return Type::OBJECT == m_type;
-}
-
-bool Value::is_array() const {
-    return Type::ARRAY == m_type;
-}
-
-bool Value::is_number() const {
-    return Type::NUMBER == m_type;
-}
-
-bool Value::is_boolean() const {
-    return Type::BOOLEAN == m_type;
-}
-
-bool Value::is_null() const {
-    return Type::NIL == m_type;
-}
-
-bool Value::is_int() const {
-    return is_number() ? Number(m_number).is_int() : false;
-}
-
-bool Value::is_uint() const {
-    return is_number() ? Number(m_number).is_uint() : false;
-}
-
-bool Value::is_double() const {
-    return is_number() ? Number(m_number).is_double() : false;
-}
-
-Value::operator String&() {
+String& Value::as_string() {
     if (Type::STRING != m_type) {
         throw Value::Exception("JSON isn't a string");
     }
     return m_string;
 }
 
-Value::operator const String&() const {
+const String& Value::as_string() const {
     if (Type::STRING != m_type) {
         throw Value::Exception("JSON isn't a string");
     }
     return m_string;
 }
 
-Value::operator const char*() const {
+const char* Value::as_char() const {
     if (Type::STRING != m_type) {
         throw Value::Exception("JSON isn't a string");
     }
     return m_string.c_str();
 }
 
-Value::operator Bool() const {
+Bool Value::as_bool() const {
     if (Type::BOOLEAN != m_type) {
         throw Value::Exception("JSON isn't a boolean");
     }
     return m_boolean;
 }
 
-Value::operator Null() const {
+Null Value::as_null() const {
     if (Type::NIL != m_type) {
         throw Value::Exception("JSON isn't a null");
     }
     return nullptr;
 }
 
-Value::operator Int() const {
+Int Value::as_int() const {
     if (Type::NUMBER != m_type) {
         throw Value::Exception("JSON isn't a number");
     }
     return Int(m_number);
 }
 
-Value::operator Uint() const {
+Uint Value::as_uint() const {
     if (Type::NUMBER != m_type) {
         throw Value::Exception("JSON isn't a number");
     }
     return Uint(m_number);
 }
 
-Value::operator Double() const {
+Double Value::as_double() const {
     if (Type::NUMBER != m_type) {
         throw Value::Exception("JSON isn't a number");
     }
     return Double(m_number);
 }
 
-Value::operator Array&() {
+Array& Value::as_array() {
     if (Type::ARRAY != m_type) {
         throw Value::Exception("JSON isn't an array");
     }
     return m_array;
 }
 
-Value::operator Number&() {
+Number& Value::as_number() {
     if (Type::NUMBER != m_type) {
         throw Value::Exception("JSON isn't a number");
     }
     return m_number;
 }
 
-Value::operator const Array&() const {
+const Array& Value::as_array() const {
     if (Type::ARRAY != m_type) {
         throw Value::Exception("JSON isn't an array");
     }
     return m_array;
 }
 
-Value::operator const Object&() const {
+const Object& Value::as_object() const {
     if (Type::OBJECT != m_type) {
         throw Value::Exception("JSON isn't an object");
     }
     return m_object;
 }
 
-Value::operator const Number&() const {
+const Number& Value::as_number() const {
     if (Type::NUMBER != m_type) {
         throw Value::Exception("JSON isn't a number");
     }
     return m_number;
-}
-
-bool Value::operator!() const {
-    return is_null();
 }
 
 Value& Value::operator[](const char* key) {
@@ -790,10 +741,6 @@ bool json::operator==(const Value& val1, const Value& val2) {
     return result;
 }
 
-bool json::operator!=(const Value& val1, const Value& val2) {
-    return !(val1 == val2);
-}
-
 bool json::operator<(const Value& val1, const Value& val2) {
     if (val1.m_type != val2.m_type) { return false; }
 
@@ -821,18 +768,6 @@ bool json::operator<(const Value& val1, const Value& val2) {
     }
 
     return result;
-}
-
-bool json::operator>(const Value& val1, const Value& val2) {
-    return val2 < val1;
-}
-
-bool json::operator<=(const Value& val1, const Value& val2) {
-    return !(val2 < val1);
-}
-
-bool json::operator>=(const Value& val1, const Value& val2) {
-    return !(val1 < val2);
 }
 
 Value::iterator Value::begin() {

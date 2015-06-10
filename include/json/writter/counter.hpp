@@ -36,20 +36,76 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file writter/counter.hpp
  *
- * @brief JSON interface
+ * @brief JSON writter interface
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
+#ifndef JSON_CXX_WRITTER_COUNTER_HPP
+#define JSON_CXX_WRITTER_COUNTER_HPP
 
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
 #include "json/writter.hpp"
-#include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
 
-#endif /* JSON_CXX_HPP */
+#include <cstring>
+
+namespace json {
+namespace writter {
+
+/*!
+ * @brief Writter that counts characters
+ * */
+class Counter : public Writter {
+public:
+    /*!
+     * @brief Default constructor
+     * */
+    Counter() : m_count(0) { }
+
+    /*!
+     * @brief Pop character
+     * */
+    void pop_back() { --m_count; }
+
+    /*!
+     * @brief Push character
+     * */
+    void push_back(char) { ++m_count; }
+
+    /*!
+     * @brief Append repeated character
+     *
+     * @param[in]   count   Character repeated count times
+     * */
+    void append(std::size_t count, char) { m_count += count; }
+
+    /*!
+     * @brief Append array of characters terminated with '\0'
+     *
+     * @param[in]   str     Array of characters terminated with '\0'
+     * */
+    void append(const char* str) { m_count += strlen(str); }
+
+    /*!
+     * @brief Append with string
+     *
+     * @param[in]   str     String object
+     * */
+    void append(const std::string& str) { m_count += str.size(); }
+
+    /*!
+     * @brief Get counted characters
+     *
+     * @return  Counted characters
+     * */
+    size_t get_count() { return m_count; }
+
+    /*! Destructor */
+    ~Counter();
+private:
+    size_t m_count;
+};
+
+}
+}
+
+#endif /* JSON_CXX_WRITTER_COUNTER_HPP */

@@ -44,7 +44,7 @@
 #ifndef JSON_CXX_VALUE_HPP
 #define JSON_CXX_VALUE_HPP
 
-#include "number.hpp"
+#include "json/number.hpp"
 
 #include <string>
 #include <vector>
@@ -431,7 +431,7 @@ public:
      *
      * @return   true when container is empty otherwise false
      * */
-    bool empty() const;
+    bool empty() const { return !size(); }
 
     /*!
      * @brief Erase member from JSON object with given key
@@ -652,7 +652,79 @@ public:
     /*!
      * @brief Get JSON type
      * */
-    Type get_type() const;
+    Type get_type() const { return m_type; }
+
+    /*!
+     * @brief Check if JSON value is a string
+     * @return true when is otherwise false
+     * */
+    bool is_string() const {
+        return Type::STRING == m_type;
+    }
+
+    /*!
+     * @brief Check if JSON value is a object
+     * @return true when is otherwise false
+     * */
+    bool is_object() const {
+        return Type::OBJECT == m_type;
+    }
+
+    /*!
+     * @brief Check if JSON value is a array
+     * @return true when is otherwise false
+     * */
+    bool is_array() const {
+        return Type::ARRAY == m_type;
+    }
+
+    /*!
+     * @brief Check if JSON value is a number
+     * @return true when is otherwise false
+     * */
+    bool is_number() const {
+        return Type::NUMBER == m_type;
+    }
+
+    /*!
+     * @brief Check if JSON value is a boolean
+     * @return true when is otherwise false
+     * */
+    bool is_boolean() const {
+        return Type::BOOLEAN == m_type;
+    }
+
+    /*!
+     * @brief Check if JSON value is a null
+     * @return true when is otherwise false
+     * */
+    bool is_null() const {
+        return Type::NIL == m_type;
+    }
+
+    /*!
+     * @brief Check if JSON value is a signed integer
+     * @return true when is otherwise false
+     * */
+    bool is_int() const {
+        return is_number() ? Number(m_number).is_int() : false;
+    }
+
+    /*!
+     * @brief Check if JSON value is a unsigned integer
+     * @return true when is otherwise false
+     * */
+    bool is_uint() const {
+        return is_number() ? Number(m_number).is_uint() : false;
+    }
+
+    /*!
+     * @brief Check if JSON value is a double
+     * @return true when is otherwise false
+     * */
+    bool is_double() const {
+        return is_number() ? Number(m_number).is_double() : false;
+    }
 
     /*!
      * @brief Check if JSON member with given key exist in JSON object
@@ -672,140 +744,86 @@ public:
      * */
     bool is_member(const char* key) const;
 
-    /*!
-     * @brief Check if JSON value is a string
-     * @return true when is otherwise false
-     * */
-    bool is_string() const;
-
-    /*!
-     * @brief Check if JSON value is a object
-     * @return true when is otherwise false
-     * */
-    bool is_object() const;
-
-    /*!
-     * @brief Check if JSON value is a array
-     * @return true when is otherwise false
-     * */
-    bool is_array() const;
-
-    /*!
-     * @brief Check if JSON value is a number
-     * @return true when is otherwise false
-     * */
-    bool is_number() const;
-
-    /*!
-     * @brief Check if JSON value is a boolean
-     * @return true when is otherwise false
-     * */
-    bool is_boolean() const;
-
-    /*!
-     * @brief Check if JSON value is a null
-     * @return true when is otherwise false
-     * */
-    bool is_null() const;
-
-    /*!
-     * @brief Check if JSON value is a signed integer
-     * @return true when is otherwise false
-     * */
-    bool is_int() const;
-
-    /*!
-     * @brief Check if JSON value is a unsigned integer
-     * @return true when is otherwise false
-     * */
-    bool is_uint() const;
-
-    /*!
-     * @brief Check if JSON value is a double
-     * @return true when is otherwise false
-     * */
-    bool is_double() const;
+    /*! Convert JSON value to string */
+    explicit operator String&() { return m_string; }
 
     /*! Convert JSON value to string */
-    explicit operator String&();
+    explicit operator const String&() const { return m_string; }
 
     /*! Convert JSON value to string */
-    explicit operator const String&() const;
-
-    /*! Convert JSON value to string */
-    explicit operator const char*() const;
+    explicit operator const char*() const { return m_string.c_str(); }
 
     /*! Convert JSON value to boolean */
-    explicit operator Bool() const;
+    explicit operator Bool() const { return m_boolean; }
 
     /*! Convert JSON value to null */
-    explicit operator Null() const;
+    explicit operator Null() const { return nullptr; }
 
     /*! Convert JSON value to signed integer */
-    explicit operator Int() const;
+    explicit operator Int() const { return Int(m_number); }
 
     /*! Convert JSON value to unsigned integer */
-    explicit operator Uint() const;
+    explicit operator Uint() const { return Uint(m_number); }
 
     /*! Convert JSON value to double */
-    explicit operator Double() const;
+    explicit operator Double() const { return Double(m_number); }
 
     /*! Convert JSON value to array */
-    explicit operator Array&();
+    explicit operator Array&() { return m_array; }
 
     /*! Convert JSON value to number */
-    explicit operator Number&();
+    explicit operator Number&() { return m_number; }
 
     /*! Convert JSON value to array */
-    explicit operator const Array&() const;
+    explicit operator const Array&() const { return m_array; }
 
     /*! Convert JSON value to object */
-    explicit operator const Object&() const;
+    explicit operator const Object&() const { return m_object; }
 
     /*! Convert JSON value to number */
-    explicit operator const Number&() const;
+    explicit operator const Number&() const { return m_number; }
 
     /*! Convert JSON value to string */
-    String& as_string() { return operator String&(); }
+    String& as_string();
 
     /*! Convert JSON value to string */
-    const String& as_string() const { return operator const String&(); }
+    const String& as_string() const;
 
     /*! Convert JSON value to string */
-    const char* as_char() const { return operator const char*(); }
+    const char* as_char() const;
 
     /*! Convert JSON value to boolean */
-    Bool as_bool() const { return operator Bool(); }
+    Bool as_bool() const;
 
     /*! Convert JSON value to null */
-    Null as_nul() const { return operator Null(); }
+    Null as_null() const;
 
     /*! Convert JSON value to signed integer */
-    Int as_int() const { return operator Int(); }
+    Int as_int() const;
 
     /*! Convert JSON value to unsigned integer */
-    Uint as_uint() const { return operator Uint(); }
+    Uint as_uint() const;
 
     /*! Convert JSON value to double */
-    Double as_double() const {return operator Double(); }
+    Double as_double() const;
 
     /*! Convert JSON value to array */
-    Array& as_array() { return operator Array&(); }
+    Array& as_array();
 
     /*! Convert JSON value to number */
-    Number& as_number() { return operator Number&(); }
+    Number& as_number();
 
     /*! Convert JSON value to array */
-    const Array& as_array() const { return operator const Array&(); }
+    const Array& as_array() const;
 
     /*! Convert JSON value to object */
-    const Object& as_object() const { return operator const Object&(); }
+    const Object& as_object() const;
 
     /*! Convert JSON value to number */
-    const Number& as_number() const { return operator const Number&(); }
+    const Number& as_number() const;
 
     /*! Equivalent to is_null() */
-    bool operator!() const;
+    bool operator!() const { return is_null(); }
 
     /*! JSON values comparison */
     friend bool operator==(const Value&, const Value&);
@@ -860,19 +878,27 @@ private:
 bool operator==(const Value&, const Value&);
 
 /*! JSON values comparison */
-bool operator!=(const Value&, const Value&);
+inline bool operator!=(const Value& val1, const Value& val2) {
+    return !(val1 == val2);
+}
 
 /*! JSON values comparison */
 bool operator< (const Value&, const Value&);
 
 /*! JSON values comparison */
-bool operator> (const Value&, const Value&);
+inline bool operator> (const Value& val1, const Value& val2) {
+    return val2 < val1;
+}
 
 /*! JSON values comparison */
-bool operator<=(const Value&, const Value&);
+inline bool operator<=(const Value& val1, const Value& val2) {
+    return !(val2 < val1);
+}
 
 /*! JSON values comparison */
-bool operator>=(const Value&, const Value&);
+inline bool operator>=(const Value& val1, const Value& val2) {
+    return !(val1 < val2);
+}
 
 } /* namespace json */
 

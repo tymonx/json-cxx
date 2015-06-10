@@ -36,20 +36,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file writter.cpp
  *
- * @brief JSON interface
+ * @brief JSON writter implementation
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
-
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
 #include "json/writter.hpp"
-#include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
 
-#endif /* JSON_CXX_HPP */
+using namespace json;
+
+Writter::~Writter() { }

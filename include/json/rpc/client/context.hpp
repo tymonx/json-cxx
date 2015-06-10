@@ -36,20 +36,40 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file json/rpc/client/context.hpp
  *
- * @brief JSON interface
+ * @brief Client context interface
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
+#ifndef JSON_CXX_RPC_CLIENT_CONTEXT_HPP
+#define JSON_CXX_RPC_CLIENT_CONTEXT_HPP
 
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
-#include "json/writter.hpp"
-#include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
+#include <json/rpc/list.hpp>
+#include <json/rpc/client/event.hpp>
 
-#endif /* JSON_CXX_HPP */
+/* Forward declaration */
+namespace json { namespace rpc { class Client; } }
+
+namespace json {
+namespace rpc {
+namespace client {
+
+class Context : public ListItem {
+public:
+    Context(Client* client) : m_client(client) { }
+
+    bool check(const Client* client) const { return m_client == client; }
+
+    void dispatch_event(Event* pevent) {
+        m_events.push(pevent);
+    }
+private:
+    Client* m_client;
+    List m_events{};
+};
+
+}
+}
+}
+
+#endif /* JSON_CXX_RPC_CLIENT_CONTEXT_HPP */

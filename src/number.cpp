@@ -48,14 +48,6 @@
 
 using namespace json;
 
-Number::Number() : m_type(Type::INT), m_int(0) { }
-
-Number::Number(Int value) : m_type(Type::INT), m_int(value) { }
-
-Number::Number(Uint value) : m_type(Type::UINT), m_uint(value) { }
-
-Number::Number(Double value) : m_type(Type::DOUBLE), m_double(value) { }
-
 Number::operator Uint() const {
     Uint64 value = 0;
 
@@ -154,22 +146,6 @@ Number::operator Double() const {
     }
 
     return value;
-}
-
-Number::Type Number::get_type() const {
-    return m_type;
-}
-
-bool Number::is_int() const {
-    return Type::INT == m_type;
-}
-
-bool Number::is_uint() const {
-    return Type::UINT == m_type;
-}
-
-bool Number::is_double() const {
-    return Type::DOUBLE == m_type;
 }
 
 Number& Number::operator+=(const Number& number) {

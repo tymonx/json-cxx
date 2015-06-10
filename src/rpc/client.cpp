@@ -36,20 +36,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file json/rpc/client.cpp
  *
- * @brief JSON interface
+ * @brief JSON client implementation
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
+#include <json/rpc/client.hpp>
+#include <json/rpc/client/proactor.hpp>
 
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
-#include "json/writter.hpp"
-#include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
+using namespace json::rpc;
 
-#endif /* JSON_CXX_HPP */
+Client::Client() : m_proactor{client::Proactor::get_instance()} {
+    //ReactorManager::get_instance().add(this);
+}
+
+Client::~Client() {
+    //ReactorManager::get_instance().remove(this);
+}
+
+/*
+void Client::method(const std::string& name, const json::Value& params, ResultCallback result) {
+    Message message;
+    message.type = Message::Type::CALL_METHOD_ASYNC;
+    message.data.request.call_method_async
+}
+*/

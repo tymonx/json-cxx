@@ -36,20 +36,50 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file json/rpc/client/reactor.cpp
  *
- * @brief JSON interface
+ * @brief JSON client reactor interface
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
+#include <json/rpc/client/proactor.hpp>
 
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
-#include "json/writter.hpp"
-#include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
+using namespace json::rpc::client;
 
-#endif /* JSON_CXX_HPP */
+Proactor* Proactor::g_instance = nullptr;
+
+void Proactor::task() {
+    std::unique_lock<std::mutex> lock(m_mutex, std::defer_lock);
+
+    while (!m_task_done) {
+        lock.lock();
+        if (m_events_background.empty()) {
+            m_cond_variable.wait(lock);
+        }
+        m_events.splice(m_events_background);
+        lock.unlock();
+
+        while (!m_events.empty()) {
+            event_handling(static_cast<Event*>(m_events.pop()));
+        }
+    }
+}
+
+void Proactor::event_handling(Event* event) {
+    if (Event::Type::CREATE_CONTEXT == event->type) {
+        m_contexts.push(new Context(event->client));
+        event_complete(event);
+    }
+    else if (Event::Type::DESTROY_CONTEXT == event->type) {
+        delete m_contexts.remove(find_context(event->client));
+        event_complete(event);
+    }
+    else {
+        auto context = find_context(event->client);
+        if (nullptr != context) {
+            context->dispatch_event(event);
+        }
+        else {
+            event_complete(event, -1);
+        }
+    }
+}

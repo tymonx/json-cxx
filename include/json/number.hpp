@@ -84,28 +84,28 @@ public:
      * On default JSON number will be created as signed integer number
      * with initialized to zero
      * */
-    Number();
+    Number() : m_type(Type::INT), m_int(0) { }
 
     /*!
      * @brief Create JSON number as signed integer number
      *
      * @param[in]  value    Value initialization
      * */
-    Number(Int value);
+    Number(Int value) : m_type(Type::INT), m_int(value) { }
 
     /*!
      * @brief Create JSON number as unsigned integer number
      *
      * @param[in]  value    Value initialization
      * */
-    Number(Uint value);
+    Number(Uint value) : m_type(Type::UINT), m_uint(value) { }
 
     /*!
      * @brief Create JSON number as double number
      *
      * @param[in]  value    Value initialization
      * */
-    Number(Double value);
+    Number(Double value) : m_type(Type::DOUBLE), m_double(value) { }
 
     /*!
      * @brief Add value
@@ -149,28 +149,28 @@ public:
      *
      * @return  When success return true, otherwise false
      * */
-    bool is_int() const;
+    bool is_int() const { return Type::INT == m_type; }
 
     /*!
      * @brief Check if JSON number is unsigned integer
      *
      * @return  When success return true, otherwise false
      * */
-    bool is_uint() const;
+    bool is_uint() const { return Type::UINT == m_type; }
 
     /*!
      * @brief Check if JSON number is double
      *
      * @return  When success return true, otherwise false
      * */
-    bool is_double() const;
+    bool is_double() const { return Type::DOUBLE == m_type; }
 
     /*!
      * @brief Get JSON number type
      *
      * @return JSON number type
      * */
-    Type get_type() const;
+    Type get_type() const { return m_type; }
 
     /*!
      * @brief Comparison between two JSON numbers
@@ -196,8 +196,10 @@ private:
 };
 
 bool operator==(const Number&, const Number&);
-bool operator!=(const Number&, const Number&);
+inline bool operator!=(const Number& num1, const Number& num2) {
+    return !(num1 == num2);
+}
 
 } /* namespace json */
 
-#endif /* _JSON_CXX_NUMBER_HPP_ */
+#endif /* JSON_CXX_NUMBER_HPP */

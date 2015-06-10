@@ -61,8 +61,6 @@ static constexpr char JSON_NULL[] = "null";
 static constexpr char JSON_TRUE[] = "true";
 static constexpr char JSON_FALSE[] = "false";
 static constexpr size_t UNICODE_LENGTH = 4;
-static constexpr Surrogate SURROGATE_MIN(0xD800, 0xDC00);
-static constexpr Surrogate SURROGATE_MAX(0xDBFF, 0xDFFF);
 
 /*!
  * @brief   Get string length without null termination '\0'
@@ -370,6 +368,9 @@ uint32_t decode_utf16_surrogate_pair(const Surrogate& surrogate) {
 }
 
 bool Deserializer::read_string_unicode(String& str) {
+    static const Surrogate SURROGATE_MIN(0xD800, 0xDC00);
+    static const Surrogate SURROGATE_MAX(0xDBFF, 0xDFFF);
+
     Surrogate surrogate;
     uint32_t code;
 
@@ -444,6 +445,9 @@ inline bool Deserializer::read_unicode(const char** pos, uint32_t& code) {
 }
 
 inline bool Deserializer::count_string_chars(size_t& count) {
+    static const Surrogate SURROGATE_MIN(0xD800, 0xDC00);
+    static const Surrogate SURROGATE_MAX(0xDBFF, 0xDFFF);
+
     const char* pos = m_current;
 
     while (pos < m_end) {

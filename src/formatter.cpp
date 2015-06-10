@@ -36,20 +36,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file formatter.cpp
  *
- * @brief JSON interface
+ * @brief JSON formatter implementation
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
-
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
-#include "json/writter.hpp"
 #include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
 
-#endif /* JSON_CXX_HPP */
+#include <algorithm>
+
+using namespace json;
+
+constexpr const char Formatter::JSON_NULL[];
+constexpr const char Formatter::JSON_TRUE[];
+constexpr const char Formatter::JSON_FALSE[];
+
+std::string Formatter::escape_characters(const std::string& str) {
+    std::string::difference_type count =
+        std::count_if(str.cbegin(), str.cend(),
+            [](const char& ch) { return (('\\' == ch) || ('\"' == ch)); }
+        );
+
+    if (0 == count) { return str; }
+
+    std::string escaped {};
+    escaped.reserve(str.size() + std::string::size_type(count));
+
+    std::for_each(str.cbegin(), str.cend(),
+        [&escaped](const char& ch) {
+            if (('\\' == ch) || ('\"' == ch)) {
+                escaped.push_back('\\');
+            }
+            escaped.push_back(ch);
+        }
+    );
+
+    return escaped;
+}
+
+Formatter::~Formatter() { }

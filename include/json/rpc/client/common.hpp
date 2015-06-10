@@ -36,20 +36,61 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file json/rpc/client/message.hpp
  *
- * @brief JSON interface
+ * @brief JSON client message interface
+ *
+ * Message used for communication between clients and proactor
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
+#ifndef JSON_CXX_RPC_CLIENT_MESSAGE_HPP
+#define JSON_CXX_RPC_CLIENT_MESSAGE_HPP
 
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
-#include "json/writter.hpp"
-#include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
+/* Events */
+#include "event/call_method.hpp"
 
-#endif /* JSON_CXX_HPP */
+#include <future>
+
+namespace json {
+namespace rpc {
+namespace client {
+
+struct Message {
+    using PromiseStatus = std::promise<int>;
+    using FutureStatus = std::future<int>;
+
+    enum class Type {
+        UNDEFINED = 0,
+        CALL_METHOD,
+        CALL_METHOD_ASYNC
+    };
+
+    union Request {
+        struct RequestCallMethod call_method;
+        struct RequestCallMethodAsync call_method_async;
+    };
+
+    union Response {
+        struct ResponseCallMethod call_method;
+    };
+
+    union Data {
+        union Request request;
+        union Response response;
+    };
+
+    Type type;
+    Data data;
+    PromiseStatus status;
+};
+
+static inline
+Message::FutureStatus get_future_status(struct Message& message) {
+    return message.status.get_future();
+}
+
+} /* client */
+} /* rpc */
+} /* json */
+
+#endif /* JSON_CXX_RPC_CLIENT_MESSAGE_HPP */

@@ -36,20 +36,46 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/json.hpp
+ * @file formatter/compact.hpp
  *
- * @brief JSON interface
+ * @brief JSON formatter interface
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
+#ifndef JSON_CXX_FORMATTER_COMPACT_HPP
+#define JSON_CXX_FORMATTER_COMPACT_HPP
 
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
-#include "json/writter.hpp"
 #include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
 
-#endif /* JSON_CXX_HPP */
+namespace json {
+namespace formatter {
+
+/*!
+ * @brief Compact formatter
+ *
+ * Creates serialized compact JSON data that not include whitespace or newlines
+ * */
+class Compact : public Formatter {
+public:
+    /*!
+     * @brief Serialize JSON value
+     *
+     * @param[in]   value   JSON value
+     * */
+    void execute(const Value& value) final override;
+
+    /*! Destructor */
+    ~Compact();
+protected:
+    void write_value(const Value& value);
+    void write_object(const Value& value);
+    void write_array(const Value& value);
+    void write_number(const Value& value);
+    void write_string(const Value& value);
+    void write_boolean(const Value& value);
+    void write_empty(const Value& value);
+};
+
+}
+}
+
+#endif /* JSON_CXX_FORMATTER_COMPACT_HPP */

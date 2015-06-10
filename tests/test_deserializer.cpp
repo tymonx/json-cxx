@@ -53,9 +53,7 @@ protected:
     }
 
     virtual void TearDown() {
-        bool invalid = m_deserializer.is_invalid();
-        EXPECT_FALSE(invalid);
-        if (invalid) {
+        if (m_deserializer.is_invalid()) {
             Deserializer::Error error = m_deserializer.get_error();
             std::cerr << "Parsing invalid " << error.decode() << " at line "
                 << error.line << " in column  " << error.column << std::endl;
@@ -171,5 +169,32 @@ TEST_F(DeserializerTest, PositiveSimpleNull) {
 
     EXPECT_TRUE(value.is_null());
     EXPECT_EQ(value.size(), 0);
+    EXPECT_EQ(value, nullptr);
+}
+
+TEST_F(DeserializerTest, NegativeExtTruee) {
+    Value value;
+
+    m_deserializer << R"(truee)" >> value;
+
+    EXPECT_TRUE(m_deserializer.is_invalid());
+    EXPECT_EQ(value, nullptr);
+}
+
+TEST_F(DeserializerTest, NegativeExtFalsee) {
+    Value value;
+
+    m_deserializer << R"(falsee)" >> value;
+
+    EXPECT_TRUE(m_deserializer.is_invalid());
+    EXPECT_EQ(value, nullptr);
+}
+
+TEST_F(DeserializerTest, NegativeExtNulll) {
+    Value value;
+
+    m_deserializer << R"(nulll)" >> value;
+
+    EXPECT_TRUE(m_deserializer.is_invalid());
     EXPECT_EQ(value, nullptr);
 }

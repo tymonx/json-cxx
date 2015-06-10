@@ -38,6 +38,7 @@
  * */
 
 #include "json/json.hpp"
+#include "json/formatter/pretty.hpp"
 
 #include <functional>
 #include <iostream>
@@ -119,7 +120,9 @@ int main(void) {
     val.swap(val2);
     cout << "Serializer: " << json::Serializer(val) << endl;
     cout << "Serializer: " << json::Serializer(val2) << endl;
-    cout << "Serializer: " << json::Serializer(val3, json::Serializer::Mode::PRETTY) << endl;
+
+    json::formatter::Pretty pretty;
+    cout << "Serializer: " << json::Serializer(val3, &pretty) << endl;
 
     json::Value val4;
     json::Value val5;
@@ -259,7 +262,7 @@ int main(void) {
     cout << "Deserializer: ";
     while (!deserializer.empty()) {
         deserializer >> val4;
-        cout << json::Serializer(val4, json::Serializer::Mode::PRETTY) << endl;
+        cout << json::Serializer(val4, &pretty) << endl;
     }
 
     while (!deserializer_copy.empty()) {
