@@ -90,6 +90,8 @@ void Proactor::event_handling(Event* event) {
     }
 }
 
+Proactor::Proactor() : m_thread(std::thread{&Proactor::task, this}) { }
+
 Proactor::~Proactor() {
     m_task_done = true;
     m_thread.join();
@@ -107,4 +109,11 @@ Proactor::~Proactor() {
         delete m_contexts.pop();
     }
     std::cout << "Context?" << std::endl;
+}
+
+void Proactor::push_event(Event* pevent) {
+    std::unique_lock<std::mutex> lock(m_mutex);
+    m_events_background.push(pevent);
+    lock.unlock();
+    m_cond_variable.notify_one();
 }

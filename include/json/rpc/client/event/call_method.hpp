@@ -48,6 +48,7 @@
 
 #include <json/json.hpp>
 #include <json/rpc/client/event.hpp>
+#include <json/rpc/client/event_notify.hpp>
 
 #include <string>
 #include <functional>
@@ -59,7 +60,7 @@ namespace event {
 
 using ResultCallback = std::function<void(const json::Value&)>;
 
-class CallMethod : public Event {
+class CallMethod : public EventNotify {
 public:
     CallMethod(Client* client, const std::string& name, const Value& value);
     virtual ~CallMethod() final;

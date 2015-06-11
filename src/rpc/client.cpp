@@ -71,9 +71,8 @@ void Client::method(const std::string& name, const json::Value& params,
 
 json::Value Client::method(const std::string& name, const json::Value& params) {
     event::CallMethod event(this, name, params);
-    auto notify = event.get_notify();
     m_proactor.push_event(&event);
-    notify.get();
+    event.wait();
     return event.m_value;
 }
 

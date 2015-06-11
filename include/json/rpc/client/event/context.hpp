@@ -79,8 +79,7 @@ private:
 
 class DestroyContext : public Event {
 public:
-    DestroyContext(Client* client) :
-        Event(EventType::DESTROY_CONTEXT, client, AUTO_REMOVE) { }
+    DestroyContext(Client* client);
 
     virtual ~DestroyContext() final;
 };

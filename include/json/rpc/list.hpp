@@ -53,17 +53,12 @@ namespace rpc {
 class ListItem {
 public:
     ListItem() : m_prev{nullptr}, m_next{nullptr} { }
-    ListItem(ListItem&& other) {
-        m_prev = other.m_prev;
-        m_next = other.m_next;
-
-        other.m_prev = nullptr;
-        other.m_next = nullptr;
-    }
     virtual ~ListItem();
 private:
     ListItem(const ListItem&) = delete;
+    ListItem(ListItem&&) = delete;
     ListItem& operator=(const ListItem&) = delete;
+    ListItem& operator=(ListItem&&) = delete;
 
     ListItem* m_prev{nullptr};
     ListItem* m_next{nullptr};

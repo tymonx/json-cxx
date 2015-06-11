@@ -67,16 +67,11 @@ public:
         return proactor;
     }
 
-    Proactor() : m_thread(std::thread{&Proactor::task, this}) { }
+    Proactor();
 
     ~Proactor();
 
-    void push_event(Event* pevent) {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        m_events_background.push(pevent);
-        lock.unlock();
-        m_cond_variable.notify_one();
-    }
+    void push_event(Event* pevent);
 private:
     static Proactor* g_instance;
 

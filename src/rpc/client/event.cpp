@@ -42,12 +42,22 @@
  * */
 
 #include <json/rpc/client/event.hpp>
+#include <json/rpc/client/event_notify.hpp>
+#include <mutex>
 
 using namespace json::rpc::client;
 
-Event::~Event() { }
-
 void Event::event_complete(Event* event) {
-    if (event->check_flag(Event::NOTIFY)) { event->m_notify.set_value(); }
+    if (event->check_flag(Event::NOTIFY)) {
+        static_cast<EventNotify*>(event)->notify();
+    }
     if (event->check_flag(Event::AUTO_REMOVE)) { delete event; }
 }
+
+void EventNotify::wait() {
+    std::mutex mutex;
+    std::unique_lock<std::mutex> lock(mutex);
+    m_cond_variable.wait(lock);
+}
+
+Event::~Event() { }

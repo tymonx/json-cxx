@@ -43,6 +43,7 @@ add_library(json-cxx STATIC
     rpc/list.cpp
     rpc/client/proactor.cpp
     rpc/client/event.cpp
+    rpc/client/event_notify.cpp
     rpc/client/event/context.cpp
     rpc/client/event/call_method.cpp
     rpc/client/event/send_notification.cpp

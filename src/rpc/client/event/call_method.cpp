@@ -47,7 +47,7 @@ using json::rpc::client::event::CallMethod;
 using json::rpc::client::event::CallMethodAsync;
 
 CallMethod::CallMethod(Client* client, const std::string& name,
-        const Value& value) : Event(EventType::CALL_METHOD, client, NOTIFY),
+        const Value& value) : EventNotify(EventType::CALL_METHOD, client),
     m_name(name), m_value(value) { }
 
 CallMethod::~CallMethod() { }

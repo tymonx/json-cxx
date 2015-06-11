@@ -45,8 +45,6 @@
 
 using namespace json::rpc;
 
-ListItem::~ListItem() { }
-
 void List::push(ListItem* item) {
     if (nullptr == item) { return; }
 
@@ -104,3 +102,5 @@ void List::splice(List& list) {
         list.clear();
     }
 }
+
+ListItem::~ListItem() { }
