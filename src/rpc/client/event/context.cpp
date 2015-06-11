@@ -42,8 +42,11 @@
  * */
 
 #include <json/rpc/client/event/context.hpp>
+#include <iostream>
 
+using namespace json::rpc::client;
 using json::rpc::client::event::Context;
+using json::rpc::client::event::DestroyContext;
 
 Context::Context(Client* client, const Protocol& protocol) :
     Event(EventType::CONTEXT, client, AUTO_REMOVE),
@@ -51,7 +54,7 @@ Context::Context(Client* client, const Protocol& protocol) :
 {
     switch (m_protocol_type) {
     case ProtocolType::IPv4:
-        create_protocol<protocol::IPv4>(protocol);
+        new (&m_ipv4) protocol::IPv4(static_cast<const protocol::IPv4&>(protocol));
         break;
     case ProtocolType::IPv6:
     case ProtocolType::UDP:
@@ -65,7 +68,7 @@ Context::Context(Client* client, const Protocol& protocol) :
 Context::~Context() {
     switch (m_protocol_type) {
     case ProtocolType::IPv4:
-        m_protocol.ipv4.~IPv4();
+        m_ipv4.~IPv4();
         break;
     case ProtocolType::IPv6:
     case ProtocolType::UDP:
@@ -74,4 +77,10 @@ Context::~Context() {
     default:
         break;
     }
+
+    while (!m_events.empty()) {
+        Event::event_complete(static_cast<Event*>(m_events.pop()));
+    }
 }
+
+DestroyContext::~DestroyContext() { }

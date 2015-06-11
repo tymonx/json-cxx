@@ -63,21 +63,13 @@ public:
     using Context = event::Context;
 
     static Proactor& get_instance() {
-        if (nullptr == g_instance) { g_instance = new Proactor; }
-        return *g_instance;
-    }
-
-    static void shutdown() {
-        delete g_instance;
-        g_instance = nullptr;
+        static Proactor proactor{};
+        return proactor;
     }
 
     Proactor() : m_thread(std::thread{&Proactor::task, this}) { }
 
-    ~Proactor() {
-        m_task_done = true;
-        m_thread.join();
-    }
+    ~Proactor();
 
     void push_event(Event* pevent) {
         std::unique_lock<std::mutex> lock(m_mutex);
@@ -99,6 +91,8 @@ private:
             }
         ).operator->());
     }
+
+    void event_loop();
 
     void inline event_handling(Event* event);
 

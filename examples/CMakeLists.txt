@@ -28,15 +28,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 add_executable(example example.cpp)
-target_link_libraries(
-    example
+target_link_libraries(example
     json-cxx
-    ${SAFESTRING_LIBRARIES}
-    )
+)
 
 add_executable(performance performance.cpp)
-target_link_libraries(
-    performance
+target_link_libraries(performance
     json-cxx
-    ${SAFESTRING_LIBRARIES}
-    )
+)
+
+add_executable(rpc-client rpc_client.cpp)
+target_link_libraries(rpc-client
+    json-cxx
+    pthread
+)

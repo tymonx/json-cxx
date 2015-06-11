@@ -46,6 +46,7 @@ add_library(json-cxx STATIC
     rpc/client/event/context.cpp
     rpc/client/event/call_method.cpp
     rpc/client/event/send_notification.cpp
+    rpc/client/protocol/ipv4.cpp
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES Clang)

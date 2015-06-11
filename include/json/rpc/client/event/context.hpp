@@ -62,31 +62,27 @@ namespace event {
 class Context : public Event {
 public:
     Context(Client* client, const Protocol& protocol);
-    ~Context();
+    virtual ~Context() final;
 
     bool check(const Client* client) const { return get_client() == client; }
 
-    void dispatch_event(Event* pevent) {
-        m_events.push(pevent);
+    void dispatch_event(Event* event) {
+        Event::event_complete(event);
     }
 private:
-    union ContextProtocol {
-        protocol::IPv4 ipv4;
-        ~ContextProtocol() {}
-    } m_protocol{};
+    union {
+        protocol::IPv4 m_ipv4;
+    };
     ProtocolType m_protocol_type{ProtocolType::UNDEFINED};
     List m_events{};
-
-    template<class T>
-    void create_protocol(const Protocol& protocol) {
-        new (&m_protocol) T(static_cast<const T&>(protocol));
-    }
 };
 
 class DestroyContext : public Event {
 public:
     DestroyContext(Client* client) :
         Event(EventType::DESTROY_CONTEXT, client, AUTO_REMOVE) { }
+
+    virtual ~DestroyContext() final;
 };
 
 } /* event */

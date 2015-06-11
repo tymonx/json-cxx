@@ -50,6 +50,7 @@ function (clang_compiler_processing)
         -Wno-c++98-compat-pedantic
         -Wno-covered-switch-default
         -Wno-global-constructors
+        -Wno-exit-time-destructors
     )
 
     set(C_FLAGS     ${C_FLAGS}   ${C_WARNINGS})

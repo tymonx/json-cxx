@@ -78,6 +78,8 @@ public:
         other.m_flags = 0;
     }
 
+    virtual ~Event();
+
     EventType get_type() const { return m_type; }
 
     const Client* get_client() const { return m_client; }

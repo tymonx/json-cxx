@@ -45,6 +45,8 @@
 
 using namespace json::rpc;
 
+ListItem::~ListItem() { }
+
 void List::push(ListItem* item) {
     if (nullptr == item) { return; }
 

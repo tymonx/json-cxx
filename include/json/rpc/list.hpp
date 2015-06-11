@@ -60,6 +60,7 @@ public:
         other.m_prev = nullptr;
         other.m_next = nullptr;
     }
+    virtual ~ListItem();
 private:
     ListItem(const ListItem&) = delete;
     ListItem& operator=(const ListItem&) = delete;

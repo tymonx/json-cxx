@@ -36,61 +36,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/message.hpp
+ * @file json/rpc/client/protocol/ipv4.cpp
  *
- * @brief JSON client message interface
- *
- * Message used for communication between clients and proactor
+ * @brief JSON client protocol IPv4 protocol
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_MESSAGE_HPP
-#define JSON_CXX_RPC_CLIENT_MESSAGE_HPP
+#include <json/rpc/client/protocol/ipv4.hpp>
 
-/* Events */
-#include "event/call_method.hpp"
+using json::rpc::client::protocol::IPv4;
 
-#include <future>
+constexpr const char IPv4::DEFAULT_ADDRESS[];
 
-namespace json {
-namespace rpc {
-namespace client {
-
-struct Message {
-    using PromiseStatus = std::promise<int>;
-    using FutureStatus = std::future<int>;
-
-    enum class Type {
-        UNDEFINED = 0,
-        CALL_METHOD,
-        CALL_METHOD_ASYNC
-    };
-
-    union Request {
-        struct RequestCallMethod call_method;
-        struct RequestCallMethodAsync call_method_async;
-    };
-
-    union Response {
-        struct ResponseCallMethod call_method;
-    };
-
-    union Data {
-        union Request request;
-        union Response response;
-    };
-
-    Type type;
-    Data data;
-    PromiseStatus status;
-};
-
-static inline
-Message::FutureStatus get_future_status(struct Message& message) {
-    return message.status.get_future();
-}
-
-} /* client */
-} /* rpc */
-} /* json */
-
-#endif /* JSON_CXX_RPC_CLIENT_MESSAGE_HPP */
+constexpr const std::uint16_t IPv4::DEFAULT_PORT;

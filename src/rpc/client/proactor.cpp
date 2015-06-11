@@ -42,15 +42,15 @@
  * */
 
 #include <json/rpc/client/proactor.hpp>
+#include <iostream>
 
 using namespace json::rpc::client;
-
-Proactor* Proactor::g_instance = nullptr;
 
 void Proactor::task() {
     std::unique_lock<std::mutex> lock(m_mutex, std::defer_lock);
 
     while (!m_task_done) {
+        std::cout << "Enter" << std::endl;
         lock.lock();
         if (m_events_background.empty()) {
             m_cond_variable.wait(lock);
@@ -58,9 +58,16 @@ void Proactor::task() {
         m_events.splice(m_events_background);
         lock.unlock();
 
-        while (!m_events.empty()) {
-            event_handling(static_cast<Event*>(m_events.pop()));
-        }
+        std::cout << "Event" << std::endl;
+        event_loop();
+        std::cout << "Finish" << std::endl;
+    }
+    std::cout << "Exit" << std::endl;
+}
+
+void Proactor::event_loop() {
+    while (!m_events.empty()) {
+        event_handling(static_cast<Event*>(m_events.pop()));
     }
 }
 
@@ -70,7 +77,7 @@ void Proactor::event_handling(Event* event) {
     }
     else if (EventType::DESTROY_CONTEXT == event->get_type()) {
         delete m_contexts.remove(find_context(event->get_client()));
-        event_complete(event);
+        Event::event_complete(event);
     }
     else {
         auto context = find_context(event->get_client());
@@ -78,7 +85,26 @@ void Proactor::event_handling(Event* event) {
             context->dispatch_event(event);
         }
         else {
-            event_complete(event);
+            Event::event_complete(event);
         }
     }
+}
+
+Proactor::~Proactor() {
+    m_task_done = true;
+    m_thread.join();
+    std::cout << "Join?" << std::endl;
+
+    std::unique_lock<std::mutex> lock(m_mutex);
+    m_events.splice(m_events_background);
+    lock.unlock();
+
+    std::cout << "Splice?" << std::endl;
+    event_loop();
+    std::cout << "Loop?" << std::endl;
+
+    while (!m_contexts.empty()) {
+        delete m_contexts.pop();
+    }
+    std::cout << "Context?" << std::endl;
 }

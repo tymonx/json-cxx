@@ -58,7 +58,7 @@ class SendNotification : public Event {
 public:
     SendNotification(Client* client, const std::string& name,
             const Value& value);
-    ~SendNotification();
+    virtual ~SendNotification() final;
 
     std::string m_name{};
     Value m_value{};

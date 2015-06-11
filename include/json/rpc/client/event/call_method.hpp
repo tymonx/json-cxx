@@ -62,7 +62,7 @@ using ResultCallback = std::function<void(const json::Value&)>;
 class CallMethod : public Event {
 public:
     CallMethod(Client* client, const std::string& name, const Value& value);
-    ~CallMethod();
+    virtual ~CallMethod() final;
 
     std::string m_name{};
     Value m_value{};
@@ -72,7 +72,7 @@ class CallMethodAsync : public Event {
 public:
     CallMethodAsync(Client* client, const std::string& name,
             const Value& value, ResultCallback callback);
-    ~CallMethodAsync();
+    virtual ~CallMethodAsync() final;
 
     std::string m_name{};
     Value m_value{};

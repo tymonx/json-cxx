@@ -45,6 +45,8 @@
 
 using namespace json::rpc::client;
 
+Event::~Event() { }
+
 void Event::event_complete(Event* event) {
     if (event->check_flag(Event::NOTIFY)) { event->m_notify.set_value(); }
     if (event->check_flag(Event::AUTO_REMOVE)) { delete event; }

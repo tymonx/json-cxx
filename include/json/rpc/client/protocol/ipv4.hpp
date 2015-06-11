@@ -61,7 +61,10 @@ public:
 
     IPv4(const std::string& address = DEFAULT_ADDRESS,
             std::uint16_t port = DEFAULT_PORT)
-        : Protocol(ProtocolType::IPv4), m_address{address}, m_port{port} { }
+        : Protocol(ProtocolType::IPv4), m_address{address}, m_port{port}
+    {
+        (void)m_port;
+    }
 private:
     std::string m_address{DEFAULT_ADDRESS};
     std::uint16_t m_port{DEFAULT_PORT};
