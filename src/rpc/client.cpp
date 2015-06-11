@@ -42,22 +42,41 @@
  * */
 
 #include <json/rpc/client.hpp>
+
 #include <json/rpc/client/proactor.hpp>
+#include <json/rpc/client/protocol.hpp>
+#include <json/rpc/client/event/context.hpp>
+#include <json/rpc/client/event/call_method.hpp>
+#include <json/rpc/client/event/send_notification.hpp>
 
 using namespace json::rpc;
+using namespace json::rpc::client;
 
-Client::Client() : m_proactor{client::Proactor::get_instance()} {
-    //ReactorManager::get_instance().add(this);
+Client::Client(const Protocol& protocol)
+    : m_proactor{Proactor::get_instance()}
+{
+    m_proactor.push_event(new event::Context(this, protocol));
 }
 
 Client::~Client() {
-    //ReactorManager::get_instance().remove(this);
+    m_proactor.push_event(new event::DestroyContext(this));
 }
 
-/*
-void Client::method(const std::string& name, const json::Value& params, ResultCallback result) {
-    Message message;
-    message.type = Message::Type::CALL_METHOD_ASYNC;
-    message.data.request.call_method_async
+void Client::method(const std::string& name, const json::Value& params,
+        ResultCallback result)
+{
+    m_proactor.push_event(
+            new event::CallMethodAsync(this, name, params, result));
 }
-*/
+
+json::Value Client::method(const std::string& name, const json::Value& params) {
+    event::CallMethod event(this, name, params);
+    auto notify = event.get_notify();
+    m_proactor.push_event(&event);
+    notify.get();
+    return event.m_value;
+}
+
+void Client::notification(const std::string& name, const json::Value& params) {
+    m_proactor.push_event(new event::SendNotification(this, name, params));
+}

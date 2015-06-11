@@ -36,49 +36,40 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/reactor.cpp
+ * @file json/rpc/client/protocol/ipv4.hpp
  *
- * @brief JSON client reactor interface
+ * @brief JSON client protocol IPv4 protocol
  * */
 
-#include <json/rpc/client/proactor.hpp>
+#ifndef JSON_CXX_RPC_CLIENT_PROTOCOL_IPv4_HPP
+#define JSON_CXX_RPC_CLIENT_PROTOCOL_IPv4_HPP
 
-using namespace json::rpc::client;
+#include <json/rpc/client/protocol.hpp>
 
-Proactor* Proactor::g_instance = nullptr;
+#include <string>
 
-void Proactor::task() {
-    std::unique_lock<std::mutex> lock(m_mutex, std::defer_lock);
+namespace json {
+namespace rpc {
+namespace client {
+namespace protocol {
 
-    while (!m_task_done) {
-        lock.lock();
-        if (m_events_background.empty()) {
-            m_cond_variable.wait(lock);
-        }
-        m_events.splice(m_events_background);
-        lock.unlock();
+class IPv4 : public json::rpc::client::Protocol {
+public:
+    static constexpr const char DEFAULT_ADDRESS[] = "127.0.0.1";
 
-        while (!m_events.empty()) {
-            event_handling(static_cast<Event*>(m_events.pop()));
-        }
-    }
-}
+    static constexpr const std::uint16_t DEFAULT_PORT = 80;
 
-void Proactor::event_handling(Event* event) {
-    if (EventType::CONTEXT == event->get_type()) {
-        m_contexts.push(event);
-    }
-    else if (EventType::DESTROY_CONTEXT == event->get_type()) {
-        delete m_contexts.remove(find_context(event->get_client()));
-        event_complete(event);
-    }
-    else {
-        auto context = find_context(event->get_client());
-        if (nullptr != context) {
-            context->dispatch_event(event);
-        }
-        else {
-            event_complete(event);
-        }
-    }
-}
+    IPv4(const std::string& address = DEFAULT_ADDRESS,
+            std::uint16_t port = DEFAULT_PORT)
+        : Protocol(ProtocolType::IPv4), m_address{address}, m_port{port} { }
+private:
+    std::string m_address{DEFAULT_ADDRESS};
+    std::uint16_t m_port{DEFAULT_PORT};
+};
+
+} /* protocol */
+} /* client */
+} /* rpc */
+} /* json */
+
+#endif /* JSON_CXX_RPC_CLIENT_PROTOCOL_IPv4_HPP */

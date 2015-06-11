@@ -47,9 +47,7 @@
 #define JSON_CXX_RPC_CLIENT_EVENT_HPP
 
 #include <json/rpc/list.hpp>
-
-/* Client events */
-#include "event/call_method.hpp"
+#include <json/rpc/client/event_type.hpp>
 
 #include <future>
 
@@ -60,53 +58,55 @@ class Client;
 
 namespace client {
 
-struct Event : public json::rpc::ListItem {
-    using PromiseStatus = std::promise<int>;
-    using FutureStatus = std::future<int>;
+class Event : public json::rpc::ListItem {
+public:
+    using Flags = std::uint16_t;
 
-    enum class Type {
-        UNDEFINED = 0,
-        CALL_METHOD,
-        CALL_METHOD_ASYNC,
-        CREATE_CONTEXT,
-        DESTROY_CONTEXT,
-        OPEN_CONNECTION,
-        CLOSE_CONNECTION
+    enum Option : Flags {
+        AUTO_REMOVE         = 0x0001,
+        NOTIFY              = 0x0002
     };
 
-    union Request {
-        struct RequestCallMethod call_method;
-        struct RequestCallMethodAsync call_method_async;
-    };
-
-    union Response {
-        struct ResponseCallMethod call_method;
-    };
-
-    union Data {
-        union Request request;
-        union Response response;
-
-        ~Data() { }
-    };
-
-    Client* client;
-    Type type;
-    Data data;
-    PromiseStatus status;
-    struct {
-        unsigned auto_remove : 1;
-    } flag;
-
-    ~Event() {
-    
+    Event(Event&& other) :
+        m_type(other.m_type),
+        m_client(other.m_client),
+        m_flags(other.m_flags),
+        m_notify(std::move(other.m_notify))
+    {
+        other.m_type = EventType::UNDEFINED;
+        other.m_client = nullptr;
+        other.m_flags = 0;
     }
-};
 
-static inline
-Event::FutureStatus get_future_status(struct Event& event) {
-    return event.status.get_future();
-}
+    EventType get_type() const { return m_type; }
+
+    const Client* get_client() const { return m_client; }
+
+    std::future<void> get_notify() { return m_notify.get_future(); }
+
+    Flags get_flags() const { return m_flags; }
+    void set_flags(Flags flags) { m_flags |= flags; }
+    void clear_flags() { m_flags = 0; }
+    void clear_flags(Flags flags) { m_flags &= Flags(~flags); }
+    bool check_flags(Flags flags) { return (m_flags & flags) == flags; }
+    bool check_flag(Flags flag) { return (m_flags & flag); }
+
+    static void event_complete(Event* event);
+protected:
+    Event(EventType type, Client* client, const Flags& flags = {})
+        : m_type(type), m_client(client), m_flags(flags) { }
+private:
+    Event() = delete;
+    Event(const Event&) = delete;
+    Event& operator=(const Event&) = delete;
+
+    EventType m_type{EventType::UNDEFINED};
+    Client* m_client{nullptr};
+    Flags m_flags{0};
+    std::promise<void> m_notify{};
+
+    friend void event_complete(Event* event);
+};
 
 } /* client */
 } /* rpc */

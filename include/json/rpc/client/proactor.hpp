@@ -46,7 +46,7 @@
 
 #include <json/rpc/list.hpp>
 #include <json/rpc/client/event.hpp>
-#include <json/rpc/client/context.hpp>
+#include <json/rpc/client/event/context.hpp>
 
 #include <mutex>
 #include <atomic>
@@ -60,6 +60,8 @@ namespace client {
 
 class Proactor {
 public:
+    using Context = event::Context;
+
     static Proactor& get_instance() {
         if (nullptr == g_instance) { g_instance = new Proactor; }
         return *g_instance;
@@ -99,16 +101,6 @@ private:
     }
 
     void inline event_handling(Event* event);
-
-    void event_complete(Event* event, int status = 0) {
-        if (event->flag.auto_remove) { delete event; }
-        else { event->status.set_value(status); }
-    }
-
-    void event_complete(Event* event, std::exception_ptr exception_ptr) {
-        if (event->flag.auto_remove) { delete event; }
-        else { event->status.set_exception(exception_ptr); }
-    }
 
     volatile std::atomic<bool> m_task_done{false};
 

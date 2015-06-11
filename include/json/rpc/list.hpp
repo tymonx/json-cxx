@@ -52,12 +52,20 @@ namespace rpc {
 
 class ListItem {
 public:
-    ListItem() : mp_prev{nullptr}, mp_next{nullptr} { }
-    ListItem(const ListItem&) = delete;
-    ListItem(ListItem&&) = delete;
+    ListItem() : m_prev{nullptr}, m_next{nullptr} { }
+    ListItem(ListItem&& other) {
+        m_prev = other.m_prev;
+        m_next = other.m_next;
+
+        other.m_prev = nullptr;
+        other.m_next = nullptr;
+    }
 private:
-    ListItem* mp_prev;
-    ListItem* mp_next;
+    ListItem(const ListItem&) = delete;
+    ListItem& operator=(const ListItem&) = delete;
+
+    ListItem* m_prev{nullptr};
+    ListItem* m_next{nullptr};
     friend class List;
 };
 
@@ -89,73 +97,87 @@ public:
         base_iterator() = default;
         base_iterator(const base_iterator& it) = default;
         base_iterator(base_iterator&& it) = default;
-        base_iterator(pointer pit) : mp_it(pit) { }
+        base_iterator(pointer it) : m_it(it) { }
 
         template<typename = typename std::enable_if<is_const>>
-        base_iterator(const base_iterator<>& other) : mp_it(other.mp_it) { }
+        base_iterator(const base_iterator<>& other) : m_it(other.m_it) { }
 
         base_iterator& operator++() {
-            mp_it = mp_it->mp_next;
+            m_it = m_it->m_next;
             return *this;
         }
         base_iterator operator++(int) {
-            base_iterator it(mp_it);
-            mp_it = mp_it->mp_next;
+            base_iterator it(m_it);
+            m_it = m_it->m_next;
             return it;
         }
         base_iterator& operator--() {
-            mp_it = mp_it->mp_prev;
+            m_it = m_it->m_prev;
             return *this;
         }
         base_iterator operator--(int) {
-            base_iterator it(mp_it);
-            mp_it = mp_it->mp_prev;
+            base_iterator it(m_it);
+            m_it = m_it->m_prev;
             return it;
         }
 
-        bool operator!=(const base_iterator& other) { return mp_it != other.mp_it; }
-        bool operator==(const base_iterator& other) { return mp_it == other.mp_it; }
-        reference operator*() { return *mp_it; }
-        pointer operator->() { return mp_it; }
+        bool operator!=(const base_iterator& other) {
+            return m_it != other.m_it;
+        }
+        bool operator==(const base_iterator& other) {
+            return m_it == other.m_it;
+        }
+        reference operator*() { return *m_it; }
+        pointer operator->() { return m_it; }
     private:
-        pointer mp_it;
+        pointer m_it;
     };
 
     using iterator = base_iterator<false>;
     using const_iterator = base_iterator<true>;
+
+    List() { }
+
+    List(List&& other) : m_first{other.m_first}, m_last{other.m_last} {
+        other.m_first = nullptr;
+        other.m_last = nullptr;
+    }
 
     /*!
      * @brief Check if list is empty
      *
      * @return true when list is empty otherwise return false
      * */
-    bool empty() const { return nullptr == mp_first; }
+    bool empty() const { return nullptr == m_first; }
 
-    void push(ListItem* pitem);
+    void push(ListItem* item);
 
-    ListItem* pop() { return remove(mp_first); }
+    ListItem* pop() { return remove(m_first); }
 
-    ListItem* remove(ListItem* pitem);
+    ListItem* remove(ListItem* item);
 
     void splice(List& list);
 
     void clear() {
-        mp_first = nullptr;
-        mp_last = nullptr;
+        m_first = nullptr;
+        m_last = nullptr;
     }
 
-    iterator begin() { return mp_first; }
+    iterator begin() { return m_first; }
     iterator end() { return nullptr; }
-    const_iterator cbegin() const { return mp_first; }
+    const_iterator cbegin() const { return m_first; }
     const_iterator cend() const { return nullptr; }
 
-    ListItem* front() { return mp_first; }
-    ListItem* back() { return mp_last; }
-    const ListItem* front() const { return mp_first; }
-    const ListItem* back() const { return mp_last; }
+    ListItem* front() { return m_first; }
+    ListItem* back() { return m_last; }
+    const ListItem* front() const { return m_first; }
+    const ListItem* back() const { return m_last; }
 private:
-    ListItem* mp_first = nullptr;
-    ListItem* mp_last = nullptr;
+    List(const List&) = delete;
+    List& operator=(const List&) = delete;
+
+    ListItem* m_first{nullptr};
+    ListItem* m_last{nullptr};
 };
 
 }

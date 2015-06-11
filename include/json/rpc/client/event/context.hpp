@@ -36,49 +36,62 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/reactor.cpp
+ * @file json/rpc/client/message.hpp
  *
- * @brief JSON client reactor interface
+ * @brief JSON client message interface
+ *
+ * Message used for communication between clients and proactor
  * */
 
-#include <json/rpc/client/proactor.hpp>
+#ifndef JSON_CXX_RPC_CLIENT_EVENT_CONTEXT_HPP
+#define JSON_CXX_RPC_CLIENT_EVENT_CONTEXT_HPP
 
-using namespace json::rpc::client;
+#include <json/json.hpp>
+#include <json/rpc/list.hpp>
+#include <json/rpc/client/event.hpp>
+#include <json/rpc/client/protocol.hpp>
+#include <json/rpc/client/protocol/ipv4.hpp>
 
-Proactor* Proactor::g_instance = nullptr;
+#include <string>
 
-void Proactor::task() {
-    std::unique_lock<std::mutex> lock(m_mutex, std::defer_lock);
+namespace json {
+namespace rpc {
+namespace client {
+namespace event {
 
-    while (!m_task_done) {
-        lock.lock();
-        if (m_events_background.empty()) {
-            m_cond_variable.wait(lock);
-        }
-        m_events.splice(m_events_background);
-        lock.unlock();
+class Context : public Event {
+public:
+    Context(Client* client, const Protocol& protocol);
+    ~Context();
 
-        while (!m_events.empty()) {
-            event_handling(static_cast<Event*>(m_events.pop()));
-        }
+    bool check(const Client* client) const { return get_client() == client; }
+
+    void dispatch_event(Event* pevent) {
+        m_events.push(pevent);
     }
-}
+private:
+    union ContextProtocol {
+        protocol::IPv4 ipv4;
+        ~ContextProtocol() {}
+    } m_protocol{};
+    ProtocolType m_protocol_type{ProtocolType::UNDEFINED};
+    List m_events{};
 
-void Proactor::event_handling(Event* event) {
-    if (EventType::CONTEXT == event->get_type()) {
-        m_contexts.push(event);
+    template<class T>
+    void create_protocol(const Protocol& protocol) {
+        new (&m_protocol) T(static_cast<const T&>(protocol));
     }
-    else if (EventType::DESTROY_CONTEXT == event->get_type()) {
-        delete m_contexts.remove(find_context(event->get_client()));
-        event_complete(event);
-    }
-    else {
-        auto context = find_context(event->get_client());
-        if (nullptr != context) {
-            context->dispatch_event(event);
-        }
-        else {
-            event_complete(event);
-        }
-    }
-}
+};
+
+class DestroyContext : public Event {
+public:
+    DestroyContext(Client* client) :
+        Event(EventType::DESTROY_CONTEXT, client, AUTO_REMOVE) { }
+};
+
+} /* event */
+} /* client */
+} /* rpc */
+} /* json */
+
+#endif /* JSON_CXX_RPC_CLIENT_EVENT_CONTEXT_HPP */

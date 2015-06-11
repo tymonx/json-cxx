@@ -46,9 +46,9 @@ function (gnu_compiler_processing)
         -Wconversion
         -Wdisabled-optimization
         -Wdouble-promotion
-        -Werror
+        #-Werror
         -Wextra
-        -Wfatal-errors
+        #-Wfatal-errors
         -Wfloat-equal
         -Wformat-nonliteral
         -Wformat-security

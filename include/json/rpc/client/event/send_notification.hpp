@@ -36,49 +36,37 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/reactor.cpp
+ * @file json/rpc/client/message.hpp
  *
- * @brief JSON client reactor interface
+ * @brief JSON client message interface
  * */
 
-#include <json/rpc/client/proactor.hpp>
+#ifndef JSON_CXX_RPC_CLIENT_EVENT_SEND_NOTIFICATION_HPP
+#define JSON_CXX_RPC_CLIENT_EVENT_SEND_NOTIFICATION_HPP
 
-using namespace json::rpc::client;
+#include <json/json.hpp>
+#include <json/rpc/client/event.hpp>
 
-Proactor* Proactor::g_instance = nullptr;
+#include <string>
 
-void Proactor::task() {
-    std::unique_lock<std::mutex> lock(m_mutex, std::defer_lock);
+namespace json {
+namespace rpc {
+namespace client {
+namespace event {
 
-    while (!m_task_done) {
-        lock.lock();
-        if (m_events_background.empty()) {
-            m_cond_variable.wait(lock);
-        }
-        m_events.splice(m_events_background);
-        lock.unlock();
+class SendNotification : public Event {
+public:
+    SendNotification(Client* client, const std::string& name,
+            const Value& value);
+    ~SendNotification();
 
-        while (!m_events.empty()) {
-            event_handling(static_cast<Event*>(m_events.pop()));
-        }
-    }
-}
+    std::string m_name{};
+    Value m_value{};
+};
 
-void Proactor::event_handling(Event* event) {
-    if (EventType::CONTEXT == event->get_type()) {
-        m_contexts.push(event);
-    }
-    else if (EventType::DESTROY_CONTEXT == event->get_type()) {
-        delete m_contexts.remove(find_context(event->get_client()));
-        event_complete(event);
-    }
-    else {
-        auto context = find_context(event->get_client());
-        if (nullptr != context) {
-            context->dispatch_event(event);
-        }
-        else {
-            event_complete(event);
-        }
-    }
-}
+} /* event */
+} /* client */
+} /* rpc */
+} /* json */
+
+#endif /* JSON_CXX_RPC_CLIENT_EVENT_SEND_NOTIFICATION_HPP */

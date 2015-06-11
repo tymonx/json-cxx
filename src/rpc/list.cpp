@@ -45,59 +45,59 @@
 
 using namespace json::rpc;
 
-void List::push(ListItem* pitem) {
-    if (nullptr == pitem) { return; }
+void List::push(ListItem* item) {
+    if (nullptr == item) { return; }
 
-    if (nullptr == mp_first) {
-        pitem->mp_prev = nullptr;
-        pitem->mp_next = nullptr;
-        mp_first = pitem;
-        mp_last = pitem;
+    if (nullptr == m_first) {
+        item->m_prev = nullptr;
+        item->m_next = nullptr;
+        m_first = item;
+        m_last = item;
     }
     else {
-        mp_last->mp_next = pitem;
-        pitem->mp_prev = mp_last;
-        pitem->mp_next = nullptr;
-        mp_last = pitem;
+        m_last->m_next = item;
+        item->m_prev = m_last;
+        item->m_next = nullptr;
+        m_last = item;
     }
 }
 
-ListItem* List::remove(ListItem* pitem) {
-    if (nullptr == pitem) { return nullptr; }
+ListItem* List::remove(ListItem* item) {
+    if (nullptr == item) { return nullptr; }
 
-    if ((pitem == mp_first) && (pitem == mp_last)) {
-        mp_first = nullptr;
-        mp_last = nullptr;
+    if ((item == m_first) && (item == m_last)) {
+        m_first = nullptr;
+        m_last = nullptr;
     }
-    else if (pitem == mp_first) {
-        mp_first = pitem->mp_next;
+    else if (item == m_first) {
+        m_first = item->m_next;
     }
-    else if (pitem == mp_last) {
-        mp_last = pitem->mp_prev;
+    else if (item == m_last) {
+        m_last = item->m_prev;
     }
-    else if ((nullptr != pitem->mp_prev) && (nullptr != pitem->mp_next)) {
-        ListItem* pafter = pitem->mp_next;
-        ListItem* pbefore = pitem->mp_prev;
+    else if ((nullptr != item->m_prev) && (nullptr != item->m_next)) {
+        ListItem* after = item->m_next;
+        ListItem* before = item->m_prev;
 
-        pafter->mp_prev = pbefore;
-        pbefore->mp_next = pafter;
+        after->m_prev = before;
+        before->m_next = after;
     }
 
-    pitem->mp_prev = nullptr;
-    pitem->mp_next = nullptr;
+    item->m_prev = nullptr;
+    item->m_next = nullptr;
 
-    return pitem;
+    return item;
 }
 
 void List::splice(List& list) {
-    if (nullptr != list.mp_first) {
-        if (nullptr != mp_first) {
-            mp_last->mp_next = list.mp_first;
-            mp_last = list.mp_last;
+    if (nullptr != list.m_first) {
+        if (nullptr != m_first) {
+            m_last->m_next = list.m_first;
+            m_last = list.m_last;
         }
         else {
-            mp_first = list.mp_first;
-            mp_last = list.mp_last;
+            m_first = list.m_first;
+            m_last = list.m_last;
         }
         list.clear();
     }

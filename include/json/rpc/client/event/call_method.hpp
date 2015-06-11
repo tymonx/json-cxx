@@ -47,28 +47,39 @@
 #define JSON_CXX_RPC_CLIENT_EVENT_CALL_METHOD_HPP
 
 #include <json/json.hpp>
+#include <json/rpc/client/event.hpp>
 
+#include <string>
 #include <functional>
 
 namespace json {
 namespace rpc {
 namespace client {
+namespace event {
 
 using ResultCallback = std::function<void(const json::Value&)>;
 
-struct RequestCallMethod {
-    Value value;
+class CallMethod : public Event {
+public:
+    CallMethod(Client* client, const std::string& name, const Value& value);
+    ~CallMethod();
+
+    std::string m_name{};
+    Value m_value{};
 };
 
-struct RequestCallMethodAsync {
-    Value value;
-    ResultCallback callback;
+class CallMethodAsync : public Event {
+public:
+    CallMethodAsync(Client* client, const std::string& name,
+            const Value& value, ResultCallback callback);
+    ~CallMethodAsync();
+
+    std::string m_name{};
+    Value m_value{};
+    ResultCallback m_callback{};
 };
 
-struct ResponseCallMethod {
-    Value value;
-};
-
+} /* event */
 } /* client */
 } /* rpc */
 } /* json */

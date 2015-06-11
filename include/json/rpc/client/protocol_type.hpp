@@ -36,40 +36,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/context.hpp
+ * @file json/rpc/client/protocol_type.hpp
  *
- * @brief Client context interface
+ * @brief JSON client protocol types
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_CONTEXT_HPP
-#define JSON_CXX_RPC_CLIENT_CONTEXT_HPP
-
-#include <json/rpc/list.hpp>
-#include <json/rpc/client/event.hpp>
-
-/* Forward declaration */
-namespace json { namespace rpc { class Client; } }
+#ifndef JSON_CXX_RPC_CLIENT_PROTOCOL_TYPE_HPP
+#define JSON_CXX_RPC_CLIENT_PROTOCOL_TYPE_HPP
 
 namespace json {
 namespace rpc {
 namespace client {
 
-class Context : public ListItem {
-public:
-    Context(Client* client) : m_client(client) { }
-
-    bool check(const Client* client) const { return m_client == client; }
-
-    void dispatch_event(Event* pevent) {
-        m_events.push(pevent);
-    }
-private:
-    Client* m_client;
-    List m_events{};
+enum class ProtocolType {
+    UNDEFINED = 0,
+    IPv4,
+    IPv6,
+    UDP,
+    SERIAL
 };
 
-}
-}
-}
+} /* client */
+} /* rpc */
+} /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_CONTEXT_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_PROTOCOL_TYPE_HPP */

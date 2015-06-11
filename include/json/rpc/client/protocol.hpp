@@ -36,49 +36,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/reactor.cpp
+ * @file json/rpc/client/protocol.hpp
  *
- * @brief JSON client reactor interface
+ * @brief JSON client protocol interface
  * */
 
-#include <json/rpc/client/proactor.hpp>
+#ifndef JSON_CXX_RPC_CLIENT_PROTOCOL_HPP
+#define JSON_CXX_RPC_CLIENT_PROTOCOL_HPP
 
-using namespace json::rpc::client;
+#include <json/rpc/client/protocol_type.hpp>
 
-Proactor* Proactor::g_instance = nullptr;
+namespace json {
+namespace rpc {
+namespace client {
 
-void Proactor::task() {
-    std::unique_lock<std::mutex> lock(m_mutex, std::defer_lock);
+class Protocol {
+public:
+    ProtocolType get_type() const { return m_type; }
+protected:
+    Protocol(ProtocolType type) : m_type{type} { }
+private:
+    Protocol() = delete;
+    ProtocolType m_type{ProtocolType::UNDEFINED};
+};
 
-    while (!m_task_done) {
-        lock.lock();
-        if (m_events_background.empty()) {
-            m_cond_variable.wait(lock);
-        }
-        m_events.splice(m_events_background);
-        lock.unlock();
+} /* client */
+} /* rpc */
+} /* json */
 
-        while (!m_events.empty()) {
-            event_handling(static_cast<Event*>(m_events.pop()));
-        }
-    }
-}
-
-void Proactor::event_handling(Event* event) {
-    if (EventType::CONTEXT == event->get_type()) {
-        m_contexts.push(event);
-    }
-    else if (EventType::DESTROY_CONTEXT == event->get_type()) {
-        delete m_contexts.remove(find_context(event->get_client()));
-        event_complete(event);
-    }
-    else {
-        auto context = find_context(event->get_client());
-        if (nullptr != context) {
-            context->dispatch_event(event);
-        }
-        else {
-            event_complete(event);
-        }
-    }
-}
+#endif /* JSON_CXX_RPC_CLIENT_PROTOCOL_HPP */

@@ -52,8 +52,11 @@
 namespace json {
 namespace rpc {
 
-/* Forward declaration */
-namespace client { class Proactor; }
+/* Forward declarations */
+namespace client {
+    class Protocol;
+    class Proactor;
+}
 
 /*!
  * JSON Client class
@@ -62,7 +65,7 @@ class Client {
 public:
     using ResultCallback = std::function<void(const json::Value&)>;
 
-    Client();
+    Client(const client::Protocol& protocol);
 
     ~Client();
 
@@ -74,7 +77,7 @@ public:
      * @param[out]  result      Method output parameter
      * */
     void method(const std::string& name, const json::Value& params,
-            json::Value& result);
+            json::Value& result) { result = method(name, params); }
 
     /*!
      * @brief Call JSON-RPC method
@@ -104,6 +107,8 @@ public:
     void notification(const std::string& name, const json::Value& params);
 
 private:
+    Client() = delete;
+
     client::Proactor& m_proactor;
 };
 
