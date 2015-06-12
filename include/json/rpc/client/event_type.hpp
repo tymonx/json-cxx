@@ -54,9 +54,7 @@ enum class EventType {
     CALL_METHOD_ASYNC,
     SEND_NOTIFICATION,
     CONTEXT,
-    DESTROY_CONTEXT,
-    OPEN_CONNECTION,
-    CLOSE_CONNECTION
+    DESTROY_CONTEXT
 };
 
 } /* client */

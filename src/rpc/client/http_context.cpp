@@ -36,69 +36,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/event.hpp
+ * @file json/rpc/client/http_context.cpp
  *
  * @brief JSON client message interface
- *
- * Message used for communication between clients and proactor
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EVENT_HPP
-#define JSON_CXX_RPC_CLIENT_EVENT_HPP
+#include <json/rpc/client/http_context.hpp>
 
-#include <json/rpc/list.hpp>
-#include <json/rpc/error.hpp>
-#include <json/rpc/client/event_type.hpp>
+#include <curl/curl.h>
 
-namespace json {
-namespace rpc {
+using json::rpc::client::HttpContext;
 
-class Client;
+HttpContext::HttpContext(Client* client) : Context{client} {
 
-namespace client {
+}
 
-class Event : public json::rpc::ListItem {
-public:
-    using Flags = std::uint16_t;
+HttpContext::~HttpContext() {
 
-    enum Option : Flags {
-        AUTO_REMOVE         = 0x0001,
-        NOTIFY              = 0x0002
-    };
+}
 
-    EventType get_type() const { return m_type; }
+void HttpContext::curl_easy_deleter(void* curl_easy) {
+    curl_easy_cleanup(curl_easy);
+}
 
-    const Client* get_client() const { return m_client; }
-
-    Flags get_flags() const { return m_flags; }
-    void set_flags(Flags flags) { m_flags |= flags; }
-    void clear_flags() { m_flags = 0; }
-    void clear_flags(Flags flags) { m_flags &= Flags(~flags); }
-    bool check_flags(Flags flags) { return (m_flags & flags) == flags; }
-    bool check_flag(Flags flag) { return (m_flags & flag); }
-
-    static void event_complete(Event* event, const Error& error = {Error::OK});
-
-    virtual ~Event();
-protected:
-    Event(EventType type, Client* client, const Flags& flags = {})
-        : m_type(type), m_client(client), m_flags(flags) { }
-private:
-    Event() = delete;
-    Event(const Event&) = delete;
-    Event(Event&&) = delete;
-    Event& operator=(const Event&) = delete;
-    Event& operator=(Event&&) = delete;
-
-    EventType m_type{EventType::UNDEFINED};
-    Client* m_client{nullptr};
-    Flags m_flags{0};
-
-    friend void event_complete(Event* event);
-};
-
-} /* client */
-} /* rpc */
-} /* json */
-
-#endif /* JSON_CXX_RPC_CLIENT_EVENT_HPP */
+void HttpContext::dispatch_event(Event* event) {
+    m_events.push(event);
+}

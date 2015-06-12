@@ -41,68 +41,76 @@
  * @brief JSON client reactor interface
  * */
 
-#include <json/rpc/client/proactor.hpp>
+#include <json/rpc/client/http_proactor.hpp>
+#include <json/rpc/client/http_context.hpp>
 #include <json/rpc/error.hpp>
 
-#include <algorithm>
+#include <iostream>
+#include <exception>
+#include <curl/curl.h>
+#include <sys/eventfd.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 using json::rpc::Error;
-using json::rpc::client::Context;
-using json::rpc::client::Proactor;
+using json::rpc::client::HttpProactor;
 
-void Proactor::event_loop() {
-    get_events();
-    while (!m_events.empty()) {
-        event_handling(static_cast<Event*>(m_events.pop()));
+HttpProactor::HttpProactor() {
+    m_eventfd = eventfd(0, EFD_NONBLOCK);
+    if (m_eventfd < 0) {
+        throw std::exception();
     }
+
+    m_curl_multi = curl_multi_init();
+    if (nullptr == m_curl_multi) {
+        throw std::exception();
+    }
+    curl_multi_setopt(m_curl_multi, CURLMOPT_PIPELINING, 1UL);
+
+    curl_multi_fdset(m_curl_multi, &m_fdread, &m_fdwrite, &m_fdexcep, &m_maxfd);
+
+    m_thread = std::thread{&HttpProactor::task, this};
 }
 
-void Proactor::get_events() {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_events.splice(m_events_background);
-}
+HttpProactor::~HttpProactor() {
+    m_task_done = true;
+    notify();
+    m_thread.join();
+    close(m_eventfd);
 
-void Proactor::event_handling(Event* event) {
-    if (EventType::CONTEXT == event->get_type()) {
-        m_contexts.push(event);
-    }
-    else if (EventType::DESTROY_CONTEXT == event->get_type()) {
-        delete m_contexts.remove(find_context(event->get_client()));
-        Event::event_complete(event);
-    }
-    else {
-        auto context = find_context(event->get_client());
-        if (nullptr != context) {
-            context->dispatch_event(event);
-        }
-        else {
-            Event::event_complete(event, Error{Error::INTERNAL_ERROR,
-                    "Client context doesn't exist"});
-        }
-    }
-}
-
-Context* Proactor::find_context(const Client* client) {
-    return static_cast<Context*>(std::find_if(
-        m_contexts.begin(),
-        m_contexts.end(),
-        [&client] (const ListItem& item) {
-            return static_cast<const Context&>(item).check(client);
-        }
-    ).operator->());
-}
-
-Proactor::~Proactor() {
     event_loop();
 
     while (!m_contexts.empty()) {
-        delete m_contexts.pop();
+        delete static_cast<HttpContext*>(m_contexts.pop());
     }
 }
 
-void Proactor::push_event(Event* pevent) {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    m_events_background.push(pevent);
-    lock.unlock();
-    notify();
+void HttpProactor::task() {
+    struct timeval timeout{};
+    long curl_timeout{-1};
+    int err;
+
+    while (!m_task_done) {
+        curl_multi_timeout(m_curl_multi, &curl_timeout);
+        if (curl_timeout < 0) {
+            curl_timeout = 980;
+        }
+
+        timeout.tv_sec = curl_timeout / 1000;
+        timeout.tv_usec = (curl_timeout % 1000) * 1000;
+
+        err = select(m_maxfd + 1, &m_fdread, &m_fdwrite, &m_fdexcep, &timeout);
+        if (err < 0) {
+            std::cout << "Error!!!" << std::endl;
+            continue;
+        }
+
+        event_loop();
+
+        curl_multi_perform(m_curl_multi, nullptr);
+    }
+}
+
+void HttpProactor::notify() {
+    write(m_eventfd, &m_event, sizeof(m_event));
 }

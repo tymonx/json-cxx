@@ -36,69 +36,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/event.hpp
+ * @file json/rpc/client/message.hpp
  *
  * @brief JSON client message interface
  *
  * Message used for communication between clients and proactor
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EVENT_HPP
-#define JSON_CXX_RPC_CLIENT_EVENT_HPP
+#ifndef JSON_CXX_RPC_CLIENT_EVENT_CONTEXT_HPP
+#define JSON_CXX_RPC_CLIENT_EVENT_CONTEXT_HPP
 
-#include <json/rpc/list.hpp>
-#include <json/rpc/error.hpp>
-#include <json/rpc/client/event_type.hpp>
+#include <json/rpc/client/event.hpp>
 
 namespace json {
 namespace rpc {
-
-class Client;
-
 namespace client {
 
-class Event : public json::rpc::ListItem {
+class Context : public Event {
 public:
-    using Flags = std::uint16_t;
+    Context(Client* client);
+    virtual ~Context();
 
-    enum Option : Flags {
-        AUTO_REMOVE         = 0x0001,
-        NOTIFY              = 0x0002
-    };
+    bool check(const Client* client) const { return get_client() == client; }
 
-    EventType get_type() const { return m_type; }
-
-    const Client* get_client() const { return m_client; }
-
-    Flags get_flags() const { return m_flags; }
-    void set_flags(Flags flags) { m_flags |= flags; }
-    void clear_flags() { m_flags = 0; }
-    void clear_flags(Flags flags) { m_flags &= Flags(~flags); }
-    bool check_flags(Flags flags) { return (m_flags & flags) == flags; }
-    bool check_flag(Flags flag) { return (m_flags & flag); }
-
-    static void event_complete(Event* event, const Error& error = {Error::OK});
-
-    virtual ~Event();
-protected:
-    Event(EventType type, Client* client, const Flags& flags = {})
-        : m_type(type), m_client(client), m_flags(flags) { }
-private:
-    Event() = delete;
-    Event(const Event&) = delete;
-    Event(Event&&) = delete;
-    Event& operator=(const Event&) = delete;
-    Event& operator=(Event&&) = delete;
-
-    EventType m_type{EventType::UNDEFINED};
-    Client* m_client{nullptr};
-    Flags m_flags{0};
-
-    friend void event_complete(Event* event);
+    virtual void dispatch_event(Event* event) = 0;
 };
 
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_EVENT_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_EVENT_CONTEXT_HPP */

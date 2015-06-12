@@ -50,8 +50,7 @@ namespace client {
 
 enum class ProtocolType {
     UNDEFINED = 0,
-    IPv4,
-    IPv6,
+    HTTP,
     UDP,
     SERIAL
 };

@@ -46,68 +46,34 @@
 
 #include <json/rpc/list.hpp>
 #include <json/rpc/client/event.hpp>
-#include <json/rpc/client/event/context.hpp>
+#include <json/rpc/client/context.hpp>
 
 #include <mutex>
-#include <atomic>
-#include <thread>
-#include <algorithm>
-#include <unistd.h>
 
 namespace json {
 namespace rpc {
 namespace client {
 
 class Proactor {
-public:
-    using Context = event::Context;
-
-    static Proactor& get_instance() {
-        static Proactor proactor{};
-        return proactor;
-    }
-
-    Proactor();
-
-    ~Proactor();
+protected:
+    virtual ~Proactor();
 
     void push_event(Event* pevent);
-private:
-    static Proactor* g_instance;
-
-    void task();
-
-    Context* find_context(const Client* client) {
-        return static_cast<Context*>(std::find_if(
-            m_contexts.begin(),
-            m_contexts.end(),
-            [&client] (const ListItem& item) {
-                return static_cast<const Context&>(item).check(client);
-            }
-        ).operator->());
-    }
 
     void event_loop();
 
-    void inline event_handling(Event* event);
+    virtual void notify() = 0;
 
-    volatile std::atomic<bool> m_task_done{false};
+    Context* find_context(const Client* client);
 
     json::rpc::List m_events{};
     json::rpc::List m_events_background{};
     json::rpc::List m_contexts{};
 
-    std::thread m_thread{};
     std::mutex m_mutex{};
 
-    fd_set m_fdread{};
-    fd_set m_fdwrite{};
-    fd_set m_fdexcep{};
-    int m_maxfd{-1};
-
-    uint64_t m_event{0};
-    int m_eventfd{0};
-    void* m_context{nullptr};
+    inline void get_events();
+    inline void event_handling(Event* event);
 };
 
 }

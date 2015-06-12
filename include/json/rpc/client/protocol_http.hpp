@@ -41,8 +41,8 @@
  * @brief JSON client protocol IPv4 protocol
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_PROTOCOL_IPv4_HPP
-#define JSON_CXX_RPC_CLIENT_PROTOCOL_IPv4_HPP
+#ifndef JSON_CXX_RPC_CLIENT_PROTOCOL_HTTP_HPP
+#define JSON_CXX_RPC_CLIENT_PROTOCOL_HTTP_HPP
 
 #include <json/rpc/client/protocol.hpp>
 
@@ -51,9 +51,8 @@
 namespace json {
 namespace rpc {
 namespace client {
-namespace protocol {
 
-class IPv4 : public json::rpc::client::Protocol {
+class ProtocolHttp : public Protocol {
 public:
     using Address = std::string;
     using Port = std::uint16_t;
@@ -62,9 +61,9 @@ public:
 
     static constexpr const Port DEFAULT_PORT = 80;
 
-    IPv4(const Address& address = DEFAULT_ADDRESS,
+    ProtocolHttp(const Address& address = DEFAULT_ADDRESS,
             Port port = DEFAULT_PORT)
-        : Protocol(ProtocolType::IPv4), m_address{address}, m_port{port} { }
+        : Protocol(ProtocolType::HTTP), m_address{address}, m_port{port} { }
 
     const Address& get_address() const { return m_address; }
     Port get_port() const { return m_port; }
@@ -73,9 +72,8 @@ private:
     Port m_port{DEFAULT_PORT};
 };
 
-} /* protocol */
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_PROTOCOL_IPv4_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_PROTOCOL_HTTP_HPP */

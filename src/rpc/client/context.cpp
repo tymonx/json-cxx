@@ -41,7 +41,7 @@
  * @brief JSON client protocol IPv4 protocol
  * */
 
-#include <json/rpc/client/event/context.hpp>
+#include <json/rpc/client/context.hpp>
 
 #include <curl/curl.h>
 #include <iostream>
@@ -113,8 +113,3 @@ void Context::dispatch_event(Event* event) {
 
     Event::event_complete(event);
 }
-
-DestroyContext::DestroyContext(Client* client) :
-    Event(EventType::DESTROY_CONTEXT, client, AUTO_REMOVE) { }
-
-DestroyContext::~DestroyContext() { }

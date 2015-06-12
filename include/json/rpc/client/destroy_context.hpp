@@ -36,44 +36,19 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/message.hpp
+ * @file json/rpc/client/destroy_context.hpp
  *
  * @brief JSON client message interface
- *
- * Message used for communication between clients and proactor
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EVENT_CONTEXT_HPP
-#define JSON_CXX_RPC_CLIENT_EVENT_CONTEXT_HPP
+#ifndef JSON_CXX_RPC_CLIENT_EVENT_DESTROY_CONTEXT_HPP
+#define JSON_CXX_RPC_CLIENT_EVENT_DESTROY_CONTEXT_HPP
 
-#include <json/json.hpp>
-#include <json/rpc/list.hpp>
 #include <json/rpc/client/event.hpp>
-#include <json/rpc/client/protocol.hpp>
-#include <json/rpc/client/protocol/ipv4.hpp>
-
-#include <string>
 
 namespace json {
 namespace rpc {
 namespace client {
-namespace event {
-
-class Context : public Event {
-public:
-    Context(Client* client, const Protocol& protocol);
-    virtual ~Context() final;
-
-    bool check(const Client* client) const { return get_client() == client; }
-
-    void dispatch_event(Event* event);
-private:
-    union {
-        protocol::IPv4 m_ipv4;
-    };
-    ProtocolType m_protocol_type{ProtocolType::UNDEFINED};
-    List m_events{};
-};
 
 class DestroyContext : public Event {
 public:
@@ -82,9 +57,8 @@ public:
     virtual ~DestroyContext() final;
 };
 
-} /* event */
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_EVENT_CONTEXT_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_EVENT_DESTROY_CONTEXT_HPP */

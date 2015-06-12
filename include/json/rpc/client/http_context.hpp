@@ -36,15 +36,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/protocol/ipv4.cpp
+ * @file json/rpc/client/message.hpp
  *
- * @brief JSON client protocol IPv4 protocol
+ * @brief JSON client message interface
+ *
+ * Message used for communication between clients and proactor
  * */
 
-#include <json/rpc/client/protocol/ipv4.hpp>
+#ifndef JSON_CXX_RPC_CLIENT_HTTP_CONTEXT_HPP
+#define JSON_CXX_RPC_CLIENT_HTTP_CONTEXT_HPP
 
-using json::rpc::client::protocol::IPv4;
+#include <json/rpc/list.hpp>
+#include <json/rpc/client/context.hpp>
 
-constexpr const char IPv4::DEFAULT_ADDRESS[];
+#include <memory>
 
-constexpr const std::uint16_t IPv4::DEFAULT_PORT;
+namespace json {
+namespace rpc {
+namespace client {
+
+class HttpContext : public Context {
+public:
+    HttpContext(Client* client);
+
+    virtual ~HttpContext() final;
+
+    virtual void dispatch_event(Event* event) final;
+private:
+    static void curl_easy_deleter(void*);
+
+    using CurlEasyPtr = std::unique_ptr<void, decltype(curl_easy_deleter)>;
+
+    List m_events{};
+};
+
+} /* client */
+} /* rpc */
+} /* json */
+
+#endif /* JSON_CXX_RPC_CLIENT_HTTP_CONTEXT_HPP */
