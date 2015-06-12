@@ -36,13 +36,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/event.cpp
+ * @file json/rpc/client.cpp
  *
- * @brief JSON client message interface
+ * @brief JSON client implementation
  * */
 
-#include <json/rpc/client/event_notify.hpp>
+#include <json/rpc/error.hpp>
 
-using namespace json::rpc::client;
+using json::rpc::Error;
 
-EventNotify::~EventNotify() { }
+Error::~Error() { }

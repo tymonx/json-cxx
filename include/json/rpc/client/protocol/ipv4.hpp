@@ -55,19 +55,22 @@ namespace protocol {
 
 class IPv4 : public json::rpc::client::Protocol {
 public:
+    using Address = std::string;
+    using Port = std::uint16_t;
+
     static constexpr const char DEFAULT_ADDRESS[] = "127.0.0.1";
 
-    static constexpr const std::uint16_t DEFAULT_PORT = 80;
+    static constexpr const Port DEFAULT_PORT = 80;
 
-    IPv4(const std::string& address = DEFAULT_ADDRESS,
-            std::uint16_t port = DEFAULT_PORT)
-        : Protocol(ProtocolType::IPv4), m_address{address}, m_port{port}
-    {
-        (void)m_port;
-    }
+    IPv4(const Address& address = DEFAULT_ADDRESS,
+            Port port = DEFAULT_PORT)
+        : Protocol(ProtocolType::IPv4), m_address{address}, m_port{port} { }
+
+    const Address& get_address() const { return m_address; }
+    Port get_port() const { return m_port; }
 private:
-    std::string m_address{DEFAULT_ADDRESS};
-    std::uint16_t m_port{DEFAULT_PORT};
+    Address m_address{DEFAULT_ADDRESS};
+    Port m_port{DEFAULT_PORT};
 };
 
 } /* protocol */

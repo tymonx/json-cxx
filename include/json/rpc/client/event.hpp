@@ -47,6 +47,7 @@
 #define JSON_CXX_RPC_CLIENT_EVENT_HPP
 
 #include <json/rpc/list.hpp>
+#include <json/rpc/error.hpp>
 #include <json/rpc/client/event_type.hpp>
 
 namespace json {
@@ -76,9 +77,11 @@ public:
     bool check_flags(Flags flags) { return (m_flags & flags) == flags; }
     bool check_flag(Flags flag) { return (m_flags & flag); }
 
-    static void event_complete(Event* event);
+    static void event_complete(Event* event, const Error& error = {Error::OK});
 
     virtual ~Event();
+
+    void* context{nullptr};
 protected:
     Event(EventType type, Client* client, const Flags& flags = {})
         : m_type(type), m_client(client), m_flags(flags) { }

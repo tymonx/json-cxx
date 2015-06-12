@@ -42,22 +42,54 @@
  * */
 
 #include <json/rpc/client/event.hpp>
-#include <json/rpc/client/event_notify.hpp>
-#include <mutex>
+#include <json/rpc/client/event_type.hpp>
+#include <json/rpc/client/event/call_method.hpp>
 
+using json::rpc::Error;
 using namespace json::rpc::client;
 
-void Event::event_complete(Event* event) {
-    if (event->check_flag(Event::NOTIFY)) {
-        static_cast<EventNotify*>(event)->notify();
+static inline void call_method(Event* _event, const Error& error) {
+    event::CallMethod* event = static_cast<event::CallMethod*>(_event);
+    if (!error) {
+        event->m_result.set_value(event->m_value);
     }
-    if (event->check_flag(Event::AUTO_REMOVE)) { delete event; }
+    else {
+        event->m_result.set_exception(std::make_exception_ptr(error));
+    }
 }
 
-void EventNotify::wait() {
-    std::mutex mutex;
-    std::unique_lock<std::mutex> lock(mutex);
-    m_cond_variable.wait(lock);
+static inline void call_method_async(const Event* _event, const Error& error) {
+    const event::CallMethodAsync* event =
+        static_cast<const event::CallMethodAsync*>(_event);
+    if (nullptr == event->m_callback) { return; }
+    if (!error) {
+        event->m_callback(event->m_value, Error::OK);
+    }
+    else {
+        event->m_callback(json::Value::Type::NIL, error);
+    }
+}
+
+void Event::event_complete(Event* event, const Error& error) {
+    switch (event->get_type()) {
+    case EventType::CALL_METHOD:
+        call_method(event, error);
+        break;
+    case EventType::CALL_METHOD_ASYNC:
+        call_method_async(event, error);
+        break;
+    case EventType::SEND_NOTIFICATION:
+    case EventType::OPEN_CONNECTION:
+    case EventType::CLOSE_CONNECTION:
+    case EventType::CONTEXT:
+    case EventType::DESTROY_CONTEXT:
+    case EventType::UNDEFINED:
+        break;
+    default:
+        break;
+    }
+
+    if (event->check_flag(Event::AUTO_REMOVE)) { delete event; }
 }
 
 Event::~Event() { }

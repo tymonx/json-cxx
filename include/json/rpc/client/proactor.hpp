@@ -52,7 +52,7 @@
 #include <atomic>
 #include <thread>
 #include <algorithm>
-#include <condition_variable>
+#include <unistd.h>
 
 namespace json {
 namespace rpc {
@@ -97,9 +97,17 @@ private:
     json::rpc::List m_events_background{};
     json::rpc::List m_contexts{};
 
-    std::condition_variable m_cond_variable{};
     std::thread m_thread{};
     std::mutex m_mutex{};
+
+    fd_set m_fdread{};
+    fd_set m_fdwrite{};
+    fd_set m_fdexcep{};
+    int m_maxfd{-1};
+
+    uint64_t m_event{0};
+    int m_eventfd{0};
+    void* m_context{nullptr};
 };
 
 }

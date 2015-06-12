@@ -36,41 +36,67 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/event.hpp
+ * @file json/rpc/error.hpp
  *
- * @brief JSON client message interface
- *
- * Message used for communication between clients and proactor
+ * @brief JSON client interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EVENT_NOTIFY_HPP
-#define JSON_CXX_RPC_CLIENT_EVENT_NOTIFY_HPP
+#ifndef JSON_CXX_RPC_ERROR_HPP
+#define JSON_CXX_RPC_ERROR_HPP
 
-#include <json/rpc/client/event.hpp>
-
-#include <condition_variable>
+#include <json/json.hpp>
+#include <string>
+#include <exception>
 
 namespace json {
 namespace rpc {
-namespace client {
 
-class EventNotify : public Event {
+class Error : public std::exception {
 public:
-    void wait();
+    using Message = std::string;
+    using Data = json::Value;
 
-    virtual ~EventNotify();
-protected:
-    EventNotify(EventType type, Client* client, const Flags& flags = {})
-        : Event(type, client, NOTIFY | flags) { }
+    enum Code : std::int32_t {
+        OK                  = 0,
+        PARSE_ERROR         = -32700,
+        INVALID_REQUEST     = -32600,
+        METHOD_NOT_FOUND    = -32601,
+        INVALID_PARAMS      = -32602,
+        INTERNAL_ERROR      = -32603
+    };
 
-    void notify() { m_cond_variable.notify_one(); }
+    Error(Code code = OK, const Message& message = "", const Data& data = {}) :
+        m_code{code}, m_message{message}, m_data{data} { }
+
+    Error(const Error&) = default;
+    Error(Error&&) = default;
+
+    virtual ~Error();
+
+    virtual const char* what() const noexcept { return m_message.c_str(); }
+
+    Code get_code() const { return m_code; }
+    const Message& get_message() const { return m_message; }
+    const Data& get_data() const { return m_data; }
+
+    bool operator!() const { return OK == m_code; }
+    operator bool() const { return OK != m_code; }
+
+    bool operator==(Code code) const { return m_code == code; }
+    bool operator!=(Code code) const { return m_code != code; }
 private:
-    std::condition_variable_any m_cond_variable{};
-    friend class Event;
+    Code m_code{OK};
+    Message m_message{""};
+    Data m_data{};
 };
 
-} /* client */
-} /* rpc */
-} /* json */
+}
+}
 
-#endif /* JSON_CXX_RPC_CLIENT_EVENT_NOTIFY_HPP */
+static inline bool operator==(json::rpc::Error::Code code,
+        const json::rpc::Error& error) { return error == code; }
+
+static inline bool operator!=(json::rpc::Error::Code code,
+        const json::rpc::Error& error) { return error != code; }
+
+#endif /* JSON_CXX_RPC_ERROR_HPP */

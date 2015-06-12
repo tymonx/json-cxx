@@ -41,6 +41,7 @@ add_executable(rpc-client rpc_client.cpp)
 target_link_libraries(rpc-client
     json-cxx
     pthread
+    curl
 )
 
 add_executable(server_microhttpd server_microhttpd.cpp)

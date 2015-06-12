@@ -51,6 +51,7 @@ function (clang_compiler_processing)
         -Wno-covered-switch-default
         -Wno-global-constructors
         -Wno-exit-time-destructors
+        -Wno-disabled-macro-expansion
     )
 
     set(C_FLAGS     ${C_FLAGS}   ${C_WARNINGS})

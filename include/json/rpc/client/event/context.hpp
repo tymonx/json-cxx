@@ -66,9 +66,7 @@ public:
 
     bool check(const Client* client) const { return get_client() == client; }
 
-    void dispatch_event(Event* event) {
-        Event::event_complete(event);
-    }
+    void dispatch_event(Event* event);
 private:
     union {
         protocol::IPv4 m_ipv4;

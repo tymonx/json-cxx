@@ -45,9 +45,11 @@
 #define JSON_CXX_RPC_CLIENT_HPP
 
 #include <json/json.hpp>
+#include <json/rpc/error.hpp>
 
 #include <string>
 #include <functional>
+#include <future>
 
 namespace json {
 namespace rpc {
@@ -63,7 +65,8 @@ namespace client {
  * */
 class Client {
 public:
-    using ResultCallback = std::function<void(const json::Value&)>;
+    using ResultCallback = std::function<void(const json::Value&, const Error&)>;
+    using ResultFuture = std::future<json::Value>;
 
     Client(const client::Protocol& protocol);
 
@@ -77,7 +80,17 @@ public:
      * @param[out]  result      Method output parameter
      * */
     void method(const std::string& name, const json::Value& params,
-            json::Value& result) { result = method(name, params); }
+            json::Value& result) { result = method(name, params).get(); }
+
+    /*!
+     * @brief Call JSON-RPC method
+     *
+     * @param[in]   name        Method name
+     * @param[in]   params      Method input parameter
+     * @param[out]  result      Method output parameter
+     * */
+    void method(const std::string& name, const json::Value& params,
+            ResultFuture& result) { result = method(name, params); }
 
     /*!
      * @brief Call JSON-RPC method
@@ -87,7 +100,7 @@ public:
      *
      * @return  JSON-RPC result from method by future
      * */
-    json::Value method(const std::string& name, const json::Value& params);
+    ResultFuture method(const std::string& name, const json::Value& params);
 
     /*!
      * @brief Call JSON-RPC method
@@ -108,7 +121,6 @@ public:
 
 private:
     Client() = delete;
-
     client::Proactor& m_proactor;
 };
 

@@ -48,25 +48,27 @@
 
 #include <json/json.hpp>
 #include <json/rpc/client/event.hpp>
-#include <json/rpc/client/event_notify.hpp>
+#include <json/rpc/error.hpp>
 
 #include <string>
 #include <functional>
+#include <future>
 
 namespace json {
 namespace rpc {
 namespace client {
 namespace event {
 
-using ResultCallback = std::function<void(const json::Value&)>;
+using ResultCallback = std::function<void(const json::Value&, const Error&)>;
 
-class CallMethod : public EventNotify {
+class CallMethod : public Event {
 public:
     CallMethod(Client* client, const std::string& name, const Value& value);
     virtual ~CallMethod() final;
 
     std::string m_name{};
     Value m_value{};
+    std::promise<json::Value> m_result{};
 };
 
 class CallMethodAsync : public Event {

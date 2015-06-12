@@ -69,11 +69,13 @@ void Client::method(const std::string& name, const json::Value& params,
             new event::CallMethodAsync(this, name, params, result));
 }
 
-json::Value Client::method(const std::string& name, const json::Value& params) {
-    event::CallMethod event(this, name, params);
-    m_proactor.push_event(&event);
-    event.wait();
-    return event.m_value;
+Client::ResultFuture Client::method(const std::string& name,
+        const json::Value& params)
+{
+    auto event = new event::CallMethod(this, name, params);
+    auto result = event->m_result.get_future();
+    m_proactor.push_event(event);
+    return result;
 }
 
 void Client::notification(const std::string& name, const json::Value& params) {

@@ -42,6 +42,8 @@
  * */
 
 #include <json/rpc/client/event/context.hpp>
+
+#include <curl/curl.h>
 #include <iostream>
 
 using namespace json::rpc::client;
@@ -79,8 +81,37 @@ Context::~Context() {
     }
 
     while (!m_events.empty()) {
-        Event::event_complete(static_cast<Event*>(m_events.pop()));
+        Event::event_complete(static_cast<Event*>(m_events.pop()),
+                Error{Error::INTERNAL_ERROR, "Client context destroyed"});
     }
+}
+
+void Context::dispatch_event(Event* event) {
+    switch (event->get_type()) {
+    case EventType::CALL_METHOD:
+    case EventType::CALL_METHOD_ASYNC:
+    case EventType::SEND_NOTIFICATION:
+        event->context = curl_easy_init();
+        if (nullptr == event->context) {
+            return Event::event_complete(event, Error{Error::INTERNAL_ERROR,
+                    "Cannot create context"});
+        }
+        curl_easy_setopt(event->context, CURLOPT_URL, m_ipv4.get_address().c_str());
+        curl_easy_setopt(event->context, CURLOPT_PORT, m_ipv4.get_port());
+        curl_easy_setopt(event->context, CURLOPT_POSTFIELDS, "Dupa!!!");
+        curl_multi_add_handle(context, event->context);
+        break;
+    case EventType::OPEN_CONNECTION:
+    case EventType::CLOSE_CONNECTION:
+    case EventType::CONTEXT:
+    case EventType::DESTROY_CONTEXT:
+    case EventType::UNDEFINED:
+        break;
+    default:
+        break;
+    }
+
+    Event::event_complete(event);
 }
 
 DestroyContext::DestroyContext(Client* client) :
