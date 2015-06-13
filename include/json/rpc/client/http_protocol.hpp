@@ -36,55 +36,44 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/message.hpp
+ * @file json/rpc/client/http_protocol.hpp
  *
- * @brief JSON client message interface
- *
- * Message used for communication between clients and proactor
+ * @brief JSON client protocol IPv4 protocol
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EVENT_CALL_METHOD_HPP
-#define JSON_CXX_RPC_CLIENT_EVENT_CALL_METHOD_HPP
+#ifndef JSON_CXX_RPC_CLIENT_HTTP_PROTOCOL_HPP
+#define JSON_CXX_RPC_CLIENT_HTTP_PROTOCOL_HPP
 
-#include <json/json.hpp>
-#include <json/rpc/client/event.hpp>
-#include <json/rpc/error.hpp>
+#include <json/rpc/client/protocol.hpp>
 
 #include <string>
-#include <functional>
-#include <future>
 
 namespace json {
 namespace rpc {
 namespace client {
-namespace event {
 
-using ResultCallback = std::function<void(const json::Value&, const Error&)>;
-
-class CallMethod : public Event {
+class HttpProtocol : public Protocol {
 public:
-    CallMethod(Client* client, const std::string& name, const Value& value);
-    virtual ~CallMethod() final;
+    using Address = std::string;
+    using Port = std::uint16_t;
 
-    std::string m_name{};
-    Value m_value{};
-    std::promise<json::Value> m_result{};
+    static constexpr const char DEFAULT_ADDRESS[] = "127.0.0.1";
+
+    static constexpr const Port DEFAULT_PORT = 80;
+
+    HttpProtocol(const Address& address = DEFAULT_ADDRESS,
+            Port port = DEFAULT_PORT)
+        : Protocol(ProtocolType::HTTP), m_address{address}, m_port{port} { }
+
+    const Address& get_address() const { return m_address; }
+    Port get_port() const { return m_port; }
+private:
+    Address m_address{DEFAULT_ADDRESS};
+    Port m_port{DEFAULT_PORT};
 };
 
-class CallMethodAsync : public Event {
-public:
-    CallMethodAsync(Client* client, const std::string& name,
-            const Value& value, ResultCallback callback);
-    virtual ~CallMethodAsync() final;
-
-    std::string m_name{};
-    Value m_value{};
-    ResultCallback m_callback{};
-};
-
-} /* event */
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_EVENT_CALL_METHOD_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_HTTP_PROTOCOL_HPP */

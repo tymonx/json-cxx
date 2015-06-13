@@ -130,6 +130,7 @@ function (gnu_compiler_processing)
         -Wzero-as-null-pointer-constant
         -Wstack-protector
         -fstack-protector-all
+        -Wno-missing-field-initializers
     )
 
     set(C_FLAGS     ${C_FLAGS}   ${COMMON_WARNINGS} ${C_WARNINGS})

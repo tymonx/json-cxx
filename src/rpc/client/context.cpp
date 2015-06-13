@@ -43,73 +43,9 @@
 
 #include <json/rpc/client/context.hpp>
 
-#include <curl/curl.h>
-#include <iostream>
+using json::rpc::client::Context;
 
-using namespace json::rpc::client;
-using json::rpc::client::event::Context;
-using json::rpc::client::event::DestroyContext;
+Context::Context(Client* client) :
+    Event(EventType::CONTEXT, client, AUTO_REMOVE) { }
 
-Context::Context(Client* client, const Protocol& protocol) :
-    Event(EventType::CONTEXT, client, AUTO_REMOVE),
-    m_protocol_type{protocol.get_type()}
-{
-    switch (m_protocol_type) {
-    case ProtocolType::IPv4:
-        new (&m_ipv4) protocol::IPv4(static_cast<const protocol::IPv4&>(protocol));
-        break;
-    case ProtocolType::IPv6:
-    case ProtocolType::UDP:
-    case ProtocolType::SERIAL:
-    case ProtocolType::UNDEFINED:
-    default:
-        break;
-    }
-}
-
-Context::~Context() {
-    switch (m_protocol_type) {
-    case ProtocolType::IPv4:
-        m_ipv4.~IPv4();
-        break;
-    case ProtocolType::IPv6:
-    case ProtocolType::UDP:
-    case ProtocolType::SERIAL:
-    case ProtocolType::UNDEFINED:
-    default:
-        break;
-    }
-
-    while (!m_events.empty()) {
-        Event::event_complete(static_cast<Event*>(m_events.pop()),
-                Error{Error::INTERNAL_ERROR, "Client context destroyed"});
-    }
-}
-
-void Context::dispatch_event(Event* event) {
-    switch (event->get_type()) {
-    case EventType::CALL_METHOD:
-    case EventType::CALL_METHOD_ASYNC:
-    case EventType::SEND_NOTIFICATION:
-        event->context = curl_easy_init();
-        if (nullptr == event->context) {
-            return Event::event_complete(event, Error{Error::INTERNAL_ERROR,
-                    "Cannot create context"});
-        }
-        curl_easy_setopt(event->context, CURLOPT_URL, m_ipv4.get_address().c_str());
-        curl_easy_setopt(event->context, CURLOPT_PORT, m_ipv4.get_port());
-        curl_easy_setopt(event->context, CURLOPT_POSTFIELDS, "Dupa!!!");
-        curl_multi_add_handle(context, event->context);
-        break;
-    case EventType::OPEN_CONNECTION:
-    case EventType::CLOSE_CONNECTION:
-    case EventType::CONTEXT:
-    case EventType::DESTROY_CONTEXT:
-    case EventType::UNDEFINED:
-        break;
-    default:
-        break;
-    }
-
-    Event::event_complete(event);
-}
+Context::~Context() { }

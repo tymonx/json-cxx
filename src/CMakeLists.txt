@@ -42,12 +42,16 @@ add_library(json-cxx STATIC
     rpc/client.cpp
     rpc/list.cpp
     rpc/error.cpp
-    rpc/client/proactor.cpp
     rpc/client/event.cpp
-    rpc/client/event/context.cpp
-    rpc/client/event/call_method.cpp
-    rpc/client/event/send_notification.cpp
-    rpc/client/protocol/ipv4.cpp
+    rpc/client/proactor.cpp
+    rpc/client/context.cpp
+    rpc/client/destroy_context.cpp
+    rpc/client/call_method.cpp
+    rpc/client/call_method_async.cpp
+    rpc/client/send_notification.cpp
+    rpc/client/http_context.cpp
+    rpc/client/http_protocol.cpp
+    rpc/client/http_proactor.cpp
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES Clang)

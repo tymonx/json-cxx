@@ -36,15 +36,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/protocol/ipv4.cpp
+ * @file json/rpc/client/call_method_async.cpp
  *
  * @brief JSON client protocol IPv4 protocol
  * */
 
-#include <json/rpc/client/protocol_http.hpp>
+#include <json/rpc/client/call_method_async.hpp>
 
-using json::rpc::client::ProtocolHttp;
+using json::rpc::client::CallMethodAsync;
 
-constexpr const char ProtocolHttp::DEFAULT_ADDRESS[];
+CallMethodAsync::CallMethodAsync(Client* client, const std::string& name,
+        const Value& value, ResultCallback callback) :
+    Event(EventType::CALL_METHOD_ASYNC, client, AUTO_REMOVE),
+    m_name(name), m_value(value), m_callback(callback) { }
 
-constexpr const std::uint16_t ProtocolHttp::DEFAULT_PORT;
+CallMethodAsync::~CallMethodAsync() { }

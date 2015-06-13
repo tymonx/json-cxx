@@ -36,37 +36,40 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/message.hpp
+ * @file json/rpc/client/call_method_async.hpp
  *
  * @brief JSON client message interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EVENT_SEND_NOTIFICATION_HPP
-#define JSON_CXX_RPC_CLIENT_EVENT_SEND_NOTIFICATION_HPP
+#ifndef JSON_CXX_RPC_CLIENT_CALL_METHOD_ASYNC_HPP
+#define JSON_CXX_RPC_CLIENT_CALL_METHOD_ASYNC_HPP
 
 #include <json/json.hpp>
 #include <json/rpc/client/event.hpp>
+#include <json/rpc/error.hpp>
 
 #include <string>
+#include <functional>
 
 namespace json {
 namespace rpc {
 namespace client {
-namespace event {
 
-class SendNotification : public Event {
+using ResultCallback = std::function<void(const json::Value&, const Error&)>;
+
+class CallMethodAsync : public Event {
 public:
-    SendNotification(Client* client, const std::string& name,
-            const Value& value);
-    virtual ~SendNotification() final;
+    CallMethodAsync(Client* client, const std::string& name,
+            const Value& value, ResultCallback callback);
+    virtual ~CallMethodAsync() final;
 
     std::string m_name{};
     Value m_value{};
+    ResultCallback m_callback{};
 };
 
-} /* event */
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_EVENT_SEND_NOTIFICATION_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_CALL_METHOD_ASYNC_HPP */

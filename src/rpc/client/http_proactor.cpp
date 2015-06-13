@@ -55,19 +55,21 @@
 using json::rpc::Error;
 using json::rpc::client::HttpProactor;
 
-HttpProactor::HttpProactor() {
+HttpProactor::HttpProactor() :
+    m_curl_multi(curl_multi_init(), curl_multi_deleter)
+{
+    if (nullptr == m_curl_multi) {
+        throw std::exception();
+    }
+
     m_eventfd = eventfd(0, EFD_NONBLOCK);
     if (m_eventfd < 0) {
         throw std::exception();
     }
 
-    m_curl_multi = curl_multi_init();
-    if (nullptr == m_curl_multi) {
-        throw std::exception();
-    }
-    curl_multi_setopt(m_curl_multi, CURLMOPT_PIPELINING, 1UL);
+    curl_multi_setopt(m_curl_multi.get(), CURLMOPT_PIPELINING, 1UL);
 
-    curl_multi_fdset(m_curl_multi, &m_fdread, &m_fdwrite, &m_fdexcep, &m_maxfd);
+    curl_multi_fdset(m_curl_multi.get(), &m_fdread, &m_fdwrite, &m_fdexcep, &m_maxfd);
 
     m_thread = std::thread{&HttpProactor::task, this};
 }
@@ -85,13 +87,17 @@ HttpProactor::~HttpProactor() {
     }
 }
 
+void HttpProactor::curl_multi_deleter(void* curl_multi) {
+    curl_multi_cleanup(curl_multi);
+}
+
 void HttpProactor::task() {
     struct timeval timeout{};
     long curl_timeout{-1};
     int err;
 
     while (!m_task_done) {
-        curl_multi_timeout(m_curl_multi, &curl_timeout);
+        curl_multi_timeout(m_curl_multi.get(), &curl_timeout);
         if (curl_timeout < 0) {
             curl_timeout = 980;
         }
@@ -107,7 +113,7 @@ void HttpProactor::task() {
 
         event_loop();
 
-        curl_multi_perform(m_curl_multi, nullptr);
+        curl_multi_perform(m_curl_multi.get(), nullptr);
     }
 }
 

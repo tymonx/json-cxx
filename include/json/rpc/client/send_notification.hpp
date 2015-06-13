@@ -36,15 +36,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/protocol/ipv4.hpp
+ * @file json/rpc/client/send_notification.hpp
  *
- * @brief JSON client protocol IPv4 protocol
+ * @brief JSON client message interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_PROTOCOL_HTTP_HPP
-#define JSON_CXX_RPC_CLIENT_PROTOCOL_HTTP_HPP
+#ifndef JSON_CXX_RPC_CLIENT_SEND_NOTIFICATION_HPP
+#define JSON_CXX_RPC_CLIENT_SEND_NOTIFICATION_HPP
 
-#include <json/rpc/client/protocol.hpp>
+#include <json/json.hpp>
+#include <json/rpc/client/event.hpp>
 
 #include <string>
 
@@ -52,28 +53,18 @@ namespace json {
 namespace rpc {
 namespace client {
 
-class ProtocolHttp : public Protocol {
+class SendNotification : public Event {
 public:
-    using Address = std::string;
-    using Port = std::uint16_t;
+    SendNotification(Client* client, const std::string& name,
+            const Value& value);
+    virtual ~SendNotification() final;
 
-    static constexpr const char DEFAULT_ADDRESS[] = "127.0.0.1";
-
-    static constexpr const Port DEFAULT_PORT = 80;
-
-    ProtocolHttp(const Address& address = DEFAULT_ADDRESS,
-            Port port = DEFAULT_PORT)
-        : Protocol(ProtocolType::HTTP), m_address{address}, m_port{port} { }
-
-    const Address& get_address() const { return m_address; }
-    Port get_port() const { return m_port; }
-private:
-    Address m_address{DEFAULT_ADDRESS};
-    Port m_port{DEFAULT_PORT};
+    std::string m_name{};
+    Value m_value{};
 };
 
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_PROTOCOL_HTTP_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_EVENT_SEND_NOTIFICATION_HPP */

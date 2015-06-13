@@ -36,60 +36,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/proactor.hpp
+ * @file json/rpc/client/send_notification.cpp
  *
- * @brief JSON client reactor interface
+ * @brief JSON client protocol IPv4 protocol
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_HTTP_PROACTOR_HPP
-#define JSON_CXX_RPC_CLIENT_HTTP_PROACTOR_HPP
+#include <json/rpc/client/send_notification.hpp>
 
-#include <json/rpc/client/proactor.hpp>
+using json::rpc::client::SendNotification;
 
-#include <atomic>
-#include <thread>
-#include <memory>
-#include <sys/select.h>
+SendNotification::SendNotification(Client* client, const std::string& name,
+        const Value& value) :
+    Event(EventType::SEND_NOTIFICATION, client, AUTO_REMOVE),
+    m_name(name), m_value(value) { }
 
-namespace json {
-namespace rpc {
-namespace client {
-
-class HttpProactor : public Proactor {
-public:
-    static Proactor& get_instance() {
-        static HttpProactor proactor{};
-        return proactor;
-    }
-
-    HttpProactor();
-
-    virtual ~HttpProactor() final;
-
-    virtual void notify() final;
-private:
-    static void curl_multi_deleter(void*);
-
-    using CurlMultiPtr = std::unique_ptr<void, void(*)(void*)>;
-
-    void task();
-
-    CurlMultiPtr m_curl_multi;
-
-    volatile std::atomic<bool> m_task_done{false};
-    std::thread m_thread{};
-
-    fd_set m_fdread{};
-    fd_set m_fdwrite{};
-    fd_set m_fdexcep{};
-    int m_maxfd{-1};
-
-    uint64_t m_event{0};
-    int m_eventfd{0};
-};
-
-}
-}
-}
-
-#endif /* JSON_CXX_RPC_CLIENT_HTTP_PROACTOR_HPP */
+SendNotification::~SendNotification() { }

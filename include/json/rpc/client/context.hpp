@@ -36,15 +36,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/message.hpp
+ * @file json/rpc/client/context.hpp
  *
  * @brief JSON client message interface
- *
- * Message used for communication between clients and proactor
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EVENT_CONTEXT_HPP
-#define JSON_CXX_RPC_CLIENT_EVENT_CONTEXT_HPP
+#ifndef JSON_CXX_RPC_CLIENT_CONTEXT_HPP
+#define JSON_CXX_RPC_CLIENT_CONTEXT_HPP
 
 #include <json/rpc/client/event.hpp>
 
@@ -66,4 +64,4 @@ public:
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_EVENT_CONTEXT_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_CONTEXT_HPP */

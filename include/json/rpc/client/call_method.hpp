@@ -36,26 +36,39 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/event/call_method.cpp
+ * @file json/rpc/client/call_method.hpp
  *
- * @brief JSON client protocol IPv4 protocol
+ * @brief JSON client message interface
+ *
+ * Message used for communication between clients and proactor
  * */
 
-#include <json/rpc/client/event/call_method.hpp>
+#ifndef JSON_CXX_RPC_CLIENT_CALL_METHOD_HPP
+#define JSON_CXX_RPC_CLIENT_CALL_METHOD_HPP
 
-using json::rpc::client::event::CallMethod;
-using json::rpc::client::event::CallMethodAsync;
+#include <json/json.hpp>
+#include <json/rpc/client/event.hpp>
+#include <json/rpc/error.hpp>
 
-CallMethod::CallMethod(Client* client, const std::string& name,
-        const Value& value) :
-    Event(EventType::CALL_METHOD, client, AUTO_REMOVE),
-    m_name(name), m_value(value) { }
+#include <string>
+#include <future>
 
-CallMethod::~CallMethod() { }
+namespace json {
+namespace rpc {
+namespace client {
 
-CallMethodAsync::CallMethodAsync(Client* client, const std::string& name,
-        const Value& value, ResultCallback callback) :
-    Event(EventType::CALL_METHOD_ASYNC, client, AUTO_REMOVE),
-    m_name(name), m_value(value), m_callback(callback) { }
+class CallMethod : public Event {
+public:
+    CallMethod(Client* client, const std::string& name, const Value& value);
+    virtual ~CallMethod() final;
 
-CallMethodAsync::~CallMethodAsync() { }
+    std::string m_name{};
+    Value m_value{};
+    std::promise<json::Value> m_result{};
+};
+
+} /* client */
+} /* rpc */
+} /* json */
+
+#endif /* JSON_CXX_RPC_CLIENT_CALL_METHOD_HPP */

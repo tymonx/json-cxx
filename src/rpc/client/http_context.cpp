@@ -47,9 +47,9 @@
 
 using json::rpc::client::HttpContext;
 
-HttpContext::HttpContext(Client* client) : Context{client} {
-
-}
+HttpContext::HttpContext(Client* client, HttpProactor& proactor,
+        const HttpProtocol& protocol) : Context{client},
+    m_proactor{proactor}, m_protocol{protocol} { }
 
 HttpContext::~HttpContext() {
 
@@ -60,5 +60,29 @@ void HttpContext::curl_easy_deleter(void* curl_easy) {
 }
 
 void HttpContext::dispatch_event(Event* event) {
-    m_events.push(event);
+    switch (event->get_type()) {
+    case EventType::CALL_METHOD:
+    case EventType::CALL_METHOD_ASYNC:
+    case EventType::SEND_NOTIFICATION:
+        /*
+        event->context = curl_easy_init();
+        if (nullptr == event->context) {
+            return Event::event_complete(event, Error{Error::INTERNAL_ERROR,
+                    "Cannot create context"});
+        }
+        curl_easy_setopt(event->context, CURLOPT_URL, m_ipv4.get_address().c_str());
+        curl_easy_setopt(event->context, CURLOPT_PORT, m_ipv4.get_port());
+        curl_easy_setopt(event->context, CURLOPT_POSTFIELDS, "Dupa!!!");
+        curl_multi_add_handle(context, event->context);
+        */
+        break;
+    case EventType::CONTEXT:
+    case EventType::DESTROY_CONTEXT:
+    case EventType::UNDEFINED:
+        break;
+    default:
+        break;
+    }
+
+    Event::event_complete(event);
 }

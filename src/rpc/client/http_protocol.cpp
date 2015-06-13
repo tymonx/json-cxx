@@ -36,60 +36,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/proactor.hpp
+ * @file json/rpc/client/http_protocol.cpp
  *
- * @brief JSON client reactor interface
+ * @brief JSON client protocol IPv4 protocol
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_HTTP_PROACTOR_HPP
-#define JSON_CXX_RPC_CLIENT_HTTP_PROACTOR_HPP
+#include <json/rpc/client/http_protocol.hpp>
 
-#include <json/rpc/client/proactor.hpp>
+using json::rpc::client::HttpProtocol;
 
-#include <atomic>
-#include <thread>
-#include <memory>
-#include <sys/select.h>
+constexpr const char HttpProtocol::DEFAULT_ADDRESS[];
 
-namespace json {
-namespace rpc {
-namespace client {
-
-class HttpProactor : public Proactor {
-public:
-    static Proactor& get_instance() {
-        static HttpProactor proactor{};
-        return proactor;
-    }
-
-    HttpProactor();
-
-    virtual ~HttpProactor() final;
-
-    virtual void notify() final;
-private:
-    static void curl_multi_deleter(void*);
-
-    using CurlMultiPtr = std::unique_ptr<void, void(*)(void*)>;
-
-    void task();
-
-    CurlMultiPtr m_curl_multi;
-
-    volatile std::atomic<bool> m_task_done{false};
-    std::thread m_thread{};
-
-    fd_set m_fdread{};
-    fd_set m_fdwrite{};
-    fd_set m_fdexcep{};
-    int m_maxfd{-1};
-
-    uint64_t m_event{0};
-    int m_eventfd{0};
-};
-
-}
-}
-}
-
-#endif /* JSON_CXX_RPC_CLIENT_HTTP_PROACTOR_HPP */
+constexpr const std::uint16_t HttpProtocol::DEFAULT_PORT;

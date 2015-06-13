@@ -43,13 +43,14 @@
 
 #include <json/rpc/client/event.hpp>
 #include <json/rpc/client/event_type.hpp>
-#include <json/rpc/client/event/call_method.hpp>
+#include <json/rpc/client/call_method.hpp>
+#include <json/rpc/client/call_method_async.hpp>
 
 using json::rpc::Error;
 using namespace json::rpc::client;
 
 static inline void call_method(Event* _event, const Error& error) {
-    event::CallMethod* event = static_cast<event::CallMethod*>(_event);
+    CallMethod* event = static_cast<CallMethod*>(_event);
     if (!error) {
         event->m_result.set_value(event->m_value);
     }
@@ -59,8 +60,7 @@ static inline void call_method(Event* _event, const Error& error) {
 }
 
 static inline void call_method_async(const Event* _event, const Error& error) {
-    const event::CallMethodAsync* event =
-        static_cast<const event::CallMethodAsync*>(_event);
+    const CallMethodAsync* event = static_cast<const CallMethodAsync*>(_event);
     if (nullptr == event->m_callback) { return; }
     if (!error) {
         event->m_callback(event->m_value, Error::OK);
@@ -79,8 +79,6 @@ void Event::event_complete(Event* event, const Error& error) {
         call_method_async(event, error);
         break;
     case EventType::SEND_NOTIFICATION:
-    case EventType::OPEN_CONNECTION:
-    case EventType::CLOSE_CONNECTION:
     case EventType::CONTEXT:
     case EventType::DESTROY_CONTEXT:
     case EventType::UNDEFINED:

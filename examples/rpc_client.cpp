@@ -1,6 +1,6 @@
 #include <json/json.hpp>
 #include <json/rpc/client.hpp>
-#include <json/rpc/client/protocol/ipv4.hpp>
+#include <json/rpc/client/http_protocol.hpp>
 
 #include <iostream>
 
@@ -8,8 +8,8 @@ using namespace json;
 
 int main() {
     Value value;
-    rpc::client::protocol::IPv4 ipv4;
-    rpc::Client client(ipv4);
+    rpc::client::HttpProtocol http{};
+    rpc::Client client(http);
 
     client.method("sexy", 5, value);
     value = client.method("doopy", 7).get();

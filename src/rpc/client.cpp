@@ -43,41 +43,56 @@
 
 #include <json/rpc/client.hpp>
 
-#include <json/rpc/client/proactor.hpp>
-#include <json/rpc/client/protocol.hpp>
-#include <json/rpc/client/event/context.hpp>
-#include <json/rpc/client/event/call_method.hpp>
-#include <json/rpc/client/event/send_notification.hpp>
+#include <json/rpc/client/http_context.hpp>
+#include <json/rpc/client/http_protocol.hpp>
+#include <json/rpc/client/http_proactor.hpp>
+
+#include <json/rpc/client/call_method.hpp>
+#include <json/rpc/client/call_method_async.hpp>
+#include <json/rpc/client/send_notification.hpp>
+#include <json/rpc/client/destroy_context.hpp>
+
+#include <json/rpc/client/call_method.hpp>
+#include <json/rpc/client/send_notification.hpp>
 
 using namespace json::rpc;
 using namespace json::rpc::client;
 
-Client::Client(const Protocol& protocol)
-    : m_proactor{Proactor::get_instance()}
-{
-    m_proactor.push_event(new event::Context(this, protocol));
+Client::Client(const Protocol& protocol) : m_id{this} {
+    switch (protocol.get_type()) {
+    case ProtocolType::HTTP:
+        m_proactor = &HttpProactor::get_instance();
+        m_proactor->push_event(new HttpContext(m_id,
+            static_cast<HttpProactor&>(*m_proactor),
+            static_cast<const HttpProtocol&>(protocol)));
+        break;
+    case ProtocolType::SERIAL:
+    case ProtocolType::UDP:
+    case ProtocolType::UNDEFINED:
+    default:
+        break;
+    }
 }
 
 Client::~Client() {
-    m_proactor.push_event(new event::DestroyContext(this));
+    m_proactor->push_event(new DestroyContext(m_id));
 }
 
 void Client::method(const std::string& name, const json::Value& params,
         ResultCallback result)
 {
-    m_proactor.push_event(
-            new event::CallMethodAsync(this, name, params, result));
+    m_proactor->push_event(new CallMethodAsync(m_id, name, params, result));
 }
 
 Client::ResultFuture Client::method(const std::string& name,
         const json::Value& params)
 {
-    auto event = new event::CallMethod(this, name, params);
+    auto event = new CallMethod(m_id, name, params);
     auto result = event->m_result.get_future();
-    m_proactor.push_event(event);
+    m_proactor->push_event(event);
     return result;
 }
 
 void Client::notification(const std::string& name, const json::Value& params) {
-    m_proactor.push_event(new event::SendNotification(this, name, params));
+    m_proactor->push_event(new SendNotification(this, name, params));
 }

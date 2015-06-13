@@ -48,6 +48,8 @@
 
 #include <json/rpc/list.hpp>
 #include <json/rpc/client/context.hpp>
+#include <json/rpc/client/http_protocol.hpp>
+#include <json/rpc/client/http_proactor.hpp>
 
 #include <memory>
 
@@ -57,7 +59,8 @@ namespace client {
 
 class HttpContext : public Context {
 public:
-    HttpContext(Client* client);
+    HttpContext(Client* client, HttpProactor& proactor,
+            const HttpProtocol& protocol);
 
     virtual ~HttpContext() final;
 
@@ -67,6 +70,8 @@ private:
 
     using CurlEasyPtr = std::unique_ptr<void, decltype(curl_easy_deleter)>;
 
+    HttpProactor& m_proactor;
+    HttpProtocol m_protocol{};
     List m_events{};
 };
 

@@ -69,6 +69,10 @@ public:
     using ResultFuture = std::future<json::Value>;
 
     Client(const client::Protocol& protocol);
+    Client(const Client&) = delete;
+    Client(Client&&) = delete;
+    Client& operator=(const Client&) = delete;
+    Client& operator=(Client&&) = delete;
 
     ~Client();
 
@@ -120,8 +124,8 @@ public:
     void notification(const std::string& name, const json::Value& params);
 
 private:
-    Client() = delete;
-    client::Proactor& m_proactor;
+    client::Proactor* m_proactor{nullptr};
+    Client* const m_id{nullptr};
 };
 
 }

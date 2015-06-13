@@ -36,18 +36,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/event/ned_notification.cpp
+ * @file json/rpc/client/call_method.cpp
  *
  * @brief JSON client protocol IPv4 protocol
  * */
 
-#include <json/rpc/client/event/send_notification.hpp>
+#include <json/rpc/client/call_method.hpp>
 
-using json::rpc::client::event::SendNotification;
+using json::rpc::client::CallMethod;
 
-SendNotification::SendNotification(Client* client, const std::string& name,
+CallMethod::CallMethod(Client* client, const std::string& name,
         const Value& value) :
-    Event(EventType::SEND_NOTIFICATION, client, AUTO_REMOVE),
+    Event(EventType::CALL_METHOD, client, AUTO_REMOVE),
     m_name(name), m_value(value) { }
 
-SendNotification::~SendNotification() { }
+CallMethod::~CallMethod() { }

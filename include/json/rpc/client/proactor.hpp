@@ -55,14 +55,12 @@ namespace rpc {
 namespace client {
 
 class Proactor {
-protected:
-    virtual ~Proactor();
-
+public:
     void push_event(Event* pevent);
-
-    void event_loop();
-
     virtual void notify() = 0;
+    virtual ~Proactor();
+protected:
+    void event_loop();
 
     Context* find_context(const Client* client);
 
