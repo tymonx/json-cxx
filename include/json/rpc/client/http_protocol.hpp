@@ -47,29 +47,65 @@
 #include <json/rpc/client/protocol.hpp>
 
 #include <string>
+#include <chrono>
+#include <utility>
+#include <unordered_map>
 
 namespace json {
 namespace rpc {
 namespace client {
 
+static inline
+constexpr std::chrono::milliseconds operator "" _ms(unsigned long long ms) {
+    return std::chrono::milliseconds(ms);
+}
+
+static inline
+constexpr std::chrono::seconds operator "" _s(unsigned long long secs) {
+    return std::chrono::seconds(secs);
+}
+
 class HttpProtocol : public Protocol {
 public:
-    using Address = std::string;
-    using Port = std::uint16_t;
+    using Url = std::string;
+    using Seconds = std::chrono::seconds;
+    using Miliseconds = std::chrono::milliseconds;
+    using Header = std::pair<std::string, std::string>;
+    using Headers = std::unordered_map<std::string, std::string>;
 
-    static constexpr const char DEFAULT_ADDRESS[] = "127.0.0.1";
+    static constexpr const char DEFAULT_URL[] = "localhost";
 
-    static constexpr const Port DEFAULT_PORT = 80;
+    static constexpr const unsigned DEFAULT_PIPELINE_LENGTH = 8;
 
-    HttpProtocol(const Address& address = DEFAULT_ADDRESS,
-            Port port = DEFAULT_PORT)
-        : Protocol(ProtocolType::HTTP), m_address{address}, m_port{port} { }
+    static constexpr const Miliseconds DEFAULT_TIMEOUT_MS = 1000_ms;
 
-    const Address& get_address() const { return m_address; }
-    Port get_port() const { return m_port; }
+    HttpProtocol(const Url& url = DEFAULT_URL);
+
+    const Url& get_url() const { return m_url; }
+
+    void set_pipeline_length(unsigned pipeline_length);
+
+    unsigned get_pipeline_length() const { return m_pipeline_length; }
+
+    void set_timeout(const Seconds& seconds) {
+        set_timeout(std::chrono::duration_cast<Miliseconds>(seconds));
+    }
+
+    void set_timeout(const Miliseconds& miliseconds);
+
+    Miliseconds get_timeout() const { return m_timeout_ms; }
+
+    void add_header(const Header& header);
+    void remove_header(const Header& header) {
+        m_headers.erase(header.first);
+    }
+
+    const Headers& get_headers() const { return m_headers; }
 private:
-    Address m_address{DEFAULT_ADDRESS};
-    Port m_port{DEFAULT_PORT};
+    Url m_url{DEFAULT_URL};
+    unsigned m_pipeline_length{DEFAULT_PIPELINE_LENGTH};
+    std::chrono::milliseconds m_timeout_ms{DEFAULT_TIMEOUT_MS};
+    Headers m_headers{};
 };
 
 } /* client */

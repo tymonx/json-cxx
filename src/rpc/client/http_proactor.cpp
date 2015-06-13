@@ -56,7 +56,7 @@ using json::rpc::Error;
 using json::rpc::client::HttpProactor;
 
 HttpProactor::HttpProactor() :
-    m_curl_multi(curl_multi_init(), curl_multi_deleter)
+    m_curl_multi{curl_multi_init()}
 {
     if (nullptr == m_curl_multi) {
         throw std::exception();
@@ -68,6 +68,9 @@ HttpProactor::HttpProactor() :
     }
 
     curl_multi_setopt(m_curl_multi.get(), CURLMOPT_PIPELINING, 1UL);
+    curl_multi_setopt(m_curl_multi.get(), CURLMOPT_MAX_PIPELINE_LENGTH,
+            DEFAULT_MAX_PIPELINE_LENGTH);
+    curl_multi_setopt(m_curl_multi.get(), CURLMOPT_MAX_HOST_CONNECTIONS, 1UL);
 
     curl_multi_fdset(m_curl_multi.get(), &m_fdread, &m_fdwrite, &m_fdexcep, &m_maxfd);
 
@@ -87,7 +90,7 @@ HttpProactor::~HttpProactor() {
     }
 }
 
-void HttpProactor::curl_multi_deleter(void* curl_multi) {
+void HttpProactor::CurlMultiDeleter::operator ()(void* curl_multi) {
     curl_multi_cleanup(curl_multi);
 }
 

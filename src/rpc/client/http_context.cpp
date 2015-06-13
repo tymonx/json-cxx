@@ -44,19 +44,98 @@
 #include <json/rpc/client/http_context.hpp>
 
 #include <curl/curl.h>
+#include <exception>
 
 using json::rpc::client::HttpContext;
 
 HttpContext::HttpContext(Client* client, HttpProactor& proactor,
         const HttpProtocol& protocol) : Context{client},
-    m_proactor{proactor}, m_protocol{protocol} { }
+    m_proactor{proactor}, m_protocol{protocol}
+{
+    std::string http_header{};
+    struct ::curl_slist* headers{nullptr};
+    unsigned pipeline_size{m_protocol.get_pipeline_length()};
+    (void)m_proactor;
+
+    for (const auto& header : m_protocol.get_headers()) {
+        http_header = header.first + ": " + header.second;
+        headers = curl_slist_append(headers, http_header.c_str());
+    }
+
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    headers = curl_slist_append(headers, "charset: utf-8");
+    m_headers = std::move(CurlSlistPtr{headers});
+
+    pipeline_size = (pipeline_size < m_proactor.get_max_pipeline_length()) ?
+        pipeline_size : m_proactor.get_max_pipeline_length();
+
+    m_pipelines.resize(pipeline_size);
+    for (auto& pipe : m_pipelines) {
+        CURL* curl_easy = curl_easy_init();
+        if (nullptr == curl_easy) {
+            throw std::bad_alloc();
+        }
+        curl_easy_setopt(curl_easy, CURLOPT_URL, m_protocol.get_url().c_str());
+        curl_easy_setopt(curl_easy, CURLOPT_WRITEFUNCTION, write_function);
+        curl_easy_setopt(curl_easy, CURLOPT_WRITEDATA, &pipe);
+        curl_easy_setopt(curl_easy, CURLOPT_READFUNCTION, read_function);
+        curl_easy_setopt(curl_easy, CURLOPT_READDATA, &pipe);
+        curl_easy_setopt(curl_easy, CURLOPT_POSTFIELDS, nullptr);
+        curl_easy_setopt(curl_easy, CURLOPT_POSTFIELDSIZE, 0);
+        curl_easy_setopt(curl_easy, CURLOPT_HTTPHEADER, m_headers.get());
+        curl_easy_setopt(curl_easy, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_easy_setopt(curl_easy, CURLOPT_TIMEOUT_MS,
+                m_protocol.get_timeout().count());
+        pipe.curl_easy = std::move(CurlEasyPtr{curl_easy});
+
+    }
+}
 
 HttpContext::~HttpContext() {
 
 }
 
-void HttpContext::curl_easy_deleter(void* curl_easy) {
+size_t HttpContext::write_function(char* buffer, size_t size, size_t nmemb,
+        void* userdata)
+{
+    struct pipeline* pipe = static_cast<struct pipeline*>(userdata);
+    size_t copy = size * nmemb;
+    pipe->response.append(buffer, copy, pipe->response_pos);
+    pipe->response_pos += copy;
+    return copy;
+}
+
+size_t HttpContext::read_function(char* buffer, size_t size, size_t nmemb,
+        void* userdata)
+{
+    struct pipeline* pipe = static_cast<struct pipeline*>(userdata);
+    std::string::size_type copied;
+
+    if (!size || !nmemb || (pipe->request_pos >= pipe->request.size())) {
+        return 0;
+    }
+
+    copied = pipe->request.copy(buffer, size * nmemb, pipe->request_pos);
+    pipe->request_pos += copied;
+
+    return copied;
+}
+
+void HttpContext::CurlEasyDeleter::operator()(void* curl_easy) {
     curl_easy_cleanup(curl_easy);
+}
+
+void HttpContext::CurlSlistDeleter::operator()(struct curl_slist* curl_slist) {
+    curl_slist_free_all(curl_slist);
+}
+
+void HttpContext::event_to_message(Event* event) {
+    for (Pipelines::size_type i = 0; i < m_pipelines.size(); ++i) {
+        if (nullptr == m_pipelines[i].event) {
+            return;
+        }
+    }
+    m_events.push(event);
 }
 
 void HttpContext::dispatch_event(Event* event) {
@@ -64,17 +143,7 @@ void HttpContext::dispatch_event(Event* event) {
     case EventType::CALL_METHOD:
     case EventType::CALL_METHOD_ASYNC:
     case EventType::SEND_NOTIFICATION:
-        /*
-        event->context = curl_easy_init();
-        if (nullptr == event->context) {
-            return Event::event_complete(event, Error{Error::INTERNAL_ERROR,
-                    "Cannot create context"});
-        }
-        curl_easy_setopt(event->context, CURLOPT_URL, m_ipv4.get_address().c_str());
-        curl_easy_setopt(event->context, CURLOPT_PORT, m_ipv4.get_port());
-        curl_easy_setopt(event->context, CURLOPT_POSTFIELDS, "Dupa!!!");
-        curl_multi_add_handle(context, event->context);
-        */
+        event_to_message(event);
         break;
     case EventType::CONTEXT:
     case EventType::DESTROY_CONTEXT:

@@ -45,6 +45,24 @@
 
 using json::rpc::client::HttpProtocol;
 
-constexpr const char HttpProtocol::DEFAULT_ADDRESS[];
+constexpr const char HttpProtocol::DEFAULT_URL[];
 
-constexpr const std::uint16_t HttpProtocol::DEFAULT_PORT;
+constexpr const HttpProtocol::Miliseconds HttpProtocol::DEFAULT_TIMEOUT_MS;
+
+HttpProtocol::HttpProtocol(const Url& url)
+    : Protocol(ProtocolType::HTTP), m_url{url} { }
+
+void HttpProtocol::set_pipeline_length(unsigned pipeline_length) {
+    if (!pipeline_length) { m_pipeline_length = DEFAULT_PIPELINE_LENGTH; }
+    else { m_pipeline_length = pipeline_length; }
+}
+
+void HttpProtocol::set_timeout(const Miliseconds& miliseconds) {
+    if (0_ms == miliseconds) { m_timeout_ms = DEFAULT_TIMEOUT_MS; }
+    else { m_timeout_ms = miliseconds; }
+}
+
+void HttpProtocol::add_header(const Header& header) {
+    if (header.first.empty() || header.second.empty()) { return; }
+    m_headers.emplace(header.first, header.second);
+}

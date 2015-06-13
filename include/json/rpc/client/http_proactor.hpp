@@ -57,6 +57,8 @@ namespace client {
 
 class HttpProactor : public Proactor {
 public:
+    static const constexpr unsigned DEFAULT_MAX_PIPELINE_LENGTH = 8;
+
     static Proactor& get_instance() {
         static HttpProactor proactor{};
         return proactor;
@@ -67,14 +69,20 @@ public:
     virtual ~HttpProactor() final;
 
     virtual void notify() final;
-private:
-    static void curl_multi_deleter(void*);
 
-    using CurlMultiPtr = std::unique_ptr<void, void(*)(void*)>;
+    constexpr unsigned get_max_pipeline_length() const {
+        return DEFAULT_MAX_PIPELINE_LENGTH;
+    }
+private:
+    struct CurlMultiDeleter {
+        void operator ()(void*);
+    };
+
+    using CurlMultiPtr = std::unique_ptr<void, CurlMultiDeleter>;
 
     void task();
 
-    CurlMultiPtr m_curl_multi;
+    CurlMultiPtr m_curl_multi{nullptr};
 
     volatile std::atomic<bool> m_task_done{false};
     std::thread m_thread{};

@@ -51,7 +51,12 @@
 #include <json/rpc/client/http_protocol.hpp>
 #include <json/rpc/client/http_proactor.hpp>
 
+#include <string>
 #include <memory>
+#include <vector>
+
+/* Forward declaration */
+struct curl_slist;
 
 namespace json {
 namespace rpc {
@@ -66,10 +71,40 @@ public:
 
     virtual void dispatch_event(Event* event) final;
 private:
-    static void curl_easy_deleter(void*);
+    struct CurlEasyDeleter {
+        void operator()(void* curl_easy);
+    };
 
-    using CurlEasyPtr = std::unique_ptr<void, decltype(curl_easy_deleter)>;
+    struct CurlSlistDeleter {
+        void operator()(struct ::curl_slist* curl_slist);
+    };
 
+    using MessageId = std::uint16_t;
+    using CurlEasyPtr = std::unique_ptr<void, CurlEasyDeleter>;
+    using CurlSlistPtr = std::unique_ptr<struct ::curl_slist, CurlSlistDeleter>;
+
+    struct pipeline {
+        CurlEasyPtr curl_easy{nullptr};
+        Event* event{nullptr};
+        std::string::size_type request_pos{0};
+        std::string::size_type response_pos{0};
+        std::string request{};
+        std::string response{};
+    };
+
+    static size_t write_function(char* buffer, size_t size, size_t nmemb,
+            void* userdata);
+
+    static size_t read_function(char* buffer, size_t size, size_t nmemb,
+            void* userdata);
+
+    void event_to_message(Event* event);
+
+    using Pipelines = std::vector<struct pipeline>;
+
+    MessageId m_message_id{0};
+    CurlSlistPtr m_headers{nullptr};
+    Pipelines m_pipelines{};
     HttpProactor& m_proactor;
     HttpProtocol m_protocol{};
     List m_events{};
