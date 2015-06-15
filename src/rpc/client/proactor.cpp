@@ -65,6 +65,7 @@ void Proactor::get_events() {
 
 void Proactor::event_handling(Event* event) {
     if (EventType::CONTEXT == event->get_type()) {
+        setup_context(static_cast<Context&>(*event));
         m_contexts.push(event);
     }
     else if (EventType::DESTROY_CONTEXT == event->get_type()) {

@@ -47,8 +47,7 @@
 #define JSON_CXX_RPC_CLIENT_CALL_METHOD_HPP
 
 #include <json/json.hpp>
-#include <json/rpc/client/event.hpp>
-#include <json/rpc/error.hpp>
+#include <json/rpc/client/request.hpp>
 
 #include <string>
 #include <future>
@@ -57,13 +56,14 @@ namespace json {
 namespace rpc {
 namespace client {
 
-class CallMethod : public Event {
+class CallMethod : public Request {
 public:
-    CallMethod(Client* client, const std::string& name, const Value& value);
+    CallMethod(Client* client, const std::string& name,
+            const Value& value) :
+        Request(EventType::CALL_METHOD, client, name, value) { }
+
     virtual ~CallMethod() final;
 
-    std::string m_name{};
-    Value m_value{};
     std::promise<json::Value> m_result{};
 };
 

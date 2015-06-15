@@ -45,9 +45,4 @@
 
 using json::rpc::client::CallMethodAsync;
 
-CallMethodAsync::CallMethodAsync(Client* client, const std::string& name,
-        const Value& value, ResultCallback callback) :
-    Event(EventType::CALL_METHOD_ASYNC, client, AUTO_REMOVE),
-    m_name(name), m_value(value), m_callback(callback) { }
-
 CallMethodAsync::~CallMethodAsync() { }

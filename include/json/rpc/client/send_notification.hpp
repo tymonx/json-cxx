@@ -45,7 +45,7 @@
 #define JSON_CXX_RPC_CLIENT_SEND_NOTIFICATION_HPP
 
 #include <json/json.hpp>
-#include <json/rpc/client/event.hpp>
+#include <json/rpc/client/request.hpp>
 
 #include <string>
 
@@ -53,18 +53,17 @@ namespace json {
 namespace rpc {
 namespace client {
 
-class SendNotification : public Event {
+class SendNotification : public Request {
 public:
     SendNotification(Client* client, const std::string& name,
-            const Value& value);
-    virtual ~SendNotification() final;
+            const Value& value) :
+        Request(EventType::SEND_NOTIFICATION, client, name, value) { }
 
-    std::string m_name{};
-    Value m_value{};
+    virtual ~SendNotification() final;
 };
 
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_EVENT_SEND_NOTIFICATION_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_SEND_NOTIFICATION_HPP */

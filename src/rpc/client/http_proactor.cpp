@@ -90,6 +90,14 @@ HttpProactor::~HttpProactor() {
     }
 }
 
+void HttpProactor::setup_context(Context& context) {
+    setup_context(static_cast<HttpContext&>(context));
+}
+
+void HttpProactor::setup_context(HttpContext& context) {
+    context.m_curl_multi = m_curl_multi.get();
+}
+
 void HttpProactor::CurlMultiDeleter::operator ()(void* curl_multi) {
     curl_multi_cleanup(curl_multi);
 }
@@ -102,7 +110,7 @@ void HttpProactor::task() {
     while (!m_task_done) {
         curl_multi_timeout(m_curl_multi.get(), &curl_timeout);
         if (curl_timeout < 0) {
-            curl_timeout = 980;
+            curl_timeout = 1000;
         }
 
         timeout.tv_sec = curl_timeout / 1000;

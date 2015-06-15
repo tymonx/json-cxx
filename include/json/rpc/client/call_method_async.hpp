@@ -45,7 +45,7 @@
 #define JSON_CXX_RPC_CLIENT_CALL_METHOD_ASYNC_HPP
 
 #include <json/json.hpp>
-#include <json/rpc/client/event.hpp>
+#include <json/rpc/client/request.hpp>
 #include <json/rpc/error.hpp>
 
 #include <string>
@@ -57,14 +57,15 @@ namespace client {
 
 using ResultCallback = std::function<void(const json::Value&, const Error&)>;
 
-class CallMethodAsync : public Event {
+class CallMethodAsync : public Request {
 public:
     CallMethodAsync(Client* client, const std::string& name,
-            const Value& value, ResultCallback callback);
+            const Value& value, ResultCallback callback) :
+        Request(EventType::CALL_METHOD_ASYNC, client, name, value),
+        m_callback(callback) { }
+
     virtual ~CallMethodAsync() final;
 
-    std::string m_name{};
-    Value m_value{};
     ResultCallback m_callback{};
 };
 

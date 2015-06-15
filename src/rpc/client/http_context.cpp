@@ -43,6 +43,7 @@
 
 #include <json/rpc/client/http_context.hpp>
 
+#include <json/rpc/client/request.hpp>
 #include <json/rpc/client/call_method.hpp>
 #include <json/rpc/client/call_method_async.hpp>
 #include <json/rpc/client/send_notification.hpp>
@@ -55,14 +56,12 @@ using json::rpc::client::CallMethodAsync;
 using json::rpc::client::SendNotification;
 using json::rpc::client::HttpContext;
 
-HttpContext::HttpContext(Client* client, HttpProactor& proactor,
-        const HttpProtocol& protocol) : Context{client},
-    m_proactor{proactor}, m_protocol{protocol}
+HttpContext::HttpContext(Client* client, const HttpProtocol& protocol)
+    : Context{client}, m_protocol{protocol}
 {
     std::string http_header{};
     struct ::curl_slist* headers{nullptr};
     unsigned pipeline_size{m_protocol.get_pipeline_length()};
-    (void)m_proactor;
 
     for (const auto& header : m_protocol.get_headers()) {
         http_header = header.first + ": " + header.second;
@@ -72,9 +71,6 @@ HttpContext::HttpContext(Client* client, HttpProactor& proactor,
     headers = curl_slist_append(headers, "Content-Type: application/json");
     headers = curl_slist_append(headers, "charset: utf-8");
     m_headers = std::move(CurlSlistPtr{headers});
-
-    pipeline_size = (pipeline_size < m_proactor.get_max_pipeline_length()) ?
-        pipeline_size : m_proactor.get_max_pipeline_length();
 
     m_pipelines.resize(pipeline_size);
     for (auto& pipe : m_pipelines) {
@@ -105,7 +101,7 @@ HttpContext::~HttpContext() {
 size_t HttpContext::write_function(char* buffer, size_t size, size_t nmemb,
         void* userdata)
 {
-    struct pipeline* pipe = static_cast<struct pipeline*>(userdata);
+    Pipeline* pipe = static_cast<Pipeline*>(userdata);
     size_t copy = size * nmemb;
     pipe->response.append(buffer, copy, pipe->response_pos);
     pipe->response_pos += copy;
@@ -115,7 +111,7 @@ size_t HttpContext::write_function(char* buffer, size_t size, size_t nmemb,
 size_t HttpContext::read_function(char* buffer, size_t size, size_t nmemb,
         void* userdata)
 {
-    struct pipeline* pipe = static_cast<struct pipeline*>(userdata);
+    Pipeline* pipe = static_cast<Pipeline*>(userdata);
     std::string::size_type copied;
 
     if (!size || !nmemb || (pipe->request_pos >= pipe->request.size())) {
@@ -136,83 +132,43 @@ void HttpContext::CurlSlistDeleter::operator()(struct curl_slist* curl_slist) {
     curl_slist_free_all(curl_slist);
 }
 
-bool HttpContext::event_to_message(Event* event) {
-    for (Pipelines::size_type i = 0; i < m_pipelines.size(); ++i) {
-        if (nullptr == m_pipelines[i].event) {
-            return event_to_pipeline(event, m_pipelines[i], unsigned(i));
+void HttpContext::add_event_to_pipeline(Event* event, Pipeline& pipe, Id id) {
+    pipe.event = event;
+    pipe.request.clear();
+    pipe.request_pos = 0;
+    pipe.response.clear();
+    pipe.response_pos = 0;
+    pipe.request << build_message(static_cast<const Request&>(*event), id);
+}
+
+bool HttpContext::add_event_to_processing(Event* event) {
+    for (Pipelines::size_type id = 0; id < m_pipelines.size(); ++id) {
+        if (nullptr == m_pipelines[id].event) {
+            add_event_to_pipeline(event, m_pipelines[id], Id(id));
+            return true;
         }
     }
     return false;
 }
 
-static
-void build_params(json::Value& params, json::Value& message) {
-    if (params.is_object() || params.is_array()) {
-        message["params"] = params;
-    }
-    else {
-        message["params"].push_back(params);
-    }
-}
-
-static inline
-void build_message(CallMethod* event, json::Value& message, unsigned id) {
-    message["method"] = event->m_name;
-    build_params(event->m_value, message);
-    message["id"] = id;
-}
-
-static inline
-void build_message(CallMethodAsync* event, json::Value& message, unsigned id) {
-    message["method"] = event->m_name;
-    build_params(event->m_value, message);
-    message["id"] = id;
-}
-
-static inline
-void build_message(SendNotification* event, json::Value& message) {
-    message["method"] = event->m_name;
-    build_params(event->m_value, message);
-}
-
-bool HttpContext::build_message(Event* event, json::Value& message,
-        unsigned id)
-{
-    bool valid{true};
-    message["jsonrpc"] = "2.0";
-    if (EventType::CALL_METHOD == event->get_type()) {
-        ::build_message(static_cast<CallMethod*>(event), message, id);
-    }
-    else if (EventType::CALL_METHOD_ASYNC == event->get_type()) {
-        ::build_message(static_cast<CallMethodAsync*>(event), message, id);
-    }
-    else if (EventType::SEND_NOTIFICATION == event->get_type()) {
-        ::build_message(static_cast<SendNotification*>(event), message);
-    }
-    else {
-        valid = false;
-    }
-    return valid;
-}
-
-bool HttpContext::event_to_pipeline(Event* event, struct pipeline& pipe,
-        unsigned id)
-{
+json::Value HttpContext::build_message(const Request& request, Id id) {
     json::Value message{json::Value::Type::OBJECT};
-    if (build_message(event, message, id)) {
-        pipe.event = event;
-        pipe.request.clear();
-        pipe.request_pos = 0;
-        pipe.response.clear();
-        pipe.response_pos = 0;
-        pipe.request << message;
-        return true;
+    message["jsonrpc"] = "2.0";
+    message["method"] = request.m_name;
+    if (request.m_value.is_object() || request.m_value.is_array()) {
+        message["params"] = request.m_value;
     }
-    return false;
+    else {
+        message["params"].push_back(request.m_value);
+    }
+    if (EventType::SEND_NOTIFICATION != request.get_type()) {
+        message["id"] = id;
+    }
+    return message;
 }
 
 void HttpContext::dispatch_event(Event* event) {
-    if (!event_to_message(event)) {
+    if (!add_event_to_processing(event)) {
         m_events.push(event);
     }
 }

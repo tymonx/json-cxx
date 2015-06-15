@@ -58,6 +58,7 @@ class Proactor {
 public:
     void push_event(Event* pevent);
     virtual void notify() = 0;
+    virtual void setup_context(Context& context) = 0;
     virtual ~Proactor();
 protected:
     void event_loop();

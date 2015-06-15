@@ -55,6 +55,8 @@ namespace json {
 namespace rpc {
 namespace client {
 
+class HttpContext;
+
 class HttpProactor : public Proactor {
 public:
     static const constexpr unsigned DEFAULT_MAX_PIPELINE_LENGTH = 8;
@@ -70,6 +72,8 @@ public:
 
     virtual void notify() final;
 
+    virtual void setup_context(Context& context) final;
+
     constexpr unsigned get_max_pipeline_length() const {
         return DEFAULT_MAX_PIPELINE_LENGTH;
     }
@@ -81,6 +85,9 @@ private:
     using CurlMultiPtr = std::unique_ptr<void, CurlMultiDeleter>;
 
     void task();
+
+    inline
+    void setup_context(HttpContext& context);
 
     CurlMultiPtr m_curl_multi{nullptr};
 

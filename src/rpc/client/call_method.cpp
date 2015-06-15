@@ -45,9 +45,4 @@
 
 using json::rpc::client::CallMethod;
 
-CallMethod::CallMethod(Client* client, const std::string& name,
-        const Value& value) :
-    Event(EventType::CALL_METHOD, client, AUTO_REMOVE),
-    m_name(name), m_value(value) { }
-
 CallMethod::~CallMethod() { }

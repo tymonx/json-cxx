@@ -49,7 +49,6 @@
 #include <json/rpc/list.hpp>
 #include <json/rpc/client/context.hpp>
 #include <json/rpc/client/http_protocol.hpp>
-#include <json/rpc/client/http_proactor.hpp>
 
 #include <string>
 #include <memory>
@@ -62,15 +61,20 @@ namespace json {
 namespace rpc {
 namespace client {
 
+/* Forward declaration */
+class Request;
+class HttpProactor;
+
 class HttpContext : public Context {
 public:
-    HttpContext(Client* client, HttpProactor& proactor,
-            const HttpProtocol& protocol);
+    HttpContext(Client* client, const HttpProtocol& protocol);
 
     virtual ~HttpContext() final;
 
     virtual void dispatch_event(Event* event) final;
 private:
+    friend class HttpProactor;
+
     struct CurlEasyDeleter {
         void operator()(void* curl_easy);
     };
@@ -79,11 +83,11 @@ private:
         void operator()(struct ::curl_slist* curl_slist);
     };
 
-    using MessageId = std::uint16_t;
+    using Id = unsigned;
     using CurlEasyPtr = std::unique_ptr<void, CurlEasyDeleter>;
     using CurlSlistPtr = std::unique_ptr<struct ::curl_slist, CurlSlistDeleter>;
 
-    struct pipeline {
+    struct Pipeline {
         CurlEasyPtr curl_easy{nullptr};
         Event* event{nullptr};
         std::string::size_type request_pos{0};
@@ -92,22 +96,24 @@ private:
         std::string response{};
     };
 
+    using Pipelines = std::vector<Pipeline>;
+
     static size_t write_function(char* buffer, size_t size, size_t nmemb,
             void* userdata);
 
     static size_t read_function(char* buffer, size_t size, size_t nmemb,
             void* userdata);
 
-    bool build_message(Event* event, Value& message, unsigned id);
-    bool event_to_message(Event* event);
-    bool event_to_pipeline(Event* event, struct pipeline& pipe, unsigned id);
+    bool add_event_to_processing(Event* event);
 
-    using Pipelines = std::vector<struct pipeline>;
+    inline json::Value build_message(const Request& request, Id id);
 
-    MessageId m_message_id{0};
+    inline
+    void add_event_to_pipeline(Event* event, Pipeline& pipe, Id id);
+
+    void* m_curl_multi{nullptr};
     CurlSlistPtr m_headers{nullptr};
     Pipelines m_pipelines{};
-    HttpProactor& m_proactor;
     HttpProtocol m_protocol{};
     List m_events{};
 };

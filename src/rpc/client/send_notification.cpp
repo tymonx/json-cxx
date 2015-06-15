@@ -45,9 +45,4 @@
 
 using json::rpc::client::SendNotification;
 
-SendNotification::SendNotification(Client* client, const std::string& name,
-        const Value& value) :
-    Event(EventType::SEND_NOTIFICATION, client, AUTO_REMOVE),
-    m_name(name), m_value(value) { }
-
 SendNotification::~SendNotification() { }
