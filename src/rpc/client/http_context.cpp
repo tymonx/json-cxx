@@ -43,9 +43,16 @@
 
 #include <json/rpc/client/http_context.hpp>
 
+#include <json/rpc/client/call_method.hpp>
+#include <json/rpc/client/call_method_async.hpp>
+#include <json/rpc/client/send_notification.hpp>
+
 #include <curl/curl.h>
 #include <exception>
 
+using json::rpc::client::CallMethod;
+using json::rpc::client::CallMethodAsync;
+using json::rpc::client::SendNotification;
 using json::rpc::client::HttpContext;
 
 HttpContext::HttpContext(Client* client, HttpProactor& proactor,
@@ -129,29 +136,83 @@ void HttpContext::CurlSlistDeleter::operator()(struct curl_slist* curl_slist) {
     curl_slist_free_all(curl_slist);
 }
 
-void HttpContext::event_to_message(Event* event) {
+bool HttpContext::event_to_message(Event* event) {
     for (Pipelines::size_type i = 0; i < m_pipelines.size(); ++i) {
         if (nullptr == m_pipelines[i].event) {
-            return;
+            return event_to_pipeline(event, m_pipelines[i], unsigned(i));
         }
     }
-    m_events.push(event);
+    return false;
+}
+
+static
+void build_params(json::Value& params, json::Value& message) {
+    if (params.is_object() || params.is_array()) {
+        message["params"] = params;
+    }
+    else {
+        message["params"].push_back(params);
+    }
+}
+
+static inline
+void build_message(CallMethod* event, json::Value& message, unsigned id) {
+    message["method"] = event->m_name;
+    build_params(event->m_value, message);
+    message["id"] = id;
+}
+
+static inline
+void build_message(CallMethodAsync* event, json::Value& message, unsigned id) {
+    message["method"] = event->m_name;
+    build_params(event->m_value, message);
+    message["id"] = id;
+}
+
+static inline
+void build_message(SendNotification* event, json::Value& message) {
+    message["method"] = event->m_name;
+    build_params(event->m_value, message);
+}
+
+bool HttpContext::build_message(Event* event, json::Value& message,
+        unsigned id)
+{
+    bool valid{true};
+    message["jsonrpc"] = "2.0";
+    if (EventType::CALL_METHOD == event->get_type()) {
+        ::build_message(static_cast<CallMethod*>(event), message, id);
+    }
+    else if (EventType::CALL_METHOD_ASYNC == event->get_type()) {
+        ::build_message(static_cast<CallMethodAsync*>(event), message, id);
+    }
+    else if (EventType::SEND_NOTIFICATION == event->get_type()) {
+        ::build_message(static_cast<SendNotification*>(event), message);
+    }
+    else {
+        valid = false;
+    }
+    return valid;
+}
+
+bool HttpContext::event_to_pipeline(Event* event, struct pipeline& pipe,
+        unsigned id)
+{
+    json::Value message{json::Value::Type::OBJECT};
+    if (build_message(event, message, id)) {
+        pipe.event = event;
+        pipe.request.clear();
+        pipe.request_pos = 0;
+        pipe.response.clear();
+        pipe.response_pos = 0;
+        pipe.request << message;
+        return true;
+    }
+    return false;
 }
 
 void HttpContext::dispatch_event(Event* event) {
-    switch (event->get_type()) {
-    case EventType::CALL_METHOD:
-    case EventType::CALL_METHOD_ASYNC:
-    case EventType::SEND_NOTIFICATION:
-        event_to_message(event);
-        break;
-    case EventType::CONTEXT:
-    case EventType::DESTROY_CONTEXT:
-    case EventType::UNDEFINED:
-        break;
-    default:
-        break;
+    if (!event_to_message(event)) {
+        m_events.push(event);
     }
-
-    Event::event_complete(event);
 }

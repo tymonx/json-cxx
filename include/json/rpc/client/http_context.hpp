@@ -98,7 +98,9 @@ private:
     static size_t read_function(char* buffer, size_t size, size_t nmemb,
             void* userdata);
 
-    void event_to_message(Event* event);
+    bool build_message(Event* event, Value& message, unsigned id);
+    bool event_to_message(Event* event);
+    bool event_to_pipeline(Event* event, struct pipeline& pipe, unsigned id);
 
     using Pipelines = std::vector<struct pipeline>;
 

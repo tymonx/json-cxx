@@ -43,6 +43,7 @@
 
 #include <json/rpc/client/proactor.hpp>
 #include <json/rpc/error.hpp>
+#include <json/rpc/list.hpp>
 
 #include <algorithm>
 
@@ -68,7 +69,7 @@ void Proactor::event_handling(Event* event) {
     }
     else if (EventType::DESTROY_CONTEXT == event->get_type()) {
         delete m_contexts.remove(find_context(event->get_client()));
-        Event::event_complete(event);
+        Event::event_complete(static_cast<Event*>(event));
     }
     else {
         auto context = find_context(event->get_client());
@@ -94,7 +95,6 @@ Context* Proactor::find_context(const Client* client) {
 
 Proactor::~Proactor() {
     event_loop();
-
     while (!m_contexts.empty()) {
         delete m_contexts.pop();
     }
