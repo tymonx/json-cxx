@@ -82,6 +82,9 @@ private:
         void operator ()(void*);
     };
 
+    void context_processing(HttpContext& context);
+    void read_processing();
+
     using CurlMultiPtr = std::unique_ptr<void, CurlMultiDeleter>;
 
     void task();
@@ -93,11 +96,6 @@ private:
 
     volatile std::atomic<bool> m_task_done{false};
     std::thread m_thread{};
-
-    fd_set m_fdread{};
-    fd_set m_fdwrite{};
-    fd_set m_fdexcep{};
-    int m_maxfd{-1};
 
     uint64_t m_event{0};
     int m_eventfd{0};

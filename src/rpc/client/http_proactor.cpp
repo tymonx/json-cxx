@@ -72,8 +72,6 @@ HttpProactor::HttpProactor() :
             DEFAULT_MAX_PIPELINE_LENGTH);
     curl_multi_setopt(m_curl_multi.get(), CURLMOPT_MAX_HOST_CONNECTIONS, 1UL);
 
-    curl_multi_fdset(m_curl_multi.get(), &m_fdread, &m_fdwrite, &m_fdexcep, &m_maxfd);
-
     m_thread = std::thread{&HttpProactor::task, this};
 }
 
@@ -103,28 +101,52 @@ void HttpProactor::CurlMultiDeleter::operator ()(void* curl_multi) {
 }
 
 void HttpProactor::task() {
-    struct timeval timeout{};
-    long curl_timeout{-1};
-    int err;
+    CURLMcode code;
+    int running_handles;
+    struct curl_waitfd waitfd{};
+    waitfd.fd = m_eventfd;
+    waitfd.events = CURL_WAIT_POLLIN | CURL_WAIT_POLLOUT;
 
     while (!m_task_done) {
-        curl_multi_timeout(m_curl_multi.get(), &curl_timeout);
-        if (curl_timeout < 0) {
-            curl_timeout = 1000;
-        }
-
-        timeout.tv_sec = curl_timeout / 1000;
-        timeout.tv_usec = (curl_timeout % 1000) * 1000;
-
-        err = select(m_maxfd + 1, &m_fdread, &m_fdwrite, &m_fdexcep, &timeout);
-        if (err < 0) {
-            std::cout << "Error!!!" << std::endl;
-            continue;
-        }
+        code = curl_multi_wait(m_curl_multi.get(), nullptr, 0, 1000, nullptr);
 
         event_loop();
 
-        curl_multi_perform(m_curl_multi.get(), nullptr);
+        for (auto& context : m_contexts) {
+            context_processing(static_cast<HttpContext&>(context));
+        }
+
+        running_handles = 0;
+        curl_multi_perform(m_curl_multi.get(), &running_handles);
+
+        read_processing();
+    }
+}
+
+void HttpProactor::read_processing() {
+    CURLMsg* message;
+    int msgs_in_queue;
+    do {
+        msgs_in_queue = 0;
+        message = curl_multi_info_read(m_curl_multi.get(), &msgs_in_queue);
+        if (message && (CURLMSG_DONE == message->msg)) {
+            CURL* curl_easy = message->easy_handle;
+            for (auto& context : m_contexts) {
+                if (static_cast<HttpContext&>(context)
+                        .read_complete(curl_easy)) { break; }
+            }
+        }
+    } while (message);
+}
+
+void HttpProactor::context_processing(HttpContext& context) {
+    Event* event;
+    for (auto it = context.m_events.begin(); it != context.m_events.end();) {
+        std::cout << "Context processing" << std::endl;
+        event = static_cast<Event*>(&*it++);
+        if (context.add_event_to_processing(event)) {
+            context.m_events.remove(event);
+        }
     }
 }
 

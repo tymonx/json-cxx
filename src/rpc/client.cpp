@@ -74,7 +74,10 @@ Client::Client(const Protocol& protocol) : m_id{this} {
 }
 
 Client::~Client() {
-    m_proactor->push_event(new DestroyContext(m_id));
+    DestroyContext event(m_id);
+    auto finished_future = event.m_finished.get_future();
+    m_proactor->push_event(&event);
+    finished_future.get();
 }
 
 void Client::method(const std::string& name, const json::Value& params,

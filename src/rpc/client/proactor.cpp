@@ -45,6 +45,7 @@
 #include <json/rpc/error.hpp>
 #include <json/rpc/list.hpp>
 
+#include <iostream>
 #include <algorithm>
 
 using json::rpc::Error;
@@ -54,6 +55,7 @@ using json::rpc::client::Proactor;
 void Proactor::event_loop() {
     get_events();
     while (!m_events.empty()) {
+        std::cout << "Proactor: event_loop" << std::endl;
         event_handling(static_cast<Event*>(m_events.pop()));
     }
 }
@@ -64,15 +66,19 @@ void Proactor::get_events() {
 }
 
 void Proactor::event_handling(Event* event) {
+    std::cout << "Proactor: Event handling: " << event << std::endl;
     if (EventType::CONTEXT == event->get_type()) {
+        std::cout << "Proactor: add context" << std::endl;
         setup_context(static_cast<Context&>(*event));
         m_contexts.push(event);
     }
     else if (EventType::DESTROY_CONTEXT == event->get_type()) {
+        std::cout << "Proactor: destroy context" << std::endl;
         delete m_contexts.remove(find_context(event->get_client()));
         Event::event_complete(static_cast<Event*>(event));
     }
     else {
+        std::cout << "Proactor: event " << unsigned(event->get_type()) << std::endl;
         auto context = find_context(event->get_client());
         if (nullptr != context) {
             context->dispatch_event(event);
@@ -102,6 +108,7 @@ Proactor::~Proactor() {
 }
 
 void Proactor::push_event(Event* pevent) {
+    std::cout << "Proactor: push_event " << pevent << std::endl;
     std::unique_lock<std::mutex> lock(m_mutex);
     m_events_background.push(pevent);
     lock.unlock();

@@ -45,7 +45,4 @@
 
 using json::rpc::client::DestroyContext;
 
-DestroyContext::DestroyContext(Client* client) :
-    Event(EventType::DESTROY_CONTEXT, client, AUTO_REMOVE) { }
-
 DestroyContext::~DestroyContext() { }

@@ -48,6 +48,7 @@
 #include <json/rpc/client/call_method_async.hpp>
 #include <json/rpc/client/send_notification.hpp>
 
+#include <iostream>
 #include <curl/curl.h>
 #include <exception>
 
@@ -90,12 +91,21 @@ HttpContext::HttpContext(Client* client, const HttpProtocol& protocol)
         curl_easy_setopt(curl_easy, CURLOPT_TIMEOUT_MS,
                 m_protocol.get_timeout().count());
         pipe.curl_easy = std::move(CurlEasyPtr{curl_easy});
-
     }
 }
 
 HttpContext::~HttpContext() {
+    for (auto& pipe : m_pipelines) {
+        if (nullptr != pipe.event) {
+            Event::event_complete(pipe.event, Error{Error::INTERNAL_ERROR});
+            curl_multi_remove_handle(m_curl_multi, pipe.curl_easy.get());
+        }
+    }
 
+    while (!m_events.empty()) {
+        Event::event_complete(static_cast<Event*>(m_events.pop()),
+                Error{Error::INTERNAL_ERROR});
+    }
 }
 
 size_t HttpContext::write_function(char* buffer, size_t size, size_t nmemb,
@@ -103,20 +113,27 @@ size_t HttpContext::write_function(char* buffer, size_t size, size_t nmemb,
 {
     Pipeline* pipe = static_cast<Pipeline*>(userdata);
     size_t copy = size * nmemb;
-    pipe->response.append(buffer, copy, pipe->response_pos);
-    pipe->response_pos += copy;
+    pipe->response.append(buffer, copy);
+    std::cout << "Write function: " << pipe->response
+        << " size: " << size << "," << pipe->response.size()
+        << " nmemb: " << nmemb
+        << " pos: " << pipe->response_pos
+        << "" << buffer[0] << buffer[1] << std::endl;
     return copy;
 }
 
 size_t HttpContext::read_function(char* buffer, size_t size, size_t nmemb,
         void* userdata)
 {
+
     Pipeline* pipe = static_cast<Pipeline*>(userdata);
     std::string::size_type copied;
 
     if (!size || !nmemb || (pipe->request_pos >= pipe->request.size())) {
         return 0;
     }
+
+    std::cout << "Read function: " << pipe->request << " size: " << pipe->request.size() << std::endl;
 
     copied = pipe->request.copy(buffer, size * nmemb, pipe->request_pos);
     pipe->request_pos += copied;
@@ -132,19 +149,37 @@ void HttpContext::CurlSlistDeleter::operator()(struct curl_slist* curl_slist) {
     curl_slist_free_all(curl_slist);
 }
 
-void HttpContext::add_event_to_pipeline(Event* event, Pipeline& pipe, Id id) {
-    pipe.event = event;
-    pipe.request.clear();
-    pipe.request_pos = 0;
-    pipe.response.clear();
-    pipe.response_pos = 0;
-    pipe.request << build_message(static_cast<const Request&>(*event), id);
+bool HttpContext::add_event_to_processing(Event* event) {
+    Id id{0};
+    CURLMcode code;
+    for (auto& pipe : m_pipelines) {
+        if (nullptr == pipe.event) {
+            pipe.event = event;
+            pipe.request.clear();
+            pipe.request_pos = 0;
+            pipe.response.clear();
+            pipe.response_pos = 0;
+            pipe.request << build_message(
+                    static_cast<const Request&>(*event), id);
+            curl_easy_setopt(pipe.curl_easy.get(), CURLOPT_POSTFIELDSIZE, pipe.request.size());
+            code = curl_multi_add_handle(m_curl_multi, pipe.curl_easy.get());
+            std::cout << "HttpContext: add_event " << int(event->get_type())
+                << " status: " << code
+                << " Avent: " << event << std::endl;
+            return true;
+        }
+        ++id;
+    }
+    return false;
 }
 
-bool HttpContext::add_event_to_processing(Event* event) {
-    for (Pipelines::size_type id = 0; id < m_pipelines.size(); ++id) {
-        if (nullptr == m_pipelines[id].event) {
-            add_event_to_pipeline(event, m_pipelines[id], Id(id));
+bool HttpContext::read_complete(void* curl_easy) {
+    for (auto& pipe : m_pipelines) {
+        if (curl_easy == pipe.curl_easy.get()) {
+            pipe.response >> static_cast<Request*>(pipe.event)->m_value;
+            curl_multi_remove_handle(m_curl_multi, curl_easy);
+            Event::event_complete(pipe.event);
+            pipe.event = nullptr;
             return true;
         }
     }
@@ -152,7 +187,7 @@ bool HttpContext::add_event_to_processing(Event* event) {
 }
 
 json::Value HttpContext::build_message(const Request& request, Id id) {
-    json::Value message{json::Value::Type::OBJECT};
+    json::Value message;
     message["jsonrpc"] = "2.0";
     message["method"] = request.m_name;
     if (request.m_value.is_object() || request.m_value.is_array()) {
@@ -168,6 +203,7 @@ json::Value HttpContext::build_message(const Request& request, Id id) {
 }
 
 void HttpContext::dispatch_event(Event* event) {
+    std::cout << "DispatchEvent" << std::endl;
     if (!add_event_to_processing(event)) {
         m_events.push(event);
     }

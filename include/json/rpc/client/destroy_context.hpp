@@ -46,13 +46,18 @@
 
 #include <json/rpc/client/event.hpp>
 
+#include <future>
+
 namespace json {
 namespace rpc {
 namespace client {
 
 class DestroyContext : public Event {
 public:
-    DestroyContext(Client* client);
+    DestroyContext(Client* client) :
+        Event(EventType::DESTROY_CONTEXT, client) { }
+
+    std::promise<void> m_finished{};
 
     virtual ~DestroyContext() final;
 };

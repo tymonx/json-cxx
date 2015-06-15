@@ -43,6 +43,7 @@
 
 #include <json/rpc/client/event.hpp>
 #include <json/rpc/client/event_type.hpp>
+#include <json/rpc/client/destroy_context.hpp>
 #include <json/rpc/client/call_method.hpp>
 #include <json/rpc/client/call_method_async.hpp>
 
@@ -70,6 +71,11 @@ static inline void call_method_async(const Event* _event, const Error& error) {
     }
 }
 
+static inline void destroy_context(Event* _event) {
+    DestroyContext* event = static_cast<DestroyContext*>(_event);
+    event->m_finished.set_value();
+}
+
 void Event::event_complete(Event* event, const Error& error) {
     switch (event->get_type()) {
     case EventType::CALL_METHOD:
@@ -81,6 +87,8 @@ void Event::event_complete(Event* event, const Error& error) {
     case EventType::SEND_NOTIFICATION:
     case EventType::CONTEXT:
     case EventType::DESTROY_CONTEXT:
+        destroy_context(event);
+        break;
     case EventType::UNDEFINED:
         break;
     default:

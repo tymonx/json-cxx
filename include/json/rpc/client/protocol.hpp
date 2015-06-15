@@ -56,7 +56,6 @@ public:
 protected:
     Protocol(ProtocolType type) : m_type{type} { }
 private:
-    Protocol() = delete;
     ProtocolType m_type{ProtocolType::UNDEFINED};
 };
 

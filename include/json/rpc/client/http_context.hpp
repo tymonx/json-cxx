@@ -106,10 +106,9 @@ private:
 
     bool add_event_to_processing(Event* event);
 
-    inline json::Value build_message(const Request& request, Id id);
+    json::Value build_message(const Request& request, Id id);
 
-    inline
-    void add_event_to_pipeline(Event* event, Pipeline& pipe, Id id);
+    bool read_complete(void* curl_easy_handle);
 
     void* m_curl_multi{nullptr};
     CurlSlistPtr m_headers{nullptr};

@@ -8,19 +8,20 @@ using namespace json;
 
 int main() {
     Value value;
-    rpc::client::HttpProtocol http{};
+    rpc::client::HttpProtocol http{"localhost:6666"};
     rpc::Client client(http);
 
     client.method("sexy", 5, value);
-    value = client.method("doopy", 7).get();
+    auto vc = client.method("doopy", 7);
     client.method("xxx", 8,
         [] (const Value& v, const rpc::Error& error) {
             if (error) {
-                std::cout << "Error: " << error.what() << std::endl;
+                std::cout << "Error: " << error.what() << " " <<error.get_code() << std::endl;
             }
             (void)v;
         }
     );
+    vc.get();
 
     return 0;
 }

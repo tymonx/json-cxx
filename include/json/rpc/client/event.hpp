@@ -84,7 +84,6 @@ protected:
     Event(EventType type, Client* client, const Flags& flags = {})
         : m_type(type), m_client(client), m_flags(flags) { }
 private:
-    Event() = delete;
     Event(const Event&) = delete;
     Event(Event&&) = delete;
     Event& operator=(const Event&) = delete;

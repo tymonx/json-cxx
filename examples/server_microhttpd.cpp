@@ -67,12 +67,13 @@ static int request_with_data(Method http_method,
     if (0 != *upload_data_size) {
         data->append(upload_data, *upload_data_size);
         *upload_data_size = 0;
+        data.release();
         return MHD_YES;
     }
 
-    *con_cls = nullptr;
+    cout << "Data: " << *data << endl;
 
-    cout << *data << endl;
+    *con_cls = nullptr;
 
     return send_response(connection, MHD_HTTP_OK, "Data received\n");
 }
