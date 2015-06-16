@@ -45,6 +45,7 @@
 #define JSON_CXX_RPC_CLIENT_HTTP_PROTOCOL_HPP
 
 #include <json/rpc/client/protocol.hpp>
+#include <json/rpc/time.hpp>
 
 #include <string>
 #include <chrono>
@@ -54,16 +55,6 @@
 namespace json {
 namespace rpc {
 namespace client {
-
-static inline
-constexpr std::chrono::milliseconds operator "" _ms(unsigned long long ms) {
-    return std::chrono::milliseconds(ms);
-}
-
-static inline
-constexpr std::chrono::seconds operator "" _s(unsigned long long secs) {
-    return std::chrono::seconds(secs);
-}
 
 class HttpProtocol : public Protocol {
 public:

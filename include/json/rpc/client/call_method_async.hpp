@@ -59,9 +59,9 @@ using ResultCallback = std::function<void(const json::Value&, const Error&)>;
 
 class CallMethodAsync : public Request {
 public:
-    CallMethodAsync(Client* client, const std::string& name,
+    CallMethodAsync(Client* client, Options options, const std::string& name,
             const Value& value, ResultCallback callback) :
-        Request(EventType::CALL_METHOD_ASYNC, client, name, value),
+        Request(EventType::CALL_METHOD_ASYNC, client, options, name, value),
         m_callback(callback) { }
 
     virtual ~CallMethodAsync() final;

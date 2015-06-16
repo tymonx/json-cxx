@@ -36,13 +36,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/destroy_context.cpp
+ * @file json/rpc/time.hpp
  *
  * @brief JSON client message interface
  * */
 
-#include <json/rpc/client/destroy_context.hpp>
+#ifndef JSON_CXX_RPC_TIME_HPP
+#define JSON_CXX_RPC_TIME_HPP
 
-using json::rpc::client::DestroyContext;
+#include <chrono>
 
-DestroyContext::~DestroyContext() { }
+namespace json {
+namespace rpc {
+
+using Seconds = std::chrono::seconds;
+using Miliseconds = std::chrono::milliseconds;
+using TimePoint = std::chrono::steady_clock::time_point;
+
+static constexpr inline
+Miliseconds operator "" _ms(unsigned long long miliseconds) {
+    return Miliseconds(miliseconds);
+}
+
+static constexpr inline
+Seconds operator "" _s(unsigned long long seconds) {
+    return Seconds(seconds);
+}
+
+} /* rpc */
+} /* json */
+
+#endif /* JSON_CXX_RPC_TIME_HPP */

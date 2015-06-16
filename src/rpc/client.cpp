@@ -50,7 +50,7 @@
 #include <json/rpc/client/call_method.hpp>
 #include <json/rpc/client/call_method_async.hpp>
 #include <json/rpc/client/send_notification.hpp>
-#include <json/rpc/client/destroy_context.hpp>
+#include <json/rpc/client/closing_context.hpp>
 
 #include <json/rpc/client/call_method.hpp>
 #include <json/rpc/client/send_notification.hpp>
@@ -74,27 +74,28 @@ Client::Client(const Protocol& protocol) : m_id{this} {
 }
 
 Client::~Client() {
-    DestroyContext event(m_id);
-    auto finished_future = event.m_finished.get_future();
+    ClosingContext event(m_id, Event::NO_OPTIONS);
     m_proactor->push_event(&event);
-    finished_future.get();
+    event.wait();
 }
 
 void Client::method(const std::string& name, const json::Value& params,
         ResultCallback result)
 {
-    m_proactor->push_event(new CallMethodAsync(m_id, name, params, result));
+    m_proactor->push_event(new CallMethodAsync(m_id, Event::AUTO_REMOVE,
+                name, params, result));
 }
 
 Client::ResultFuture Client::method(const std::string& name,
         const json::Value& params)
 {
-    auto event = new CallMethod(m_id, name, params);
+    auto event = new CallMethod(m_id, Event::AUTO_REMOVE, name, params);
     auto result = event->m_result.get_future();
     m_proactor->push_event(event);
     return result;
 }
 
 void Client::notification(const std::string& name, const json::Value& params) {
-    m_proactor->push_event(new SendNotification(this, name, params));
+    m_proactor->push_event(new SendNotification(this, Event::AUTO_REMOVE,
+                name, params));
 }

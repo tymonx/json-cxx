@@ -41,8 +41,8 @@
  * @brief JSON client message interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EVENT_DESTROY_CONTEXT_HPP
-#define JSON_CXX_RPC_CLIENT_EVENT_DESTROY_CONTEXT_HPP
+#ifndef JSON_CXX_RPC_CLIENT_EVENT_CLOSING_CONTEXT_HPP
+#define JSON_CXX_RPC_CLIENT_EVENT_CLOSING_CONTEXT_HPP
 
 #include <json/rpc/client/event.hpp>
 
@@ -52,18 +52,21 @@ namespace json {
 namespace rpc {
 namespace client {
 
-class DestroyContext : public Event {
+class ClosingContext : public Event {
 public:
-    DestroyContext(Client* client) :
-        Event(EventType::DESTROY_CONTEXT, client) { }
+    ClosingContext(Client* client, Options options = NO_OPTIONS) :
+        Event(EventType::CLOSING_CONTEXT, client, options) { }
 
-    std::promise<void> m_finished{};
+    void wait() { m_closed_context.get_future().get(); }
+    void notify() { m_closed_context.set_value(); }
 
-    virtual ~DestroyContext() final;
+    virtual ~ClosingContext() final;
+private:
+    std::promise<void> m_closed_context{};
 };
 
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_EVENT_DESTROY_CONTEXT_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_EVENT_CLOSING_CONTEXT_HPP */

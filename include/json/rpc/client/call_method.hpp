@@ -58,9 +58,9 @@ namespace client {
 
 class CallMethod : public Request {
 public:
-    CallMethod(Client* client, const std::string& name,
+    CallMethod(Client* client, Options options, const std::string& name,
             const Value& value) :
-        Request(EventType::CALL_METHOD, client, name, value) { }
+        Request(EventType::CALL_METHOD, client, options, name, value) { }
 
     virtual ~CallMethod() final;
 

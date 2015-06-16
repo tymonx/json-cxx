@@ -36,29 +36,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/event_type.hpp
+ * @file json/rpc/client/closing_context.cpp
  *
  * @brief JSON client message interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EVENT_TYPE_HPP
-#define JSON_CXX_RPC_CLIENT_EVENT_TYPE_HPP
+#include <json/rpc/client/closing_context.hpp>
 
-namespace json {
-namespace rpc {
-namespace client {
+using json::rpc::client::ClosingContext;
 
-enum class EventType {
-    UNDEFINED = 0,
-    CALL_METHOD,
-    CALL_METHOD_ASYNC,
-    SEND_NOTIFICATION,
-    CONTEXT,
-    CLOSING_CONTEXT
-};
-
-} /* client */
-} /* rpc */
-} /* json */
-
-#endif /* JSON_CXX_RPC_CLIENT_EVENT_TYPE_HPP */
+ClosingContext::~ClosingContext() { }

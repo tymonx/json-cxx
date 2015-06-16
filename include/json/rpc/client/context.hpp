@@ -46,18 +46,41 @@
 
 #include <json/rpc/client/event.hpp>
 
+#include <future>
+
 namespace json {
 namespace rpc {
 namespace client {
 
 class Context : public Event {
 public:
+    using ClosedNotify = std::promise<void>;
+
+    enum State {
+        UNKNOWN = 0,
+        RUNNING,
+        CLOSING
+    };
+
     Context(Client* client);
     virtual ~Context();
 
     bool check(const Client* client) const { return get_client() == client; }
 
     virtual void dispatch_event(Event* event) = 0;
+
+    void set_state(State state) { m_state = state; }
+    State get_state() const { return m_state; }
+
+    void set_closed_notify(ClosedNotify&& closed_notify) {
+        m_closed_notify = std::move(closed_notify);
+    }
+    void call_closed_notify() {
+        m_closed_notify.set_value();
+    }
+private:
+    ClosedNotify m_closed_notify{};
+    State m_state{UNKNOWN};
 };
 
 } /* client */

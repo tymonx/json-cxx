@@ -47,6 +47,7 @@
 #define JSON_CXX_RPC_CLIENT_EVENT_HPP
 
 #include <json/rpc/list.hpp>
+#include <json/rpc/time.hpp>
 #include <json/rpc/error.hpp>
 #include <json/rpc/client/event_type.hpp>
 
@@ -59,9 +60,10 @@ namespace client {
 
 class Event : public json::rpc::ListItem {
 public:
-    using Flags = std::uint16_t;
+    using Options = std::uint16_t;
 
-    enum Option : Flags {
+    enum Option : Options {
+        NO_OPTIONS          = 0x0000,
         AUTO_REMOVE         = 0x0001,
         NOTIFY              = 0x0002
     };
@@ -70,19 +72,21 @@ public:
 
     const Client* get_client() const { return m_client; }
 
-    Flags get_flags() const { return m_flags; }
-    void set_flags(Flags flags) { m_flags |= flags; }
-    void clear_flags() { m_flags = 0; }
-    void clear_flags(Flags flags) { m_flags &= Flags(~flags); }
-    bool check_flags(Flags flags) { return (m_flags & flags) == flags; }
-    bool check_flag(Flags flag) { return (m_flags & flag); }
+    void set_live_time_duration(Miliseconds miliseconds) {
+        m_time_live = m_time_created + miliseconds;
+    }
+
+    const TimePoint& get_live_time_point() const { return m_time_live; }
 
     static void event_complete(Event* event, const Error& error = {Error::OK});
 
     virtual ~Event();
+
+    Options options() { return m_options; }
 protected:
-    Event(EventType type, Client* client, const Flags& flags = {})
-        : m_type(type), m_client(client), m_flags(flags) { }
+    Event(EventType type, Client* client, Options options = NO_OPTIONS) :
+        m_type(type), m_client(client), m_options(options),
+        m_time_created(std::chrono::steady_clock::now()) { }
 private:
     Event(const Event&) = delete;
     Event(Event&&) = delete;
@@ -91,7 +95,11 @@ private:
 
     EventType m_type{EventType::UNDEFINED};
     Client* m_client{nullptr};
-    Flags m_flags{0};
+    Options m_options{NO_OPTIONS};
+
+    /* Event time managment */
+    TimePoint m_time_live{0_ms};
+    TimePoint m_time_created{};
 
     friend void event_complete(Event* event);
 };

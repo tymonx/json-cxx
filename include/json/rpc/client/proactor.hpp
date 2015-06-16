@@ -56,23 +56,8 @@ namespace client {
 
 class Proactor {
 public:
-    void push_event(Event* pevent);
-    virtual void notify() = 0;
-    virtual void setup_context(Context& context) = 0;
+    virtual void push_event(Event* event) = 0;
     virtual ~Proactor();
-protected:
-    void event_loop();
-
-    Context* find_context(const Client* client);
-
-    json::rpc::List m_events{};
-    json::rpc::List m_events_background{};
-    json::rpc::List m_contexts{};
-
-    std::mutex m_mutex{};
-
-    inline void get_events();
-    inline void event_handling(Event* event);
 };
 
 }

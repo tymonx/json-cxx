@@ -55,9 +55,9 @@ namespace client {
 
 class SendNotification : public Request {
 public:
-    SendNotification(Client* client, const std::string& name,
+    SendNotification(Client* client, Options options, const std::string& name,
             const Value& value) :
-        Request(EventType::SEND_NOTIFICATION, client, name, value) { }
+        Request(EventType::SEND_NOTIFICATION, client, options, name, value) { }
 
     virtual ~SendNotification() final;
 };

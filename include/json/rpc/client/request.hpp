@@ -55,10 +55,9 @@ namespace client {
 
 class Request : public Event {
 public:
-    Request(EventType event, Client* client, const std::string& name,
-            const Value& value) :
-        Event{event, client, AUTO_REMOVE},
-        m_name{name}, m_value{value} { }
+    Request(EventType event, Client* client, Options options,
+            const std::string& name, const Value& value) :
+        Event{event, client, options}, m_name{name}, m_value{value} { }
 
     virtual ~Request();
 

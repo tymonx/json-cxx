@@ -87,7 +87,8 @@ HttpContext::HttpContext(Client* client, const HttpProtocol& protocol)
         curl_easy_setopt(curl_easy, CURLOPT_POSTFIELDS, nullptr);
         curl_easy_setopt(curl_easy, CURLOPT_POSTFIELDSIZE, 0);
         curl_easy_setopt(curl_easy, CURLOPT_HTTPHEADER, m_headers.get());
-        curl_easy_setopt(curl_easy, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_easy_setopt(curl_easy, CURLOPT_PROTOCOLS,
+                CURLPROTO_HTTP | CURLPROTO_HTTPS);
         curl_easy_setopt(curl_easy, CURLOPT_TIMEOUT_MS,
                 m_protocol.get_timeout().count());
         pipe.curl_easy = std::move(CurlEasyPtr{curl_easy});
@@ -203,8 +204,12 @@ json::Value HttpContext::build_message(const Request& request, Id id) {
 }
 
 void HttpContext::dispatch_event(Event* event) {
-    std::cout << "DispatchEvent" << std::endl;
-    if (!add_event_to_processing(event)) {
-        m_events.push(event);
+    switch (event->get_type()) {
+    case EventType::CALL_METHOD:
+    case EventType::CALL_METHOD_ASYNC:
+    case EventType::SEND_NOTIFICATION:
+        break;
+    default:
+        break;
     }
 }

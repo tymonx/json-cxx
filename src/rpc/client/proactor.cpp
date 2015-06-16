@@ -108,9 +108,4 @@ Proactor::~Proactor() {
 }
 
 void Proactor::push_event(Event* pevent) {
-    std::cout << "Proactor: push_event " << pevent << std::endl;
-    std::unique_lock<std::mutex> lock(m_mutex);
-    m_events_background.push(pevent);
-    lock.unlock();
-    notify();
 }

@@ -70,9 +70,9 @@ public:
 
     virtual ~HttpProactor() final;
 
-    virtual void notify() final;
+    void setup_context(HttpContext& context);
 
-    virtual void setup_context(Context& context) final;
+    virtual void push_event(Event* event) final;
 
     constexpr unsigned get_max_pipeline_length() const {
         return DEFAULT_MAX_PIPELINE_LENGTH;
@@ -82,15 +82,20 @@ private:
         void operator ()(void*);
     };
 
-    void context_processing(HttpContext& context);
-    void read_processing();
-
     using CurlMultiPtr = std::unique_ptr<void, CurlMultiDeleter>;
 
-    void task();
+    inline void notify();
+    inline void get_events();
+    inline void waiting_for_events();
+    inline void demultiplexing_events();
 
-    inline
-    void setup_context(HttpContext& context);
+    void closing_context(Event* event);
+
+    void context_processing(HttpContext& context);
+    void read_processing();
+    HttpContext* find_context(const Client* client);
+
+    void task();
 
     CurlMultiPtr m_curl_multi{nullptr};
 
@@ -99,6 +104,18 @@ private:
 
     uint64_t m_event{0};
     int m_eventfd{0};
+
+    bool m_fds_changed{true};
+    fd_set m_fds_read{};
+    fd_set m_fds_write{};
+    fd_set m_fds_except{};
+    int m_fds_max{-1};
+
+    json::rpc::List m_events{};
+    json::rpc::List m_events_background{};
+    json::rpc::List m_contexts{};
+
+    std::mutex m_mutex{};
 };
 
 }

@@ -71,6 +71,8 @@ public:
 
     virtual ~HttpContext() final;
 
+    void push_event(Event*);
+
     virtual void dispatch_event(Event* event) final;
 private:
     friend class HttpProactor;
