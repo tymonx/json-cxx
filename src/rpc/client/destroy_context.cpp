@@ -45,4 +45,4 @@
 
 using json::rpc::client::DestroyContext;
 
-ClosingContext::~ClosingContext() { }
+DestroyContext::~DestroyContext() { }

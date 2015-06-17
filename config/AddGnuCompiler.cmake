@@ -59,7 +59,7 @@ function (gnu_compiler_processing)
         -Winline
         -Winvalid-pch
         -Wlogical-op
-        -Wlong-long
+        -Wno-long-long
         -Wmissing-braces
         -Wmissing-declarations
         -Wmissing-field-initializers

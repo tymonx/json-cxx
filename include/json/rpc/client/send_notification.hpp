@@ -46,7 +46,6 @@
 
 #include <json/json.hpp>
 #include <json/rpc/error.hpp>
-#include <json/rpc/client/event.hpp>
 #include <json/rpc/client/request.hpp>
 
 #include <string>
@@ -57,19 +56,19 @@ namespace json {
 namespace rpc {
 namespace client {
 
-class SendNotification : public Event, public Request {
+class SendNotification : public Request {
 public:
     using Callback = std::function<void(const Error&)>;
 
     SendNotification(Client* client, Miliseconds time_live,
             const std::string& name, const Value& value) :
-        Event{EventType::SEND_NOTIFICATION, client, time_live},
-        Request{name, value} { }
+        Request{EventType::SEND_NOTIFICATION, client, time_live,
+            name, value} { }
 
     SendNotification(Client* client, Miliseconds time_live,
             const std::string& name, const Value& value, Callback callback) :
-        Event{EventType::SEND_NOTIFICATION_ASYNC, client, time_live},
-        Request{name, value}, m_callback{callback} { }
+        Request{EventType::SEND_NOTIFICATION_ASYNC, client, time_live,
+            name, value}, m_callback{callback} { }
 
     virtual ~SendNotification() final;
 

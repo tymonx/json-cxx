@@ -48,7 +48,6 @@
 
 #include <json/json.hpp>
 #include <json/rpc/error.hpp>
-#include <json/rpc/client/event.hpp>
 #include <json/rpc/client/request.hpp>
 
 #include <string>
@@ -58,19 +57,18 @@ namespace json {
 namespace rpc {
 namespace client {
 
-class CallMethod : public Event, public Request {
+class CallMethod : public Request {
 public:
     using Callback = std::function<void(const json::Value&, const Error&)>;
 
     CallMethod(Client* client, Miliseconds time_live,
             const std::string& name, const Value& value) :
-        Event{EventType::CALL_METHOD, client, time_live},
-        Request{name, value} { }
+        Request{EventType::CALL_METHOD, client, time_live, name, value} { }
 
     CallMethod(Client* client, Miliseconds time_live,
             const std::string& name, const Value& value, Callback callback) :
-        Event{EventType::CALL_METHOD_ASYNC, client, time_live},
-        Request{name, value}, m_callback{callback} { }
+        Request{EventType::CALL_METHOD_ASYNC, client, time_live, name, value},
+        m_callback{callback} { }
 
     virtual ~CallMethod() final;
 

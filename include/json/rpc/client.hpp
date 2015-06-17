@@ -45,6 +45,7 @@
 #define JSON_CXX_RPC_CLIENT_HPP
 
 #include <json/json.hpp>
+#include <json/rpc/time.hpp>
 #include <json/rpc/error.hpp>
 
 #include <string>
@@ -137,6 +138,7 @@ public:
 
 private:
     Client* const m_id{nullptr};
+    Miliseconds m_timeout_ms{1000_ms};
     client::Proactor& m_proactor;
 };
 

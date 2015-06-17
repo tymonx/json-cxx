@@ -87,7 +87,7 @@ private:
     TimePoint m_time_live{0_ms};
 };
 
-class EventDeleter {
+struct EventDeleter {
     void operator()(Event* event);
 };
 

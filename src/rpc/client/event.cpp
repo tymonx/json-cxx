@@ -135,7 +135,7 @@ void Event::complete(const Error& error) {
         send_notification(this, error);
         break;
     case EventType::SEND_NOTIFICATION_ASYNC:
-        send_notification(this, error);
+        send_notification_async(this, error);
         break;
     case EventType::DESTROY_CONTEXT:
         destroy_context(this, error);

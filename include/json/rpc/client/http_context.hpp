@@ -76,17 +76,23 @@ public:
 
     ~HttpContext();
 
-    const Client* get_client() const;
+    const Client* get_client() const { return m_client; }
 
-    void push_event(EventPtr event) {
-        m_events.push_back(event);
+    void splice_event(EventList& other, EventList::const_iterator it) {
+        m_events.splice(m_events.end(), other, it);
     }
 
-    void dispatch_event(Event* event);
+    void dispatch_events();
 
     bool active() const;
 private:
     friend class HttpProactor;
+
+    HttpContext(const HttpContext&) = delete;
+    HttpContext(HttpContext&&) = delete;
+
+    HttpContext& operator=(const HttpContext&) = delete;
+    HttpContext& operator=(HttpContext&&) = delete;
 
     struct CurlEasyDeleter {
         void operator()(void* curl_easy);
@@ -116,15 +122,15 @@ private:
     static size_t read_function(char* buffer, size_t size, size_t nmemb,
             void* userdata);
 
-    bool add_event_to_processing(Event* event);
-
     json::Value build_message(const Request& request, Id id);
-
+    bool handle_event_timeout(EventList::iterator& it);
+    void handle_event_request(EventList::iterator& it);
     bool read_complete(void* curl_easy_handle);
 
     const Client* m_client;
     void* m_curl_multi{nullptr};
     CurlSlistPtr m_headers{nullptr};
+    Pipelines::size_type m_pipes_active{0};
     Pipelines m_pipelines{};
     HttpProtocol m_protocol{};
     EventList m_events{};

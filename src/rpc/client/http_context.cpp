@@ -94,9 +94,9 @@ HttpContext::HttpContext(const Client* client, const HttpProtocol& protocol)
 }
 
 HttpContext::~HttpContext() {
-    for (auto& pipe : m_pipelines) {
-        if (nullptr != pipe.event) {
-            curl_multi_remove_handle(m_curl_multi, pipe.curl_easy.get());
+    for (auto it = m_pipelines.begin(); it != m_pipelines.end(); ++it) {
+        if (nullptr != it->event) {
+            curl_multi_remove_handle(m_curl_multi, it->curl_easy.get());
         }
     }
 }
@@ -107,11 +107,6 @@ size_t HttpContext::write_function(char* buffer, size_t size, size_t nmemb,
     Pipeline* pipe = static_cast<Pipeline*>(userdata);
     size_t copy = size * nmemb;
     pipe->response.append(buffer, copy);
-    std::cout << "Write function: " << pipe->response
-        << " size: " << size << "," << pipe->response.size()
-        << " nmemb: " << nmemb
-        << " pos: " << pipe->response_pos
-        << "" << buffer[0] << buffer[1] << std::endl;
     return copy;
 }
 
@@ -125,8 +120,6 @@ size_t HttpContext::read_function(char* buffer, size_t size, size_t nmemb,
     if (!size || !nmemb || (pipe->request_pos >= pipe->request.size())) {
         return 0;
     }
-
-    std::cout << "Read function: " << pipe->request << " size: " << pipe->request.size() << std::endl;
 
     copied = pipe->request.copy(buffer, size * nmemb, pipe->request_pos);
     pipe->request_pos += copied;
@@ -142,36 +135,76 @@ void HttpContext::CurlSlistDeleter::operator()(struct curl_slist* curl_slist) {
     curl_slist_free_all(curl_slist);
 }
 
-bool HttpContext::add_event_to_processing(Event* event) {
+bool HttpContext::handle_event_timeout(EventList::iterator& it) {
+    if (TimePoint(0_ms) != it->get()->get_time_live()) {
+        if (std::chrono::steady_clock::now() > it->get()->get_time_live()) {
+            it->get()->complete(Error{Error::INTERNAL_ERROR,
+                    "Timeout occur"});
+            it = m_events.erase(it);
+            return true;
+        }
+    }
+    return false;
+}
+
+void HttpContext::handle_event_request(EventList::iterator& it) {
     Id id{0};
-    CURLMcode code;
     for (auto& pipe : m_pipelines) {
         if (nullptr == pipe.event) {
-            pipe.event = event;
+            pipe.event = std::move(*it);
             pipe.request.clear();
             pipe.request_pos = 0;
             pipe.response.clear();
-            pipe.request << build_message(
-                    static_cast<const Request&>(*event), id);
-            curl_easy_setopt(pipe.curl_easy.get(), CURLOPT_POSTFIELDSIZE, pipe.request.size());
-            code = curl_multi_add_handle(m_curl_multi, pipe.curl_easy.get());
-            std::cout << "HttpContext: add_event " << int(event->get_type())
-                << " status: " << code
-                << " Avent: " << event << std::endl;
-            return true;
+            pipe.request << build_message(static_cast<const Request&>(*pipe.event), id);
+            std::cout << "Build message!" << pipe.request << std::endl;
+            curl_easy_setopt(pipe.curl_easy.get(), CURLOPT_POSTFIELDSIZE,
+                    pipe.request.size());
+            curl_multi_add_handle(m_curl_multi, pipe.curl_easy.get());
+            it = m_events.erase(it);
+            ++m_pipes_active;
+            return;
         }
         ++id;
     }
-    return false;
+    ++it;
+}
+
+void HttpContext::dispatch_events() {
+    for (auto it = m_events.begin(); it != m_events.end();) {
+        if (handle_event_timeout(it)) { continue; }
+
+        switch (it->get()->get_type()) {
+        case EventType::CALL_METHOD:
+        case EventType::CALL_METHOD_ASYNC:
+        case EventType::SEND_NOTIFICATION:
+        case EventType::SEND_NOTIFICATION_ASYNC:
+            handle_event_request(it);
+            break;
+        case EventType::CREATE_CONTEXT:
+        case EventType::DESTROY_CONTEXT:
+        case EventType::UNDEFINED:
+        default:
+            std::cout << "ERROR!" << std::endl;
+            it->get()->complete(Error{Error::INTERNAL_ERROR,
+                    "Client context cannot handle event object"});
+            it = m_events.erase(it);
+            break;
+        }
+    }
+}
+
+bool HttpContext::active() const {
+    return !m_events.empty() || m_pipes_active;
 }
 
 bool HttpContext::read_complete(void* curl_easy) {
     for (auto& pipe : m_pipelines) {
         if (curl_easy == pipe.curl_easy.get()) {
-            pipe.response >> static_cast<Request*>(pipe.event)->m_value;
+            pipe.response >> static_cast<Request*>(pipe.event.get())->m_value;
             curl_multi_remove_handle(m_curl_multi, curl_easy);
-            Event::event_complete(pipe.event);
-            pipe.event = nullptr;
+            pipe.event->complete();
+            pipe.event.reset(nullptr);
+            --m_pipes_active;
             return true;
         }
     }
@@ -188,19 +221,9 @@ json::Value HttpContext::build_message(const Request& request, Id id) {
     else {
         message["params"].push_back(request.m_value);
     }
-    if (EventType::SEND_NOTIFICATION != request.get_type()) {
+    if (EventType::CALL_METHOD == request.get_type() ||
+        EventType::CALL_METHOD_ASYNC == request.get_type()) {
         message["id"] = id;
     }
     return message;
-}
-
-void HttpContext::dispatch_event(Event* event) {
-    switch (event->get_type()) {
-    case EventType::CALL_METHOD:
-    case EventType::CALL_METHOD_ASYNC:
-    case EventType::SEND_NOTIFICATION:
-        break;
-    default:
-        break;
-    }
 }

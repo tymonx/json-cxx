@@ -74,7 +74,7 @@ public:
 
     void setup_context(HttpContext& context);
 
-    constexpr unsigned get_max_pipeline_length() const {
+    unsigned get_max_pipeline_length() const {
         return DEFAULT_MAX_PIPELINE_LENGTH;
     }
 private:
@@ -84,15 +84,14 @@ private:
 
     using CurlMultiPtr = std::unique_ptr<void, CurlMultiDeleter>;
 
-    inline void notify();
-    inline void get_events();
-    inline void waiting_for_events();
-    inline void demultiplexing_events();
-    inline void handle_create_context(EventList::iterator& it);
-    inline void handle_destroy_context(EventList::iterator& it);
-    inline void handle_events_context(EventList::iterator& it);
-
-    void context_processing(HttpContext& context);
+    void notify();
+    void get_events();
+    void waiting_for_events();
+    void dispatch_events();
+    void handle_create_context(EventList::iterator& it);
+    void handle_destroy_context(EventList::iterator& it);
+    void handle_events_context(EventList::iterator& it);
+    void context_processing();
     void read_processing();
 
     void task();
@@ -110,6 +109,7 @@ private:
     fd_set m_fds_write{};
     fd_set m_fds_except{};
     int m_fds_max{-1};
+    int m_running_handles{0};
 
     EventList m_events{};
     EventList m_events_background{};

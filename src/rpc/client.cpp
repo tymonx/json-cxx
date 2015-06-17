@@ -56,31 +56,33 @@ using namespace json::rpc;
 using namespace json::rpc::client;
 
 Client::Client(const HttpProtocol& protocol) : m_id{this},
-    m_proactor{HttpProactor::get_instance()}  {
-    m_proactor.push_event(new CreateContext{m_id, protocol});
+    m_timeout_ms{protocol.get_timeout()},
+    m_proactor{HttpProactor::get_instance()}
+{
+    m_proactor.push_event(EventPtr{new CreateContext{m_id, protocol}});
 }
 
 Client::~Client() {
     auto event = new DestroyContext{m_id};
     auto result = event->m_result.get_future();
-    m_proactor.push_event(event);
+    m_proactor.push_event(EventPtr{event});
     result.get();
 }
 
 Client::MethodFuture Client::method(const std::string& name,
         const json::Value& params)
 {
-    auto event = new CallMethod{m_id, 1000_ms, name, params};
+    auto event = new CallMethod{m_id, m_timeout_ms, name, params};
     auto result = event->m_result.get_future();
-    m_proactor.push_event(event);
+    m_proactor.push_event(EventPtr{event});
     return result;
 }
 
 void Client::method(const std::string& name, const json::Value& params,
         MethodCallback result)
 {
-    m_proactor.push_event(new CallMethod{m_id, 1000_ms,
-                name, params, result});
+    m_proactor.push_event(EventPtr{new CallMethod{m_id, m_timeout_ms,
+                name, params, result}});
 }
 
 Client::NotificationFuture Client::notification(const std::string& name,
@@ -88,13 +90,13 @@ Client::NotificationFuture Client::notification(const std::string& name,
 {
     auto event = new SendNotification{m_id, 1000_ms, name, params};
     auto result = event->m_result.get_future();
-    m_proactor.push_event(event);
+    m_proactor.push_event(EventPtr{event});
     return result;
 }
 
 void Client::notification(const std::string& name, const json::Value& params,
         NotificationCallback result)
 {
-    m_proactor.push_event(new SendNotification{m_id, 1000_ms,
-                name, params, result});
+    m_proactor.push_event(EventPtr{new SendNotification{m_id, m_timeout_ms,
+                name, params, result}});
 }

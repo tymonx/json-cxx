@@ -36,13 +36,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/reactor.cpp
+ * @file json/rpc/client/event.cpp
  *
- * @brief JSON client reactor interface
+ * @brief JSON client message interface
  * */
 
-#include <json/rpc/client/proactor.hpp>
+#include <json/rpc/client/request.hpp>
 
-using json::rpc::client::Proactor;
+using json::rpc::client::Request;
 
-Proactor::~Proactor() { }
+Request::~Request() { }
