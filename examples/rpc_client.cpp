@@ -18,11 +18,14 @@ int main() {
     auto vc = client.method("doopy", 7);
     vc.get();
 
-    for (unsigned i = 0; i < 100000; ++i) {
+    for (unsigned i = 0; i < 1000; ++i) {
     client.method("xxx", 8,
         [] (const Value& v, const rpc::Error& error) {
             if (error) {
                 std::cout << "Error: " << error.what() << " " << int(error.get_code()) << std::endl;
+            }
+            else {
+                std::cout << "OK" << std::endl;
             }
             (void)v;
         }

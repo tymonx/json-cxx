@@ -66,7 +66,7 @@ public:
 
     static constexpr const unsigned DEFAULT_PIPELINE_LENGTH = 8;
 
-    static constexpr const Miliseconds DEFAULT_TIMEOUT_MS = 10000_ms;
+    static constexpr const Miliseconds DEFAULT_TIMEOUT_MS = 1000_ms;
 
     HttpProtocol(const Url& url = DEFAULT_URL);
 
@@ -82,7 +82,9 @@ public:
         set_timeout(std::chrono::duration_cast<Miliseconds>(seconds));
     }
 
-    void set_timeout(const Miliseconds& miliseconds);
+    void set_timeout(const Miliseconds& miliseconds) {
+        m_timeout_ms = miliseconds;
+    }
 
     Miliseconds get_timeout() const { return m_timeout_ms; }
 

@@ -46,6 +46,7 @@
 #include <json/rpc/client/call_method.hpp>
 #include <json/rpc/client/destroy_context.hpp>
 #include <json/rpc/client/send_notification.hpp>
+#include <iostream>
 
 using json::rpc::Error;
 using json::rpc::client::Event;

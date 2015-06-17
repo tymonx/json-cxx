@@ -88,7 +88,7 @@ void Client::method(const std::string& name, const json::Value& params,
 Client::NotificationFuture Client::notification(const std::string& name,
         const json::Value& params)
 {
-    auto event = new SendNotification{m_id, 1000_ms, name, params};
+    auto event = new SendNotification{m_id, m_timeout_ms, name, params};
     auto result = event->m_result.get_future();
     m_proactor.push_event(EventPtr{event});
     return result;

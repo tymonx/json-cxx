@@ -58,11 +58,6 @@ void HttpProtocol::set_pipeline_length(unsigned pipeline_length) {
     else { m_pipeline_length = pipeline_length; }
 }
 
-void HttpProtocol::set_timeout(const Miliseconds& miliseconds) {
-    if (0_ms == miliseconds) { m_timeout_ms = DEFAULT_TIMEOUT_MS; }
-    else { m_timeout_ms = miliseconds; }
-}
-
 void HttpProtocol::add_header(const Header& header) {
     if (header.first.empty() || header.second.empty()) { return; }
     m_headers.emplace(header.first, header.second);

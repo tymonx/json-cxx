@@ -219,6 +219,7 @@ void HttpProactor::read_processing() {
         msgs_in_queue = 0;
         message = curl_multi_info_read(m_curl_multi.get(), &msgs_in_queue);
         if (message && (CURLMSG_DONE == message->msg)) {
+            std::cout << "! " << message->data.result << std::endl;
             CURL* curl_easy = message->easy_handle;
             for (auto& context : m_contexts) {
                 if (context->read_complete(curl_easy)) { break; }
