@@ -42,14 +42,20 @@
  * */
 
 #include <json/rpc/client/event.hpp>
-#include <json/rpc/client/event_type.hpp>
-#include <json/rpc/client/destroy_context.hpp>
-#include <json/rpc/client/call_method.hpp>
-#include <json/rpc/client/call_method_async.hpp>
 
-using json::rpc::Error;
-using namespace json::rpc::client;
+using json::rpc::client::Event;
 
+Event::Event(EventType type, Client* client, Miliseconds time_live_ms) :
+    m_type(type), m_client(client)
+{
+    if (0_ms != time_live_ms) {
+        m_time_live = std::chrono::steady_clock::now() + time_live_ms;
+    }
+}
+
+Event::~Event() { }
+
+#if 0
 static inline void call_method(Event* _event, const Error& error) {
     CallMethod* event = static_cast<CallMethod*>(_event);
     if (!error) {
@@ -91,4 +97,5 @@ void Event::event_complete(Event* event, const Error& error) {
     if (event->check_flag(Event::AUTO_REMOVE)) { delete event; }
 }
 
-Event::~Event() { }
+#endif
+

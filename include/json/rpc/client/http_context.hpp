@@ -46,8 +46,9 @@
 #ifndef JSON_CXX_RPC_CLIENT_HTTP_CONTEXT_HPP
 #define JSON_CXX_RPC_CLIENT_HTTP_CONTEXT_HPP
 
+#include <json/json.hpp>
 #include <json/rpc/list.hpp>
-#include <json/rpc/client/context.hpp>
+#include <json/rpc/client/event.hpp>
 #include <json/rpc/client/http_protocol.hpp>
 
 #include <string>
@@ -59,21 +60,24 @@ struct curl_slist;
 
 namespace json {
 namespace rpc {
+
+class Client;
+
 namespace client {
 
 /* Forward declaration */
 class Request;
 class HttpProactor;
 
-class HttpContext : public Context {
+class HttpContext {
 public:
     HttpContext(Client* client, const HttpProtocol& protocol);
 
-    virtual ~HttpContext() final;
+    ~HttpContext();
 
     void push_event(Event*);
 
-    virtual void dispatch_event(Event* event) final;
+    void dispatch_event(Event* event);
 private:
     friend class HttpProactor;
 

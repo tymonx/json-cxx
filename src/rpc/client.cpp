@@ -48,54 +48,53 @@
 #include <json/rpc/client/http_proactor.hpp>
 
 #include <json/rpc/client/call_method.hpp>
-#include <json/rpc/client/call_method_async.hpp>
 #include <json/rpc/client/send_notification.hpp>
-#include <json/rpc/client/closing_context.hpp>
-
-#include <json/rpc/client/call_method.hpp>
-#include <json/rpc/client/send_notification.hpp>
+#include <json/rpc/client/create_context.hpp>
+#include <json/rpc/client/destroy_context.hpp>
 
 using namespace json::rpc;
 using namespace json::rpc::client;
 
-Client::Client(const Protocol& protocol) : m_id{this} {
-    switch (protocol.get_type()) {
-    case ProtocolType::HTTP:
-        m_proactor = &HttpProactor::get_instance();
-        m_proactor->push_event(new HttpContext(m_id,
-            static_cast<const HttpProtocol&>(protocol)));
-        break;
-    case ProtocolType::SERIAL:
-    case ProtocolType::UDP:
-    case ProtocolType::UNDEFINED:
-    default:
-        break;
-    }
+Client::Client(const HttpProtocol& protocol) : m_id{this},
+    m_proactor{HttpProactor::get_instance()}  {
+    m_proactor.push_event(new CreateContext{m_id, protocol});
 }
 
 Client::~Client() {
-    ClosingContext event(m_id, Event::NO_OPTIONS);
-    m_proactor->push_event(&event);
-    event.wait();
+    auto event = new DestroyContext{m_id};
+    auto result = event->m_result.get_future();
+    m_proactor.push_event(event);
+    result.get();
 }
 
-void Client::method(const std::string& name, const json::Value& params,
-        ResultCallback result)
-{
-    m_proactor->push_event(new CallMethodAsync(m_id, Event::AUTO_REMOVE,
-                name, params, result));
-}
-
-Client::ResultFuture Client::method(const std::string& name,
+Client::MethodFuture Client::method(const std::string& name,
         const json::Value& params)
 {
-    auto event = new CallMethod(m_id, Event::AUTO_REMOVE, name, params);
+    auto event = new CallMethod{m_id, 1000_ms, name, params};
     auto result = event->m_result.get_future();
-    m_proactor->push_event(event);
+    m_proactor.push_event(event);
     return result;
 }
 
-void Client::notification(const std::string& name, const json::Value& params) {
-    m_proactor->push_event(new SendNotification(this, Event::AUTO_REMOVE,
-                name, params));
+void Client::method(const std::string& name, const json::Value& params,
+        MethodCallback result)
+{
+    m_proactor.push_event(new CallMethod{m_id, 1000_ms,
+                name, params, result});
+}
+
+Client::NotificationFuture Client::notification(const std::string& name,
+        const json::Value& params)
+{
+    auto event = new SendNotification{m_id, 1000_ms, name, params};
+    auto result = event->m_result.get_future();
+    m_proactor.push_event(event);
+    return result;
+}
+
+void Client::notification(const std::string& name, const json::Value& params,
+        NotificationCallback result)
+{
+    m_proactor.push_event(new SendNotification{m_id, 1000_ms,
+                name, params, result});
 }

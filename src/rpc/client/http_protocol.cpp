@@ -47,10 +47,7 @@ using json::rpc::client::HttpProtocol;
 
 constexpr const char HttpProtocol::DEFAULT_URL[];
 
-constexpr const HttpProtocol::Miliseconds HttpProtocol::DEFAULT_TIMEOUT_MS;
-
-HttpProtocol::HttpProtocol(const Url& url)
-    : Protocol(ProtocolType::HTTP), m_url{url} { }
+constexpr const json::rpc::Miliseconds HttpProtocol::DEFAULT_TIMEOUT_MS;
 
 void HttpProtocol::set_pipeline_length(unsigned pipeline_length) {
     if (!pipeline_length) { m_pipeline_length = DEFAULT_PIPELINE_LENGTH; }

@@ -48,7 +48,6 @@
 
 #include <json/rpc/list.hpp>
 #include <json/rpc/time.hpp>
-#include <json/rpc/error.hpp>
 #include <json/rpc/client/event_type.hpp>
 
 namespace json {
@@ -60,33 +59,15 @@ namespace client {
 
 class Event : public json::rpc::ListItem {
 public:
-    using Options = std::uint16_t;
-
-    enum Option : Options {
-        NO_OPTIONS          = 0x0000,
-        AUTO_REMOVE         = 0x0001,
-        NOTIFY              = 0x0002
-    };
-
     EventType get_type() const { return m_type; }
 
     const Client* get_client() const { return m_client; }
 
-    void set_live_time_duration(Miliseconds miliseconds) {
-        m_time_live = m_time_created + miliseconds;
-    }
+    const TimePoint& get_time_live() const { return m_time_live; }
 
-    const TimePoint& get_live_time_point() const { return m_time_live; }
-
-    static void event_complete(Event* event, const Error& error = {Error::OK});
+    Event(EventType type, Client* client, Miliseconds time_live_ms = 0_ms);
 
     virtual ~Event();
-
-    Options options() { return m_options; }
-protected:
-    Event(EventType type, Client* client, Options options = NO_OPTIONS) :
-        m_type(type), m_client(client), m_options(options),
-        m_time_created(std::chrono::steady_clock::now()) { }
 private:
     Event(const Event&) = delete;
     Event(Event&&) = delete;
@@ -95,13 +76,7 @@ private:
 
     EventType m_type{EventType::UNDEFINED};
     Client* m_client{nullptr};
-    Options m_options{NO_OPTIONS};
-
-    /* Event time managment */
     TimePoint m_time_live{0_ms};
-    TimePoint m_time_created{};
-
-    friend void event_complete(Event* event);
 };
 
 } /* client */

@@ -36,16 +36,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/event/context.cpp
+ * @file json/rpc/client/destroy_context.hpp
  *
- * @brief JSON client protocol IPv4 protocol
+ * @brief JSON client message interface
  * */
 
-#include <json/rpc/client/context.hpp>
+#ifndef JSON_CXX_RPC_CLIENT_EVENT_DESTROY_CONTEXT_HPP
+#define JSON_CXX_RPC_CLIENT_EVENT_DESTROY_CONTEXT_HPP
 
-using json::rpc::client::Context;
+#include <json/rpc/client/event.hpp>
 
-Context::Context(Client* client) :
-    Event(EventType::CONTEXT, client, AUTO_REMOVE) { }
+#include <future>
 
-Context::~Context() { }
+namespace json {
+namespace rpc {
+namespace client {
+
+class DestroyContext : public Event {
+public:
+    DestroyContext(Client* client) :
+        Event{EventType::DESTROY_CONTEXT, client} { }
+
+    virtual ~DestroyContext() final;
+
+    std::promise<void> m_result{};
+};
+
+} /* client */
+} /* rpc */
+} /* json */
+
+#endif /* JSON_CXX_RPC_CLIENT_EVENT_DESTROY_CONTEXT_HPP */

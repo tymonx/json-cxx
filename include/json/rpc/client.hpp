@@ -56,7 +56,7 @@ namespace rpc {
 
 /* Forward declarations */
 namespace client {
-    class Protocol;
+    class HttpProtocol;
     class Proactor;
 }
 
@@ -65,10 +65,13 @@ namespace client {
  * */
 class Client {
 public:
-    using ResultCallback = std::function<void(const json::Value&, const Error&)>;
-    using ResultFuture = std::future<json::Value>;
+    using NotificationCallback = std::function<void(const Error&)>;
+    using NotificationFuture = std::future<void>;
+    using MethodCallback = std::function<void(const json::Value&, const Error&)>;
+    using MethodFuture = std::future<json::Value>;
 
-    Client(const client::Protocol& protocol);
+    Client(const client::HttpProtocol& protocol);
+
     Client(const Client&) = delete;
     Client(Client&&) = delete;
     Client& operator=(const Client&) = delete;
@@ -94,7 +97,7 @@ public:
      * @param[out]  result      Method output parameter
      * */
     void method(const std::string& name, const json::Value& params,
-            ResultFuture& result) { result = method(name, params); }
+            MethodFuture& result) { result = method(name, params); }
 
     /*!
      * @brief Call JSON-RPC method
@@ -104,7 +107,7 @@ public:
      *
      * @return  JSON-RPC result from method by future
      * */
-    ResultFuture method(const std::string& name, const json::Value& params);
+    MethodFuture method(const std::string& name, const json::Value& params);
 
     /*!
      * @brief Call JSON-RPC method
@@ -113,7 +116,7 @@ public:
      * @param[in]   params      Method input parameter
      * */
     void method(const std::string& name, const json::Value& params,
-            ResultCallback result);
+            MethodCallback result);
 
     /*!
      * @brief Call JSON-RPC notification
@@ -121,11 +124,20 @@ public:
      * @param[in]   name        Method name
      * @param[in]   params      Method input parameter
      * */
-    void notification(const std::string& name, const json::Value& params);
+    void notification(const std::string& name, const json::Value& params,
+            NotificationFuture& result) {
+        result = notification(name, params);
+    }
+
+    NotificationFuture notification(const std::string& name,
+            const json::Value& params);
+
+    void notification(const std::string& name, const json::Value& params,
+            NotificationCallback result);
 
 private:
-    client::Proactor* m_proactor{nullptr};
     Client* const m_id{nullptr};
+    client::Proactor& m_proactor;
 };
 
 }

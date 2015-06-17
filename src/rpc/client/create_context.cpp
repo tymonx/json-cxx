@@ -36,31 +36,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/protocol.hpp
+ * @file json/rpc/client/create_http_context.cpp
  *
- * @brief JSON client protocol interface
+ * @brief JSON client protocol IPv4 protocol
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_PROTOCOL_HPP
-#define JSON_CXX_RPC_CLIENT_PROTOCOL_HPP
+#include <json/rpc/client/create_context.hpp>
 
-#include <json/rpc/client/protocol_type.hpp>
+using json::rpc::client::CreateContext;
 
-namespace json {
-namespace rpc {
-namespace client {
-
-class Protocol {
-public:
-    ProtocolType get_type() const { return m_type; }
-protected:
-    Protocol(ProtocolType type) : m_type{type} { }
-private:
-    ProtocolType m_type{ProtocolType::UNDEFINED};
-};
-
-} /* client */
-} /* rpc */
-} /* json */
-
-#endif /* JSON_CXX_RPC_CLIENT_PROTOCOL_HPP */
+CreateContext::~CreateContext() {
+    switch (m_type) {
+    case ProtocolType::HTTP:
+        m_http_protocol.~HttpProtocol();
+        break;
+    case ProtocolType::SERIAL:
+    case ProtocolType::UDP:
+    case ProtocolType::UNDEFINED:
+    default:
+        break;
+    }
+}

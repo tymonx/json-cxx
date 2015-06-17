@@ -36,37 +36,43 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/destroy_context.hpp
+ * @file json/rpc/client/create_context.hpp
  *
  * @brief JSON client message interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EVENT_CLOSING_CONTEXT_HPP
-#define JSON_CXX_RPC_CLIENT_EVENT_CLOSING_CONTEXT_HPP
+#ifndef JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP
+#define JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP
 
 #include <json/rpc/client/event.hpp>
-
-#include <future>
+#include <json/rpc/client/http_protocol.hpp>
 
 namespace json {
 namespace rpc {
 namespace client {
 
-class ClosingContext : public Event {
+class CreateContext : public Event {
 public:
-    ClosingContext(Client* client, Options options = NO_OPTIONS) :
-        Event(EventType::CLOSING_CONTEXT, client, options) { }
+    CreateContext(Client* client, const HttpProtocol& protocol) :
+        Event{EventType::CREATE_CONTEXT, client}, m_type{ProtocolType::HTTP}
+    {
+        new (&m_http_protocol) HttpProtocol{protocol};
+    }
 
-    void wait() { m_closed_context.get_future().get(); }
-    void notify() { m_closed_context.set_value(); }
+    virtual ~CreateContext() final;
 
-    virtual ~ClosingContext() final;
+    ProtocolType get_type() const { return m_type; }
+
+    const HttpProtocol& get_http_protocol() const { return m_http_protocol; }
 private:
-    std::promise<void> m_closed_context{};
+    ProtocolType m_type{ProtocolType::UNDEFINED};
+    union {
+        HttpProtocol m_http_protocol;
+    };
 };
 
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_EVENT_CLOSING_CONTEXT_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP */

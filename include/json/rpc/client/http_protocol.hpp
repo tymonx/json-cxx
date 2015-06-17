@@ -44,8 +44,8 @@
 #ifndef JSON_CXX_RPC_CLIENT_HTTP_PROTOCOL_HPP
 #define JSON_CXX_RPC_CLIENT_HTTP_PROTOCOL_HPP
 
-#include <json/rpc/client/protocol.hpp>
 #include <json/rpc/time.hpp>
+#include <json/rpc/client/protocol_type.hpp>
 
 #include <string>
 #include <chrono>
@@ -56,11 +56,9 @@ namespace json {
 namespace rpc {
 namespace client {
 
-class HttpProtocol : public Protocol {
+class HttpProtocol {
 public:
     using Url = std::string;
-    using Seconds = std::chrono::seconds;
-    using Miliseconds = std::chrono::milliseconds;
     using Header = std::pair<std::string, std::string>;
     using Headers = std::unordered_map<std::string, std::string>;
 
@@ -70,7 +68,7 @@ public:
 
     static constexpr const Miliseconds DEFAULT_TIMEOUT_MS = 1000_ms;
 
-    HttpProtocol(const Url& url = DEFAULT_URL);
+    HttpProtocol(const Url& url = DEFAULT_URL) : m_url{url} { }
 
     const Url& get_url() const { return m_url; }
 
@@ -95,7 +93,7 @@ public:
 private:
     Url m_url{DEFAULT_URL};
     unsigned m_pipeline_length{DEFAULT_PIPELINE_LENGTH};
-    std::chrono::milliseconds m_timeout_ms{DEFAULT_TIMEOUT_MS};
+    Miliseconds m_timeout_ms{DEFAULT_TIMEOUT_MS};
     Headers m_headers{};
 };
 

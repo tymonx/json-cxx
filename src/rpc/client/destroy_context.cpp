@@ -36,13 +36,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/message.cpp
+ * @file json/rpc/client/destroy_context.cpp
  *
- * @brief JSON client protocol IPv4 protocol
+ * @brief JSON client message interface
  * */
 
-#include <json/rpc/client/request.hpp>
+#include <json/rpc/client/destroy_context.hpp>
 
-using json::rpc::client::Request;
+using json::rpc::client::DestroyContext;
 
-Request::~Request() { }
+ClosingContext::~ClosingContext() { }

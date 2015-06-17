@@ -53,8 +53,9 @@ enum class EventType {
     CALL_METHOD,
     CALL_METHOD_ASYNC,
     SEND_NOTIFICATION,
-    CONTEXT,
-    CLOSING_CONTEXT
+    SEND_NOTIFICATION_ASYNC,
+    CREATE_CONTEXT,
+    DESTROY_CONTEXT
 };
 
 } /* client */

@@ -45,7 +45,6 @@
 #define JSON_CXX_RPC_CLIENT_REQUEST_HPP
 
 #include <json/json.hpp>
-#include <json/rpc/client/event.hpp>
 
 #include <string>
 
@@ -53,13 +52,10 @@ namespace json {
 namespace rpc {
 namespace client {
 
-class Request : public Event {
+class Request {
 public:
-    Request(EventType event, Client* client, Options options,
-            const std::string& name, const Value& value) :
-        Event{event, client, options}, m_name{name}, m_value{value} { }
-
-    virtual ~Request();
+    Request(const std::string& name, const Value& value) :
+        m_name{name}, m_value{value} { }
 
     std::string m_name;
     Value m_value;

@@ -70,9 +70,9 @@ public:
 
     virtual ~HttpProactor() final;
 
-    void setup_context(HttpContext& context);
-
     virtual void push_event(Event* event) final;
+
+    void setup_context(HttpContext& context);
 
     constexpr unsigned get_max_pipeline_length() const {
         return DEFAULT_MAX_PIPELINE_LENGTH;
