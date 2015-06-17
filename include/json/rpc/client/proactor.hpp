@@ -44,11 +44,7 @@
 #ifndef JSON_CXX_RPC_CLIENT_PROACTOR_HPP
 #define JSON_CXX_RPC_CLIENT_PROACTOR_HPP
 
-#include <json/rpc/list.hpp>
 #include <json/rpc/client/event.hpp>
-#include <json/rpc/client/context.hpp>
-
-#include <mutex>
 
 namespace json {
 namespace rpc {
@@ -56,7 +52,7 @@ namespace client {
 
 class Proactor {
 public:
-    virtual void push_event(Event* event) = 0;
+    virtual void push_event(EventPtr event) = 0;
     virtual ~Proactor();
 };
 

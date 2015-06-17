@@ -51,6 +51,7 @@
 #include <json/rpc/client/event.hpp>
 #include <json/rpc/client/http_protocol.hpp>
 
+#include <list>
 #include <string>
 #include <memory>
 #include <vector>
@@ -71,13 +72,19 @@ class HttpProactor;
 
 class HttpContext {
 public:
-    HttpContext(Client* client, const HttpProtocol& protocol);
+    HttpContext(const Client* client, const HttpProtocol& protocol);
 
     ~HttpContext();
 
-    void push_event(Event*);
+    const Client* get_client() const;
+
+    void push_event(EventPtr event) {
+        m_events.push_back(event);
+    }
 
     void dispatch_event(Event* event);
+
+    bool active() const;
 private:
     friend class HttpProactor;
 
@@ -95,9 +102,8 @@ private:
 
     struct Pipeline {
         CurlEasyPtr curl_easy{nullptr};
-        Event* event{nullptr};
+        EventPtr event{nullptr};
         std::string::size_type request_pos{0};
-        std::string::size_type response_pos{0};
         std::string request{};
         std::string response{};
     };
@@ -116,12 +122,16 @@ private:
 
     bool read_complete(void* curl_easy_handle);
 
+    const Client* m_client;
     void* m_curl_multi{nullptr};
     CurlSlistPtr m_headers{nullptr};
     Pipelines m_pipelines{};
     HttpProtocol m_protocol{};
-    List m_events{};
+    EventList m_events{};
 };
+
+using HttpContextPtr = std::unique_ptr<HttpContext>;
+using HttpContextList = std::list<HttpContextPtr>;
 
 } /* client */
 } /* rpc */

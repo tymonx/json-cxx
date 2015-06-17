@@ -46,9 +46,12 @@
 #ifndef JSON_CXX_RPC_CLIENT_EVENT_HPP
 #define JSON_CXX_RPC_CLIENT_EVENT_HPP
 
-#include <json/rpc/list.hpp>
 #include <json/rpc/time.hpp>
+#include <json/rpc/error.hpp>
 #include <json/rpc/client/event_type.hpp>
+
+#include <list>
+#include <memory>
 
 namespace json {
 namespace rpc {
@@ -57,7 +60,7 @@ class Client;
 
 namespace client {
 
-class Event : public json::rpc::ListItem {
+class Event {
 public:
     EventType get_type() const { return m_type; }
 
@@ -67,6 +70,10 @@ public:
 
     Event(EventType type, Client* client, Miliseconds time_live_ms = 0_ms);
 
+    void complete(const Error& error = {Error::OK});
+
+    bool is_complete() const { return m_completed; }
+
     virtual ~Event();
 private:
     Event(const Event&) = delete;
@@ -74,10 +81,18 @@ private:
     Event& operator=(const Event&) = delete;
     Event& operator=(Event&&) = delete;
 
+    bool m_completed{false};
     EventType m_type{EventType::UNDEFINED};
     Client* m_client{nullptr};
     TimePoint m_time_live{0_ms};
 };
+
+class EventDeleter {
+    void operator()(Event* event);
+};
+
+using EventPtr = std::unique_ptr<Event, EventDeleter>;
+using EventList = std::list<EventPtr>;
 
 } /* client */
 } /* rpc */

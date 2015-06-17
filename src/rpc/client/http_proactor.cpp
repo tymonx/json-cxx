@@ -45,6 +45,7 @@
 #include <json/rpc/client/http_context.hpp>
 #include <json/rpc/error.hpp>
 
+#include <json/rpc/client/create_context.hpp>
 #include <json/rpc/client/destroy_context.hpp>
 
 #include <iostream>
@@ -63,9 +64,8 @@ void HttpProactor::CurlMultiDeleter::operator ()(void* curl_multi) {
     curl_multi_cleanup(curl_multi);
 }
 
-HttpProactor::HttpProactor() :
-    m_curl_multi{curl_multi_init()}
-{
+HttpProactor::HttpProactor() {
+    m_curl_multi = CurlMultiPtr{curl_multi_init()};
     if (nullptr == m_curl_multi) {
         throw std::exception();
     }
@@ -88,10 +88,6 @@ HttpProactor::~HttpProactor() {
     notify();
     m_thread.join();
     close(m_eventfd);
-
-    while (!m_contexts.empty()) {
-        delete static_cast<HttpContext*>(m_contexts.pop());
-    }
 }
 
 void HttpProactor::notify() {
@@ -99,21 +95,20 @@ void HttpProactor::notify() {
     write(m_eventfd, &notify, sizeof(notify));
 }
 
-void HttpProactor::push_event(Event* event) {
+void HttpProactor::push_event(EventPtr event) {
     std::unique_lock<std::mutex> lock(m_mutex);
-    m_events_background.push(event);
+    m_events_background.push_back(event);
     lock.unlock();
     notify();
 }
 
 void HttpProactor::get_events() {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_events.splice(m_events_background);
+    m_events.splice(m_events.end(), m_events_background);
 }
 
 void HttpProactor::setup_context(HttpContext& context) {
     context.m_curl_multi = m_curl_multi.get();
-    context.set_state(HttpContext::RUNNING);
 }
 
 void HttpProactor::waiting_for_events() {
@@ -121,19 +116,15 @@ void HttpProactor::waiting_for_events() {
     std::uint64_t notify{0};
     struct timeval timeout;
 
-    if (m_fds_changed) {
-        FD_ZERO(&m_fds_read);
-        FD_ZERO(&m_fds_write);
-        FD_ZERO(&m_fds_except);
-        m_fds_max = -1;
+    FD_ZERO(&m_fds_read);
+    FD_ZERO(&m_fds_write);
+    FD_ZERO(&m_fds_except);
+    m_fds_max = -1;
 
-        curl_multi_fdset(m_curl_multi.get(),
-                &m_fds_read, &m_fds_write, &m_fds_except, &m_fds_max);
+    curl_multi_fdset(m_curl_multi.get(),
+            &m_fds_read, &m_fds_write, &m_fds_except, &m_fds_max);
 
-        FD_SET(m_eventfd, &m_fds_read);
-
-        m_fds_changed = false;
-    }
+    FD_SET(m_eventfd, &m_fds_read);
 
     curl_multi_timeout(m_curl_multi.get(), &curl_timeout_ms);
     if (curl_timeout_ms < 0) {
@@ -147,35 +138,75 @@ void HttpProactor::waiting_for_events() {
     read(m_eventfd, &notify, sizeof(notify));
 }
 
-void HttpProactor::demultiplexing_events() {
-    Event* event;
+void HttpProactor::handle_create_context(EventList::iterator& it) {
+    m_contexts.emplace_back(new HttpContext{it->get()->get_client(),
+            static_cast<CreateContext*>(it->get())->get_http_protocol()});
+    it = m_events.erase(it);
+}
 
-    while (!m_events.empty()) {
-        event = static_cast<Event*>(m_events.pop());
-        if (EventType::CONTEXT == event->get_type()) {
-            std::cout << "Proactor: add context" << std::endl;
-            setup_context(static_cast<HttpContext&>(*event));
-            m_contexts.push(event);
+void HttpProactor::handle_destroy_context(EventList::iterator& it) {
+    auto context = std::find(m_contexts.begin(), m_contexts.end(),
+        [&it] (const HttpContextPtr& ctx) {
+            return ctx->get_client() == it->get()->get_client();
+        }
+    );
+    if (m_contexts.end() != context) {
+        if (!context->get()->active()) {
+            m_contexts.erase(context);
+            it->get()->complete();
+            it = m_events.erase(it);
         }
         else {
-            std::cout << "Proactor: event " << unsigned(event->get_type()) << std::endl;
-            auto context = find_context(event->get_client());
-            if (nullptr != context) {
-                context->dispatch_event(event);
-            }
-            else {
-                Event::event_complete(event, Error{Error::INTERNAL_ERROR,
-                        "Client context doesn't exist"});
-            }
+            ++it;
+        }
+    }
+    else {
+        it->get()->complete();
+        it = m_events.erase(it);
+    }
+}
+
+void HttpProactor::handle_events_context(EventList::iterator& it) {
+    auto context = std::find(m_contexts.begin(), m_contexts.end(),
+        [&it] (const HttpContextPtr& ctx) {
+            return ctx->get_client() == it->get()->get_client();
+        }
+    );
+    if (m_contexts.end() != context) {
+        context->get()->push_event(std::move(*it));
+    }
+    else {
+        it->get()->complete(Error{Error::INTERNAL_ERROR,
+                "Client context doesn't exist"});
+    }
+    it = m_events.erase(it);
+}
+
+void HttpProactor::demultiplexing_events() {
+    for (auto it = m_events.begin(); it != m_events.end();) {
+        switch (it->get()->get_type()) {
+        case EventType::CREATE_CONTEXT:
+            handle_create_context(it);
+            break;
+        case EventType::DESTROY_CONTEXT:
+            handle_destroy_context(it);
+            break;
+        case EventType::CALL_METHOD:
+        case EventType::CALL_METHOD_ASYNC:
+        case EventType::SEND_NOTIFICATION:
+        case EventType::SEND_NOTIFICATION_ASYNC:
+            handle_events_context(it);
+            break;
+        case EventType::UNDEFINED:
+        default:
+            it = m_events.erase(it);
+            break;
         }
     }
 }
 
 void HttpProactor::task() {
     int running_handles;
-    struct curl_waitfd waitfd{};
-    waitfd.fd = m_eventfd;
-    waitfd.events = CURL_WAIT_POLLIN | CURL_WAIT_POLLOUT;
 
     while (!m_task_done) {
         waiting_for_events();
@@ -184,25 +215,11 @@ void HttpProactor::task() {
 
         demultiplexing_events();
 
-        for (auto& context : m_contexts) {
-            context_processing(static_cast<HttpContext&>(context));
-        }
-
         running_handles = 0;
         curl_multi_perform(m_curl_multi.get(), &running_handles);
 
         read_processing();
     }
-}
-
-HttpContext* HttpProactor::find_context(const Client* client) {
-    return static_cast<HttpContext*>(std::find_if(
-        m_contexts.begin(),
-        m_contexts.end(),
-        [&client] (const ListItem& item) {
-            return static_cast<const HttpContext&>(item).check(client);
-        }
-    ).operator->());
 }
 
 void HttpProactor::read_processing() {
@@ -214,13 +231,13 @@ void HttpProactor::read_processing() {
         if (message && (CURLMSG_DONE == message->msg)) {
             CURL* curl_easy = message->easy_handle;
             for (auto& context : m_contexts) {
-                if (static_cast<HttpContext&>(context)
-                        .read_complete(curl_easy)) { break; }
+                if (context->read_complete(curl_easy)) { break; }
             }
         }
     } while (message);
 }
 
+/*
 void HttpProactor::context_processing(HttpContext& context) {
     Event* event;
     for (auto it = context.m_events.begin(); it != context.m_events.end();) {
@@ -231,5 +248,5 @@ void HttpProactor::context_processing(HttpContext& context) {
         }
     }
 }
-
+*/
 

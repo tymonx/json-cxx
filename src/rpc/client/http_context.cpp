@@ -45,7 +45,6 @@
 
 #include <json/rpc/client/request.hpp>
 #include <json/rpc/client/call_method.hpp>
-#include <json/rpc/client/call_method_async.hpp>
 #include <json/rpc/client/send_notification.hpp>
 
 #include <iostream>
@@ -53,12 +52,11 @@
 #include <exception>
 
 using json::rpc::client::CallMethod;
-using json::rpc::client::CallMethodAsync;
 using json::rpc::client::SendNotification;
 using json::rpc::client::HttpContext;
 
-HttpContext::HttpContext(Client* client, const HttpProtocol& protocol)
-    : Context{client}, m_protocol{protocol}
+HttpContext::HttpContext(const Client* client, const HttpProtocol& protocol)
+    : m_client{client}, m_protocol{protocol}
 {
     std::string http_header{};
     struct ::curl_slist* headers{nullptr};
@@ -98,14 +96,8 @@ HttpContext::HttpContext(Client* client, const HttpProtocol& protocol)
 HttpContext::~HttpContext() {
     for (auto& pipe : m_pipelines) {
         if (nullptr != pipe.event) {
-            Event::event_complete(pipe.event, Error{Error::INTERNAL_ERROR});
             curl_multi_remove_handle(m_curl_multi, pipe.curl_easy.get());
         }
-    }
-
-    while (!m_events.empty()) {
-        Event::event_complete(static_cast<Event*>(m_events.pop()),
-                Error{Error::INTERNAL_ERROR});
     }
 }
 
@@ -159,7 +151,6 @@ bool HttpContext::add_event_to_processing(Event* event) {
             pipe.request.clear();
             pipe.request_pos = 0;
             pipe.response.clear();
-            pipe.response_pos = 0;
             pipe.request << build_message(
                     static_cast<const Request&>(*event), id);
             curl_easy_setopt(pipe.curl_easy.get(), CURLOPT_POSTFIELDSIZE, pipe.request.size());

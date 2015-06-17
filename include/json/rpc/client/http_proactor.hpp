@@ -45,7 +45,9 @@
 #define JSON_CXX_RPC_CLIENT_HTTP_PROACTOR_HPP
 
 #include <json/rpc/client/proactor.hpp>
+#include <json/rpc/client/http_context.hpp>
 
+#include <mutex>
 #include <atomic>
 #include <thread>
 #include <memory>
@@ -54,8 +56,6 @@
 namespace json {
 namespace rpc {
 namespace client {
-
-class HttpContext;
 
 class HttpProactor : public Proactor {
 public:
@@ -70,7 +70,7 @@ public:
 
     virtual ~HttpProactor() final;
 
-    virtual void push_event(Event* event) final;
+    virtual void push_event(EventPtr event) final;
 
     void setup_context(HttpContext& context);
 
@@ -88,12 +88,12 @@ private:
     inline void get_events();
     inline void waiting_for_events();
     inline void demultiplexing_events();
-
-    void closing_context(Event* event);
+    inline void handle_create_context(EventList::iterator& it);
+    inline void handle_destroy_context(EventList::iterator& it);
+    inline void handle_events_context(EventList::iterator& it);
 
     void context_processing(HttpContext& context);
     void read_processing();
-    HttpContext* find_context(const Client* client);
 
     void task();
 
@@ -111,9 +111,9 @@ private:
     fd_set m_fds_except{};
     int m_fds_max{-1};
 
-    json::rpc::List m_events{};
-    json::rpc::List m_events_background{};
-    json::rpc::List m_contexts{};
+    EventList m_events{};
+    EventList m_events_background{};
+    HttpContextList m_contexts{};
 
     std::mutex m_mutex{};
 };
