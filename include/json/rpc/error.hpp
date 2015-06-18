@@ -55,15 +55,14 @@ class Error : public std::exception {
 public:
     using Message = std::string;
     using Data = json::Value;
+    using Code = std::int32_t;
 
-    enum Code : std::int32_t {
-        OK                  = 0,
-        PARSE_ERROR         = -32700,
-        INVALID_REQUEST     = -32600,
-        METHOD_NOT_FOUND    = -32601,
-        INVALID_PARAMS      = -32602,
-        INTERNAL_ERROR      = -32603
-    };
+    static const Code OK = 0;
+    static const Code PARSE_ERROR         = -32700;
+    static const Code INVALID_REQUEST     = -32600;
+    static const Code METHOD_NOT_FOUND    = -32601;
+    static const Code INVALID_PARAMS      = -32602;
+    static const Code INTERNAL_ERROR      = -32603;
 
     Error(Code code = OK, const Message& message = "", const Data& data = {}) :
         m_code{code}, m_message{message}, m_data{data} { }

@@ -49,13 +49,13 @@ namespace rpc {
 namespace client {
 
 enum class EventType {
-    UNDEFINED = 0,
-    CALL_METHOD,
-    CALL_METHOD_ASYNC,
-    SEND_NOTIFICATION,
-    SEND_NOTIFICATION_ASYNC,
-    CREATE_CONTEXT,
-    DESTROY_CONTEXT
+    UNDEFINED                   = 0x00,
+    CALL_METHOD                 = 0x01,
+    CALL_METHOD_ASYNC           = 0x02,
+    SEND_NOTIFICATION           = 0x04,
+    SEND_NOTIFICATION_ASYNC     = 0x08,
+    CREATE_CONTEXT              = 0x10,
+    DESTROY_CONTEXT             = 0x20
 };
 
 } /* client */

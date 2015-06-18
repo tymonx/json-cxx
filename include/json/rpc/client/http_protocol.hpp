@@ -70,8 +70,6 @@ public:
 
     HttpProtocol(const Url& url = DEFAULT_URL);
 
-    ~HttpProtocol();
-
     const Url& get_url() const { return m_url; }
 
     void set_pipeline_length(unsigned pipeline_length);

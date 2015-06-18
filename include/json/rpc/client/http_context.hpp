@@ -55,6 +55,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <functional>
 
 /* Forward declaration */
 struct curl_slist;
@@ -72,7 +73,8 @@ class HttpProactor;
 
 class HttpContext {
 public:
-    HttpContext(const Client* client, const HttpProtocol& protocol);
+    HttpContext(const Client* client, const HttpProtocol& protocol,
+            void* curl_multi);
 
     ~HttpContext();
 
@@ -102,17 +104,29 @@ private:
         void operator()(struct ::curl_slist* curl_slist);
     };
 
+    struct InfoRead;
+
     using Id = unsigned;
     using CurlEasyPtr = std::unique_ptr<void, CurlEasyDeleter>;
     using CurlSlistPtr = std::unique_ptr<struct ::curl_slist, CurlSlistDeleter>;
+    using InfoReadCallback = std::function<void(HttpContext*,
+            struct InfoRead*, unsigned)>;
 
-    struct Pipeline {
+    struct InfoRead {
+        HttpContext* context;
+        InfoReadCallback callback{};
         CurlEasyPtr curl_easy{nullptr};
+    };
+
+    struct Pipeline : public InfoRead {
+        Id id{0};
         EventPtr event{nullptr};
-        std::string::size_type request_pos{0};
+        std::string::size_type request_pos{};
         std::string request{};
         std::string response{};
     };
+
+    struct KeepAlive : public InfoRead { };
 
     using Pipelines = std::vector<Pipeline>;
 
@@ -123,15 +137,20 @@ private:
             void* userdata);
 
     json::Value build_message(const Request& request, Id id);
+    void handle_pipe(struct InfoRead*, unsigned curl_code);
+    Error handle_pipe_response(Pipeline& pipe);
+    void handle_keep_alive(struct InfoRead*, unsigned curl_code);
     bool handle_event_timeout(EventList::iterator& it);
     void handle_event_request(EventList::iterator& it);
+    Error check_response(const Value& value);
     bool read_complete(void* curl_easy_handle);
 
     const Client* m_client;
-    void* m_curl_multi{nullptr};
+    void* m_curl_multi;
     CurlSlistPtr m_headers{nullptr};
     Pipelines::size_type m_pipes_active{0};
     Pipelines m_pipelines{};
+    KeepAlive m_keep_alive{};
     HttpProtocol m_protocol{};
     EventList m_events{};
 };

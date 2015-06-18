@@ -43,6 +43,8 @@
 
 #include <json/rpc/client/http_context.hpp>
 
+#include <json/deserializer.hpp>
+
 #include <json/rpc/client/request.hpp>
 #include <json/rpc/client/call_method.hpp>
 #include <json/rpc/client/send_notification.hpp>
@@ -51,16 +53,22 @@
 #include <curl/curl.h>
 #include <exception>
 
+using json::Deserializer;
+using json::rpc::Error;
 using json::rpc::client::CallMethod;
 using json::rpc::client::SendNotification;
 using json::rpc::client::HttpContext;
 
-HttpContext::HttpContext(const Client* client, const HttpProtocol& protocol)
-    : m_client{client}, m_protocol{protocol}
+HttpContext::HttpContext(const Client* client, const HttpProtocol& protocol,
+        void* curl_multi) :
+    m_client{client}, m_curl_multi{curl_multi}, m_protocol{protocol}
 {
+    using std::placeholders::_1;
+    using std::placeholders::_2;
     std::string http_header{};
     struct ::curl_slist* headers{nullptr};
     unsigned pipeline_size{m_protocol.get_pipeline_length()};
+    CURL* curl_easy;
 
     for (const auto& header : m_protocol.get_headers()) {
         http_header = header.first + ": " + header.second;
@@ -71,12 +79,18 @@ HttpContext::HttpContext(const Client* client, const HttpProtocol& protocol)
     headers = curl_slist_append(headers, "charset: utf-8");
     m_headers = std::move(CurlSlistPtr{headers});
 
+    /* Pipelines */
+    Id id{0};
     m_pipelines.resize(pipeline_size);
     for (auto& pipe : m_pipelines) {
-        CURL* curl_easy = curl_easy_init();
-        if (nullptr == curl_easy) {
+        pipe.id = id++;
+        pipe.curl_easy.reset(curl_easy_init());
+        if (nullptr == pipe.curl_easy) {
             throw std::bad_alloc();
         }
+        pipe.context = this;
+        pipe.callback = &HttpContext::handle_pipe;
+        curl_easy = pipe.curl_easy.get();
         curl_easy_setopt(curl_easy, CURLOPT_URL, m_protocol.get_url().c_str());
         curl_easy_setopt(curl_easy, CURLOPT_WRITEFUNCTION, write_function);
         curl_easy_setopt(curl_easy, CURLOPT_WRITEDATA, &pipe);
@@ -89,8 +103,25 @@ HttpContext::HttpContext(const Client* client, const HttpProtocol& protocol)
                 CURLPROTO_HTTP | CURLPROTO_HTTPS);
         curl_easy_setopt(curl_easy, CURLOPT_TIMEOUT_MS,
                 m_protocol.get_timeout().count());
-        pipe.curl_easy = std::move(CurlEasyPtr{curl_easy});
+        curl_easy_setopt(curl_easy, CURLOPT_PRIVATE,
+                static_cast<InfoRead*>(&pipe));
     }
+
+    /* Keep alive */
+    m_keep_alive.curl_easy.reset(curl_easy_init());
+    if (nullptr == m_keep_alive.curl_easy) {
+        throw std::bad_alloc();
+    }
+    m_keep_alive.context = this;
+    m_keep_alive.callback = &HttpContext::handle_keep_alive;
+    curl_easy = m_keep_alive.curl_easy.get();
+    curl_easy_setopt(curl_easy, CURLOPT_URL, m_protocol.get_url().c_str());
+    curl_easy_setopt(curl_easy, CURLOPT_TCP_KEEPALIVE, 1L);
+    curl_easy_setopt(curl_easy, CURLOPT_TCP_KEEPIDLE, 2L);
+    curl_easy_setopt(curl_easy, CURLOPT_TCP_KEEPINTVL, 1L);
+    curl_easy_setopt(curl_easy, CURLOPT_PRIVATE,
+            static_cast<InfoRead*>(&m_keep_alive));
+    curl_multi_add_handle(m_curl_multi, curl_easy);
 }
 
 HttpContext::~HttpContext() {
@@ -99,6 +130,114 @@ HttpContext::~HttpContext() {
             curl_multi_remove_handle(m_curl_multi, it->curl_easy.get());
         }
     }
+    curl_multi_remove_handle(m_curl_multi, m_keep_alive.curl_easy.get());
+}
+
+void HttpContext::handle_keep_alive(struct InfoRead* info_read,
+        unsigned curl_code)
+{
+    auto keep_alive = static_cast<KeepAlive*>(info_read);
+
+    (void)keep_alive;
+    curl_multi_remove_handle(m_curl_multi, keep_alive->curl_easy.get());
+    curl_multi_add_handle(m_curl_multi, keep_alive->curl_easy.get());
+
+    if (curl_code != 7) {
+        std::cout << "KeepAlive: " << curl_code << std::endl;
+    }
+}
+
+Error HttpContext::check_response(const Value& value) {
+    if (!value.is_object()) {
+        return {Error::PARSE_ERROR, "Is not a JSON object"};
+    }
+    if (3 != value.size()) {
+        return {Error::PARSE_ERROR, "Invalid params number"};
+    }
+    if (value["jsonrpc"] != "2.0") {
+        return {Error::PARSE_ERROR, "Invalid/missing 'jsonrpc' member"};
+    }
+    if (value.is_member("result")) {
+        if (!value["id"].is_uint()) {
+            return {Error::PARSE_ERROR, "Invalid/missing 'id' member"};
+        }
+    }
+    else if (value.is_member("error")) {
+        auto& error = value["error"];
+        if (!error.is_object()) {
+            return {Error::PARSE_ERROR, "Invalid 'error' member"};
+        }
+        if (!error["code"].is_int()) {
+            return {Error::PARSE_ERROR, "Invalid/missing 'code' in 'error'"};
+        }
+        if (!error["message"].is_string()) {
+            return {Error::PARSE_ERROR, "Invalid/missing 'message' in 'error'"};
+        }
+        if (2 == error.size()) {
+            /* Do nothing */
+        }
+        else if (3 == error.size()) {
+            if (!error.is_member("data")) {
+                return {Error::PARSE_ERROR, "Missing 'data' member in 'error'"};
+            }
+        }
+        else {
+            return {Error::PARSE_ERROR, "Invalid params number in 'error'"};
+        }
+        if (!value["id"].is_int() && !value["id"].is_null()) {
+            return {Error::PARSE_ERROR, "Invalid/missing 'id' member"};
+        }
+    }
+    else {
+        return {Error::PARSE_ERROR, "Missing 'result' or 'error' member"};
+    }
+    return {Error::OK};
+}
+
+Error HttpContext::handle_pipe_response(Pipeline& pipe) {
+    Value value;
+    Deserializer deserializer(pipe.response);
+    if (deserializer.is_invalid()) {
+        auto error = deserializer.get_error();
+        return {Error::PARSE_ERROR, "Invalid response: \'" +
+                pipe.response + "\' " + error.decode() + " at " +
+                std::to_string(error.offset)};
+    }
+    deserializer >> value;
+    if (auto error = check_response(value)) { return error; }
+    if (value.is_member("result")) {
+        static_cast<Request*>(pipe.event.get())->m_value = value["result"];
+    }
+    else {
+        return {
+            value["error"]["code"].as_int(),
+            value["error"]["message"].as_string(),
+            value["error"]["data"]
+        };
+    }
+    return {Error::OK};
+}
+
+void HttpContext::handle_pipe(struct InfoRead* info_read,
+        unsigned curl_code) {
+    auto pipe = static_cast<Pipeline*>(info_read);
+
+    switch (curl_code) {
+    case CURLE_OK:
+        pipe->event->complete(handle_pipe_response(*pipe));
+        break;
+    case CURLE_COULDNT_CONNECT:
+        m_events.push_back(std::move(pipe->event));
+        break;
+    default:
+        pipe->event->complete({Error::Code(curl_code),
+                curl_easy_strerror(CURLcode(curl_code))});
+        break;
+    }
+
+    pipe->event = nullptr;
+    curl_multi_remove_handle(m_curl_multi, pipe->curl_easy.get());
+    --m_pipes_active;
 }
 
 size_t HttpContext::write_function(char* buffer, size_t size, size_t nmemb,
@@ -156,7 +295,6 @@ void HttpContext::handle_event_request(EventList::iterator& it) {
             pipe.request_pos = 0;
             pipe.response.clear();
             pipe.request << build_message(static_cast<const Request&>(*pipe.event), id);
-            std::cout << "Build message!" << pipe.request << std::endl;
             curl_easy_setopt(pipe.curl_easy.get(), CURLOPT_POSTFIELDSIZE,
                     pipe.request.size());
             curl_multi_add_handle(m_curl_multi, pipe.curl_easy.get());
@@ -184,7 +322,6 @@ void HttpContext::dispatch_events() {
         case EventType::DESTROY_CONTEXT:
         case EventType::UNDEFINED:
         default:
-            std::cout << "ERROR!" << std::endl;
             it->get()->complete(Error{Error::INTERNAL_ERROR,
                     "Client context cannot handle event object"});
             it = m_events.erase(it);

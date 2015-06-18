@@ -72,8 +72,6 @@ public:
 
     virtual void push_event(EventPtr event) final;
 
-    void setup_context(HttpContext& context);
-
     unsigned get_max_pipeline_length() const {
         return DEFAULT_MAX_PIPELINE_LENGTH;
     }
@@ -101,14 +99,7 @@ private:
     volatile std::atomic<bool> m_task_done{false};
     std::thread m_thread{};
 
-    uint64_t m_event{0};
     int m_eventfd{0};
-
-    bool m_fds_changed{true};
-    fd_set m_fds_read{};
-    fd_set m_fds_write{};
-    fd_set m_fds_except{};
-    int m_fds_max{-1};
     int m_running_handles{0};
 
     EventList m_events{};

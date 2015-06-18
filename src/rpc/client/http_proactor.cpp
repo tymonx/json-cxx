@@ -107,10 +107,6 @@ void HttpProactor::get_events() {
     m_events.splice(m_events.end(), m_events_background);
 }
 
-void HttpProactor::setup_context(HttpContext& context) {
-    context.m_curl_multi = m_curl_multi.get();
-}
-
 void HttpProactor::waiting_for_events() {
     std::uint64_t event{0};
     struct curl_waitfd waitfd[1]{};
@@ -122,9 +118,11 @@ void HttpProactor::waiting_for_events() {
 }
 
 void HttpProactor::handle_create_context(EventList::iterator& it) {
-    m_contexts.emplace_back(new HttpContext{it->get()->get_client(),
-        static_cast<CreateContext*>(it->get())->get_http_protocol()});
-    setup_context(*m_contexts.back());
+    m_contexts.emplace_back(new HttpContext{
+        it->get()->get_client(),
+        static_cast<CreateContext*>(it->get())->get_http_protocol(),
+        m_curl_multi.get()
+    });
     it = m_events.erase(it);
 }
 
@@ -214,16 +212,23 @@ void HttpProactor::context_processing() {
 
 void HttpProactor::read_processing() {
     CURLMsg* message;
+    struct HttpContext::InfoRead* info_read;
     int msgs_in_queue;
     do {
         msgs_in_queue = 0;
         message = curl_multi_info_read(m_curl_multi.get(), &msgs_in_queue);
         if (message && (CURLMSG_DONE == message->msg)) {
-            std::cout << "! " << message->data.result << std::endl;
-            CURL* curl_easy = message->easy_handle;
-            for (auto& context : m_contexts) {
-                if (context->read_complete(curl_easy)) { break; }
+            info_read = nullptr;
+            curl_easy_getinfo(message->easy_handle,
+                    CURLINFO_PRIVATE, &info_read);
+            if (nullptr != info_read) {
+                info_read->callback(info_read->context, info_read,
+                        message->data.result);
+            }
+            else {
+                curl_multi_remove_handle(m_curl_multi.get(),
+                        message->easy_handle);
             }
         }
-    } while (message);
+    } while (nullptr != message);
 }

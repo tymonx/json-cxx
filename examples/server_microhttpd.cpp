@@ -1,4 +1,5 @@
 #include <microhttpd.h>
+#include <json/json.hpp>
 
 #include <memory>
 #include <string>
@@ -75,7 +76,17 @@ static int request_with_data(Method http_method,
 
     *con_cls = nullptr;
 
-    return send_response(connection, MHD_HTTP_OK, "Data received\n");
+    json::Value request;
+    json::Value response;
+    *data >> request;
+
+    response["jsonrpc"] = "2.0";
+    response["result"] = "DUPA!!!";
+    response["id"] = request["id"];
+
+    json::Serializer serializer(response);
+
+    return send_response(connection, MHD_HTTP_OK, serializer);
 }
 
 static int request_no_data(Method http_method,
@@ -99,11 +110,18 @@ static int request_no_data(Method http_method,
     return send_response(connection, MHD_HTTP_OK, "No data\n");
 }
 
+static int print_key_value(void*, enum MHD_ValueKind, const char* key,
+        const char* value) {
+    std::cout << key << ": " << value << std::endl;
+    return MHD_YES;
+}
+
 static int access_handler_callback(void* cls, struct MHD_Connection *connection,
     const char* url, const char* method, const char* version,
     const char* upload_data, size_t* upload_data_size, void** con_cls) {
 
     cout << "Method: " << method << endl;
+    MHD_get_connection_values(connection, MHD_HEADER_KIND, print_key_value, nullptr);
 
     if (0 == strcmp(method, "GET")) {
         return request_no_data(Method::GET,
