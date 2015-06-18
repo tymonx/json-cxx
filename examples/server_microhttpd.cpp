@@ -152,6 +152,21 @@ static int access_handler_callback(void* cls, struct MHD_Connection *connection,
     return send_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED, "No supported");
 }
 
+#include <arpa/inet.h>
+
+static int  on_client_connect(void*, const struct sockaddr* addr, socklen_t) {
+    struct sockaddr_in sockaddr;
+
+    std::memcpy(&sockaddr, addr, sizeof(sockaddr));
+
+    std::cout
+        << "IP: " << inet_ntoa(sockaddr.sin_addr)
+        << " port: " << ntohs(sockaddr.sin_port)
+        << std::endl;
+
+    return MHD_YES;
+}
+
 int main(int argc, char* argv[]) {
     Port port = 6666;
 
@@ -160,7 +175,7 @@ int main(int argc, char* argv[]) {
     }
 
     struct MHD_Daemon* mhd = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY,
-            port, nullptr, nullptr,
+            port, on_client_connect, nullptr,
             access_handler_callback, nullptr,
             MHD_OPTION_END);
     if (nullptr == mhd) {

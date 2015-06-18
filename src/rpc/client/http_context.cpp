@@ -69,6 +69,7 @@ HttpContext::HttpContext(const Client* client, const HttpProtocol& protocol,
     struct ::curl_slist* headers{nullptr};
     unsigned pipeline_size{m_protocol.get_pipeline_length()};
     CURL* curl_easy;
+    CURLcode code;
 
     for (const auto& header : m_protocol.get_headers()) {
         http_header = header.first + ": " + header.second;
@@ -103,6 +104,9 @@ HttpContext::HttpContext(const Client* client, const HttpProtocol& protocol,
                 CURLPROTO_HTTP | CURLPROTO_HTTPS);
         curl_easy_setopt(curl_easy, CURLOPT_TIMEOUT_MS,
                 m_protocol.get_timeout().count());
+        curl_easy_setopt(curl_easy, CURLOPT_TCP_KEEPALIVE, 1L);
+        curl_easy_setopt(curl_easy, CURLOPT_TCP_KEEPIDLE, 2L);
+        curl_easy_setopt(curl_easy, CURLOPT_TCP_KEEPINTVL, 1L);
         curl_easy_setopt(curl_easy, CURLOPT_PRIVATE,
                 static_cast<InfoRead*>(&pipe));
     }
@@ -116,12 +120,15 @@ HttpContext::HttpContext(const Client* client, const HttpProtocol& protocol,
     m_keep_alive.callback = &HttpContext::handle_keep_alive;
     curl_easy = m_keep_alive.curl_easy.get();
     curl_easy_setopt(curl_easy, CURLOPT_URL, m_protocol.get_url().c_str());
-    curl_easy_setopt(curl_easy, CURLOPT_TCP_KEEPALIVE, 1L);
-    curl_easy_setopt(curl_easy, CURLOPT_TCP_KEEPIDLE, 2L);
-    curl_easy_setopt(curl_easy, CURLOPT_TCP_KEEPINTVL, 1L);
+    code = curl_easy_setopt(curl_easy, CURLOPT_TCP_KEEPALIVE, 1L);
+    std::cout << "KeepAlive: " << code << std::endl;
+    code = curl_easy_setopt(curl_easy, CURLOPT_TCP_KEEPIDLE, 2L);
+    std::cout << "KeepAlive: " << code << std::endl;
+    code = curl_easy_setopt(curl_easy, CURLOPT_TCP_KEEPINTVL, 1L);
+    std::cout << "KeepAlive: " << code << std::endl;
     curl_easy_setopt(curl_easy, CURLOPT_PRIVATE,
             static_cast<InfoRead*>(&m_keep_alive));
-    curl_multi_add_handle(m_curl_multi, curl_easy);
+    //curl_multi_add_handle(m_curl_multi, curl_easy);
 }
 
 HttpContext::~HttpContext() {
@@ -139,8 +146,8 @@ void HttpContext::handle_keep_alive(struct InfoRead* info_read,
     auto keep_alive = static_cast<KeepAlive*>(info_read);
 
     (void)keep_alive;
-    curl_multi_remove_handle(m_curl_multi, keep_alive->curl_easy.get());
-    curl_multi_add_handle(m_curl_multi, keep_alive->curl_easy.get());
+    //curl_multi_remove_handle(m_curl_multi, keep_alive->curl_easy.get());
+    //curl_multi_add_handle(m_curl_multi, keep_alive->curl_easy.get());
 
     if (curl_code != 7) {
         std::cout << "KeepAlive: " << curl_code << std::endl;

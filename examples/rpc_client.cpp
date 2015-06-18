@@ -14,12 +14,12 @@ int main() {
     http.set_timeout(10000_ms);
     rpc::Client client(http);
 
-#if 0 
+#if 1 
     client.method("sexy", 5, value);
     auto vc = client.method("doopy", 7);
     vc.get();
 
-    for (unsigned i = 0; i < 1000; ++i) {
+    for (unsigned i = 0; i < 2; ++i) {
     client.method("xxx", 8,
         [] (const Value& v, const rpc::Error& error) {
             if (error) {
