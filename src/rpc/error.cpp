@@ -45,4 +45,7 @@
 
 using json::rpc::Error;
 
+Error::Error(Code code, const Message& message, const Data& data) :
+        m_code{code}, m_message{message}, m_data{data} { }
+
 Error::~Error() { }

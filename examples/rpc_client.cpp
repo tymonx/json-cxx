@@ -4,6 +4,7 @@
 #include <json/rpc/client/http_protocol.hpp>
 
 #include <iostream>
+#include <chrono>
 
 using namespace json;
 using json::rpc::operator "" _ms;
@@ -14,26 +15,25 @@ int main() {
     http.set_timeout(0_ms);
     rpc::Client client(http);
 
-#if 1 
-    client.method("sexy", 5, value);
-    auto vc = client.method("doopy", 7);
-    vc.get();
+    auto start = std::chrono::system_clock::now();
 
-    for (unsigned i = 0; i < 1000; ++i) {
+    for (unsigned i = 0; i < 100; ++i) {
     client.method("xxx", 8,
         [] (const Value& v, const rpc::Error& error) {
             if (error) {
                 std::cout << "Error: " << error.what() << " " << error.get_code() << std::endl;
             }
             else {
-                std::cout << "OK" << std::endl;
+                std::cout << "OK: " << v << std::endl;
             }
             (void)v;
         }
     );
     }
-#endif
-    //std::this_thread::sleep_for(3000_ms);
+
+    auto stop = std::chrono::system_clock::now();
+    auto diff = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start).count();
+    std::cout << "Time: " << diff << "ns" << std::endl;
 
     return 0;
 }

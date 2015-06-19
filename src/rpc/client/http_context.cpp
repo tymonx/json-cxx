@@ -49,9 +49,9 @@
 #include <json/rpc/client/call_method.hpp>
 #include <json/rpc/client/send_notification.hpp>
 
-#include <iostream>
 #include <curl/curl.h>
 #include <exception>
+#include <algorithm>
 
 using json::Deserializer;
 using json::rpc::Error;
@@ -288,22 +288,26 @@ bool HttpContext::handle_event_timeout(EventList::iterator& it) {
 }
 
 void HttpContext::handle_event_request(EventList::iterator& it) {
-    Id id{0};
-    for (auto& pipe : m_pipelines) {
-        if (nullptr == pipe.event) {
-            pipe.event = std::move(*it);
-            pipe.request.clear();
-            pipe.request_pos = 0;
-            pipe.response.clear();
-            pipe.request << build_message(static_cast<const Request&>(*pipe.event), id);
-            curl_easy_setopt(pipe.curl_easy.get(), CURLOPT_POSTFIELDSIZE,
-                    pipe.request.size());
-            curl_multi_add_handle(m_curl_multi, pipe.curl_easy.get());
+    if (m_pipes_active < m_pipelines.size()) {
+        auto pipe = std::find_if(
+            m_pipelines.begin(),
+            m_pipelines.end(),
+            [] (const Pipeline& p) { return nullptr == p.event; }
+        );
+        if (m_pipelines.end() != pipe) {
+            pipe->event = std::move(*it);
+            pipe->request.clear();
+            pipe->request_pos = 0;
+            pipe->response.clear();
+            pipe->request << build_message(
+                    static_cast<const Request&>(*pipe->event), pipe->id);
+            curl_easy_setopt(pipe->curl_easy.get(), CURLOPT_POSTFIELDSIZE,
+                    pipe->request.size());
+            curl_multi_add_handle(m_curl_multi, pipe->curl_easy.get());
             it = m_events.erase(it);
             ++m_pipes_active;
             return;
         }
-        ++id;
     }
     ++it;
 }

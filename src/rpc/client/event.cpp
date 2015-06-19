@@ -46,7 +46,8 @@
 #include <json/rpc/client/call_method.hpp>
 #include <json/rpc/client/destroy_context.hpp>
 #include <json/rpc/client/send_notification.hpp>
-#include <iostream>
+
+#include <future>
 
 using json::rpc::Error;
 using json::rpc::client::Event;
@@ -61,7 +62,7 @@ void Event::set_time_live(const Miliseconds& time_live) {
     m_time_live = std::chrono::steady_clock::now() + time_live;
 }
 
-static inline
+static
 void call_method(Event* _event, const Error& error) {
     CallMethod* event = static_cast<CallMethod*>(_event);
     if (!error) {
@@ -72,19 +73,15 @@ void call_method(Event* _event, const Error& error) {
     }
 }
 
-static inline
+static
 void call_method_async(const Event* _event, const Error& error) {
     const CallMethod* event = static_cast<const CallMethod*>(_event);
     if (nullptr == event->m_callback) { return; }
-    if (!error) {
-        event->m_callback(event->m_value, Error::OK);
-    }
-    else {
-        event->m_callback(json::Value::Type::NIL, error);
-    }
+    std::async(std::launch::async, event->m_callback,
+            event->m_value, error);
 }
 
-static inline
+static
 void send_notification(Event* _event, const Error& error) {
     SendNotification* event = static_cast<SendNotification*>(_event);
     if (!error) {
@@ -95,19 +92,14 @@ void send_notification(Event* _event, const Error& error) {
     }
 }
 
-static inline
+static
 void send_notification_async(const Event* _event, const Error& error) {
     const SendNotification* event = static_cast<const SendNotification*>(_event);
     if (nullptr == event->m_callback) { return; }
-    if (!error) {
-        event->m_callback(Error::OK);
-    }
-    else {
-        event->m_callback(error);
-    }
+    std::async(std::launch::async, event->m_callback, error);
 }
 
-static inline
+static
 void destroy_context(Event* _event, const Error& error) {
     DestroyContext* event = static_cast<DestroyContext*>(_event);
     if (!error) {
