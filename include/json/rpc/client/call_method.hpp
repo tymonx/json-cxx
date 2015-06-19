@@ -61,13 +61,13 @@ class CallMethod : public Request {
 public:
     using Callback = std::function<void(const json::Value&, const Error&)>;
 
-    CallMethod(Client* client, Miliseconds time_live,
+    CallMethod(Client* client,
             const std::string& name, const Value& value) :
-        Request{EventType::CALL_METHOD, client, time_live, name, value} { }
+        Request{EventType::CALL_METHOD, client, name, value} { }
 
-    CallMethod(Client* client, Miliseconds time_live,
+    CallMethod(Client* client,
             const std::string& name, const Value& value, Callback callback) :
-        Request{EventType::CALL_METHOD_ASYNC, client, time_live, name, value},
+        Request{EventType::CALL_METHOD_ASYNC, client, name, value},
         m_callback{callback} { }
 
     virtual ~CallMethod() final;

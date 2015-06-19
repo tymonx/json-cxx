@@ -151,14 +151,17 @@ void HttpProactor::handle_destroy_context(EventList::iterator& it) {
 void HttpProactor::handle_events_context(EventList::iterator& it) {
     auto context = std::find_if(m_contexts.begin(), m_contexts.end(),
         [&it] (const HttpContextPtr& ctx) {
-            return ctx->get_client() == it->get()->get_client();
+            return ctx->get_client() == (*it)->get_client();
         }
     );
     if (m_contexts.end() != context) {
-        context->get()->splice_event(m_events, it++);
+        if (0_ms != (*context)->get_protocol().get_time_live()) {
+            (*it)->set_time_live((*context)->get_protocol().get_time_live());
+        }
+        (*context)->splice_event(m_events, it++);
     }
     else {
-        it->get()->complete(Error{Error::INTERNAL_ERROR,
+        (*it)->complete(Error{Error::INTERNAL_ERROR,
                 "Client context doesn't exist"});
         it = m_events.erase(it);
     }

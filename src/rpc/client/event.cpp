@@ -55,15 +55,11 @@ using json::rpc::client::CallMethod;
 using json::rpc::client::DestroyContext;
 using json::rpc::client::SendNotification;
 
-Event::Event(EventType type, Client* client, Miliseconds time_live_ms) :
-    m_type(type), m_client(client)
-{
-    if (0_ms != time_live_ms) {
-        m_time_live = std::chrono::steady_clock::now() + time_live_ms;
-    }
-}
-
 Event::~Event() { }
+
+void Event::set_time_live(const Miliseconds& time_live) {
+    m_time_live = std::chrono::steady_clock::now() + time_live;
+}
 
 static inline
 void call_method(Event* _event, const Error& error) {

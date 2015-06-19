@@ -62,19 +62,22 @@ namespace client {
 
 class Event {
 public:
-    EventType get_type() const { return m_type; }
+    Event(EventType type, Client* client) :
+        m_type(type), m_client(client) { }
+
+    virtual ~Event();
 
     const Client* get_client() const { return m_client; }
 
-    const TimePoint& get_time_live() const { return m_time_live; }
-
-    Event(EventType type, Client* client, Miliseconds time_live_ms = 0_ms);
+    EventType get_type() const { return m_type; }
 
     void complete(const Error& error = {Error::OK});
 
     bool is_complete() const { return m_completed; }
 
-    virtual ~Event();
+    void set_time_live(const Miliseconds& time_live);
+
+    const TimePoint& get_time_live() const { return m_time_live; }
 private:
     Event(const Event&) = delete;
     Event(Event&&) = delete;

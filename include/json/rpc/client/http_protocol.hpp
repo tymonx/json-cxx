@@ -66,6 +66,8 @@ public:
 
     static constexpr const unsigned DEFAULT_PIPELINE_LENGTH = 8;
 
+    static constexpr const Miliseconds DEFAULT_TIME_LIVE_MS = 0_ms;
+
     static constexpr const Miliseconds DEFAULT_TIMEOUT_MS = 1000_ms;
 
     HttpProtocol(const Url& url = DEFAULT_URL);
@@ -76,15 +78,25 @@ public:
 
     unsigned get_pipeline_length() const { return m_pipeline_length; }
 
-    void set_timeout(const Seconds& seconds) {
-        set_timeout(std::chrono::duration_cast<Miliseconds>(seconds));
+    void set_timeout(const Seconds& timeout_sec) {
+        set_timeout(std::chrono::duration_cast<Miliseconds>(timeout_sec));
     }
 
-    void set_timeout(const Miliseconds& miliseconds) {
-        m_timeout_ms = miliseconds;
+    void set_timeout(const Miliseconds& timeout_ms) {
+        m_time_timeout_ms = timeout_ms;
     }
 
-    Miliseconds get_timeout() const { return m_timeout_ms; }
+    void set_time_live(const Seconds& live_sec) {
+        set_time_live(std::chrono::duration_cast<Miliseconds>(live_sec));
+    }
+
+    void set_time_live(const Miliseconds& live_ms) {
+        m_time_live_ms = live_ms;
+    }
+
+    const Miliseconds& get_time_live() const { return m_time_live_ms; }
+
+    const Miliseconds& get_timeout() const { return m_time_timeout_ms; }
 
     void add_header(const Header& header);
     void remove_header(const Header& header) {
@@ -95,7 +107,8 @@ public:
 private:
     Url m_url{DEFAULT_URL};
     unsigned m_pipeline_length{DEFAULT_PIPELINE_LENGTH};
-    Miliseconds m_timeout_ms{DEFAULT_TIMEOUT_MS};
+    Miliseconds m_time_live_ms{DEFAULT_TIME_LIVE_MS};
+    Miliseconds m_time_timeout_ms{DEFAULT_TIMEOUT_MS};
     Headers m_headers{};
 };
 

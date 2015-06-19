@@ -11,7 +11,7 @@ using json::rpc::operator "" _ms;
 int main() {
     Value value;
     rpc::client::HttpProtocol http{"localhost:6666"};
-    http.set_timeout(10000_ms);
+    http.set_timeout(0_ms);
     rpc::Client client(http);
 
 #if 1 
@@ -19,21 +19,21 @@ int main() {
     auto vc = client.method("doopy", 7);
     vc.get();
 
-    for (unsigned i = 0; i < 2; ++i) {
+    for (unsigned i = 0; i < 1000; ++i) {
     client.method("xxx", 8,
         [] (const Value& v, const rpc::Error& error) {
             if (error) {
-                //std::cout << "Error: " << error.what() << " " << int(error.get_code()) << std::endl;
+                std::cout << "Error: " << error.what() << " " << int(error.get_code()) << std::endl;
             }
             else {
-                //std::cout << "OK" << std::endl;
+                std::cout << "OK" << std::endl;
             }
             (void)v;
         }
     );
     }
 #endif
-    std::this_thread::sleep_for(10000_ms);
+    //std::this_thread::sleep_for(3000_ms);
 
     return 0;
 }

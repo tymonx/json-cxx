@@ -138,7 +138,6 @@ public:
 
 private:
     Client* const m_id{nullptr};
-    Miliseconds m_timeout_ms{1000_ms};
     client::Proactor& m_proactor;
 };
 

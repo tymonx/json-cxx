@@ -55,10 +55,9 @@ namespace client {
 
 class Request : public Event {
 public:
-    Request(EventType type, Client* client, Miliseconds time_live,
+    Request(EventType type, Client* client,
             const std::string& name, const Value& value) :
-        Event{type, client, time_live},
-        m_name{name}, m_value{value} { }
+        Event{type, client}, m_name{name}, m_value{value} { }
 
     virtual ~Request();
 

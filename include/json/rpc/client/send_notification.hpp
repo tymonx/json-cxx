@@ -60,14 +60,14 @@ class SendNotification : public Request {
 public:
     using Callback = std::function<void(const Error&)>;
 
-    SendNotification(Client* client, Miliseconds time_live,
+    SendNotification(Client* client,
             const std::string& name, const Value& value) :
-        Request{EventType::SEND_NOTIFICATION, client, time_live,
+        Request{EventType::SEND_NOTIFICATION, client,
             name, value} { }
 
-    SendNotification(Client* client, Miliseconds time_live,
+    SendNotification(Client* client,
             const std::string& name, const Value& value, Callback callback) :
-        Request{EventType::SEND_NOTIFICATION_ASYNC, client, time_live,
+        Request{EventType::SEND_NOTIFICATION_ASYNC, client,
             name, value}, m_callback{callback} { }
 
     virtual ~SendNotification() final;

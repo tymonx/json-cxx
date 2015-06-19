@@ -56,7 +56,6 @@ using namespace json::rpc;
 using namespace json::rpc::client;
 
 Client::Client(const HttpProtocol& protocol) : m_id{this},
-    m_timeout_ms{protocol.get_timeout()},
     m_proactor{HttpProactor::get_instance()}
 {
     m_proactor.push_event(EventPtr{new CreateContext{m_id, protocol}});
@@ -72,7 +71,7 @@ Client::~Client() {
 Client::MethodFuture Client::method(const std::string& name,
         const json::Value& params)
 {
-    auto event = new CallMethod{m_id, m_timeout_ms, name, params};
+    auto event = new CallMethod{m_id, name, params};
     auto result = event->m_result.get_future();
     m_proactor.push_event(EventPtr{event});
     return result;
@@ -81,14 +80,14 @@ Client::MethodFuture Client::method(const std::string& name,
 void Client::method(const std::string& name, const json::Value& params,
         MethodCallback result)
 {
-    m_proactor.push_event(EventPtr{new CallMethod{m_id, m_timeout_ms,
+    m_proactor.push_event(EventPtr{new CallMethod{m_id,
                 name, params, result}});
 }
 
 Client::NotificationFuture Client::notification(const std::string& name,
         const json::Value& params)
 {
-    auto event = new SendNotification{m_id, m_timeout_ms, name, params};
+    auto event = new SendNotification{m_id, name, params};
     auto result = event->m_result.get_future();
     m_proactor.push_event(EventPtr{event});
     return result;
@@ -97,6 +96,6 @@ Client::NotificationFuture Client::notification(const std::string& name,
 void Client::notification(const std::string& name, const json::Value& params,
         NotificationCallback result)
 {
-    m_proactor.push_event(EventPtr{new SendNotification{m_id, m_timeout_ms,
-                name, params, result}});
+    m_proactor.push_event(EventPtr{new SendNotification{m_id,
+            name, params, result}});
 }

@@ -86,7 +86,11 @@ public:
 
     void dispatch_events();
 
-    bool active() const;
+    bool active() const {
+        return !m_events.empty() || m_pipes_active;
+    }
+
+    const HttpProtocol& get_protocol() const { return m_protocol; }
 private:
     friend class HttpProactor;
 
@@ -126,8 +130,6 @@ private:
         std::string response{};
     };
 
-    struct KeepAlive : public InfoRead { };
-
     using Pipelines = std::vector<Pipeline>;
 
     static size_t write_function(char* buffer, size_t size, size_t nmemb,
@@ -139,18 +141,15 @@ private:
     json::Value build_message(const Request& request, Id id);
     void handle_pipe(struct InfoRead*, unsigned curl_code);
     Error handle_pipe_response(Pipeline& pipe);
-    void handle_keep_alive(struct InfoRead*, unsigned curl_code);
     bool handle_event_timeout(EventList::iterator& it);
     void handle_event_request(EventList::iterator& it);
     Error check_response(const Value& value);
-    bool read_complete(void* curl_easy_handle);
 
     const Client* m_client;
     void* m_curl_multi;
     CurlSlistPtr m_headers{nullptr};
     Pipelines::size_type m_pipes_active{0};
     Pipelines m_pipelines{};
-    KeepAlive m_keep_alive{};
     HttpProtocol m_protocol{};
     EventList m_events{};
 };

@@ -49,6 +49,8 @@ constexpr const char HttpProtocol::DEFAULT_URL[];
 
 constexpr const json::rpc::Miliseconds HttpProtocol::DEFAULT_TIMEOUT_MS;
 
+constexpr const json::rpc::Miliseconds HttpProtocol::DEFAULT_TIME_LIVE_MS;
+
 HttpProtocol::HttpProtocol(const Url& url) : m_url{url} { }
 
 void HttpProtocol::set_pipeline_length(unsigned pipeline_length) {
