@@ -23,7 +23,7 @@ int main() {
     client.method("xxx", 8,
         [] (const Value& v, const rpc::Error& error) {
             if (error) {
-                std::cout << "Error: " << error.what() << " " << int(error.get_code()) << std::endl;
+                std::cout << "Error: " << error.what() << " " << error.get_code() << std::endl;
             }
             else {
                 std::cout << "OK" << std::endl;

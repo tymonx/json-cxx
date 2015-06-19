@@ -82,14 +82,14 @@ private:
 
     using CurlMultiPtr = std::unique_ptr<void, CurlMultiDeleter>;
 
-    void notify();
-    void get_events();
+    inline void notify();
+    inline void get_events();
     void waiting_for_events();
     void dispatch_events();
     void handle_create_context(EventList::iterator& it);
     void handle_destroy_context(EventList::iterator& it);
     void handle_events_context(EventList::iterator& it);
-    void context_processing();
+    inline void context_processing();
     void read_processing();
 
     void task();

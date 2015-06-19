@@ -69,6 +69,8 @@ public:
 
     Error(const Error&) = default;
     Error(Error&&) = default;
+    Error& operator=(const Error&) = default;
+    Error& operator=(Error&&) = default;
 
     virtual ~Error();
 

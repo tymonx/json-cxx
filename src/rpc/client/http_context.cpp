@@ -63,8 +63,6 @@ HttpContext::HttpContext(const Client* client, const HttpProtocol& protocol,
         void* curl_multi) :
     m_client{client}, m_curl_multi{curl_multi}, m_protocol{protocol}
 {
-    using std::placeholders::_1;
-    using std::placeholders::_2;
     std::string http_header{};
     struct ::curl_slist* headers{nullptr};
     unsigned pipeline_size{m_protocol.get_pipeline_length()};
@@ -118,23 +116,33 @@ HttpContext::~HttpContext() {
 
 Error HttpContext::check_response(const Value& value) {
     if (!value.is_object()) {
-        return {Error::PARSE_ERROR, "Is not a JSON object"};
+        return {Error::PARSE_ERROR, "Invalid JSON object"};
     }
     if (3 != value.size()) {
         return {Error::PARSE_ERROR, "Invalid params number"};
     }
     if (value["jsonrpc"] != "2.0") {
-        return {Error::PARSE_ERROR, "Invalid/missing 'jsonrpc' member"};
+        return {Error::PARSE_ERROR, "Invalid/missing 'jsonrpc'"};
     }
+    if (!value.is_member("id")) {
+        return {Error::PARSE_ERROR, "Missing 'id'"};
+    }
+    else {
+        if (!value["id"].is_number() && !value["id"].is_string()
+         && !value["id"].is_null()) {
+            return {Error::PARSE_ERROR, "Invalid 'id'"};
+        }
+    }
+
     if (value.is_member("result")) {
-        if (!value["id"].is_uint()) {
-            return {Error::PARSE_ERROR, "Invalid/missing 'id' member"};
+        if (value["id"].is_null()) {
+            return {Error::PARSE_ERROR, "Invalid 'id'"};
         }
     }
     else if (value.is_member("error")) {
         auto& error = value["error"];
         if (!error.is_object()) {
-            return {Error::PARSE_ERROR, "Invalid 'error' member"};
+            return {Error::PARSE_ERROR, "Invalid JSON object 'error'"};
         }
         if (!error["code"].is_int()) {
             return {Error::PARSE_ERROR, "Invalid/missing 'code' in 'error'"};
@@ -153,17 +161,30 @@ Error HttpContext::check_response(const Value& value) {
         else {
             return {Error::PARSE_ERROR, "Invalid params number in 'error'"};
         }
-        if (!value["id"].is_int() && !value["id"].is_null()) {
-            return {Error::PARSE_ERROR, "Invalid/missing 'id' member"};
-        }
     }
     else {
-        return {Error::PARSE_ERROR, "Missing 'result' or 'error' member"};
+        return {Error::PARSE_ERROR, "Missing 'result' or 'error'"};
     }
     return {Error::OK};
 }
 
-Error HttpContext::handle_pipe_response(Pipeline& pipe) {
+void HttpContext::handle_pipe(struct InfoRead* info_read,
+        unsigned curl_code) {
+    auto pipe = static_cast<Pipeline*>(info_read);
+
+    if (CURLE_OK == curl_code) {
+        pipe->event->complete(handle_pipe_response(*pipe));
+    }
+    else {
+        m_events.push_back(std::move(pipe->event));
+    }
+
+    pipe->event = nullptr;
+    curl_multi_remove_handle(m_curl_multi, pipe->curl_easy.get());
+    --m_pipes_active;
+}
+
+Error HttpContext::handle_pipe_method(Pipeline& pipe) {
     Value value;
     Deserializer deserializer(pipe.response);
     if (deserializer.is_invalid()) {
@@ -173,7 +194,10 @@ Error HttpContext::handle_pipe_response(Pipeline& pipe) {
                 std::to_string(error.offset)};
     }
     deserializer >> value;
-    if (auto error = check_response(value)) { return error; }
+    if (auto error = check_response(value)) {
+        return {Error::PARSE_ERROR, "Invalid response: \'" +
+                pipe.response + "\' " + error.what()};
+    }
     if (value.is_member("result")) {
         static_cast<Request*>(pipe.event.get())->m_value = value["result"];
     }
@@ -184,25 +208,37 @@ Error HttpContext::handle_pipe_response(Pipeline& pipe) {
             value["error"]["data"]
         };
     }
+
     return {Error::OK};
 }
 
-void HttpContext::handle_pipe(struct InfoRead* info_read,
-        unsigned curl_code) {
-    auto pipe = static_cast<Pipeline*>(info_read);
+Error HttpContext::handle_pipe_notification(Pipeline& pipe) {
+    if (0 != pipe.response.size()) {
+        return {Error::PARSE_ERROR, "Notification response: \'" +
+            pipe.response + "\'"};
+    }
+    return {Error::OK};
+}
 
-    switch (curl_code) {
-    case CURLE_OK:
-        pipe->event->complete(handle_pipe_response(*pipe));
-        break;
-    default:
-        m_events.push_back(std::move(pipe->event));
-        break;
+
+Error HttpContext::handle_pipe_response(Pipeline& pipe) {
+    Error error;
+
+    if (EventTypeU((EventType::CALL_METHOD | EventType::CALL_METHOD_ASYNC)
+        & pipe.event->get_type()))
+    {
+        error = handle_pipe_method(pipe);
+    }
+    else if (EventTypeU((EventType::SEND_NOTIFICATION
+      | EventType::SEND_NOTIFICATION_ASYNC) & pipe.event->get_type()))
+    {
+        error = handle_pipe_notification(pipe);
+    }
+    else {
+        error = {Error::INTERNAL_ERROR, "Invalid pipe"};
     }
 
-    pipe->event = nullptr;
-    curl_multi_remove_handle(m_curl_multi, pipe->curl_easy.get());
-    --m_pipes_active;
+    return error;
 }
 
 size_t HttpContext::write_function(char* buffer, size_t size, size_t nmemb,
@@ -276,21 +312,17 @@ void HttpContext::dispatch_events() {
     for (auto it = m_events.begin(); it != m_events.end();) {
         if (handle_event_timeout(it)) { continue; }
 
-        switch (it->get()->get_type()) {
-        case EventType::CALL_METHOD:
-        case EventType::CALL_METHOD_ASYNC:
-        case EventType::SEND_NOTIFICATION:
-        case EventType::SEND_NOTIFICATION_ASYNC:
+        if (EventTypeU((EventType::SEND_NOTIFICATION
+            | EventType::SEND_NOTIFICATION_ASYNC
+            | EventType::CALL_METHOD
+            | EventType::CALL_METHOD_ASYNC) & (*it)->get_type()))
+        {
             handle_event_request(it);
-            break;
-        case EventType::CREATE_CONTEXT:
-        case EventType::DESTROY_CONTEXT:
-        case EventType::UNDEFINED:
-        default:
+        }
+        else {
             it->get()->complete(Error{Error::INTERNAL_ERROR,
                     "Client context cannot handle event object"});
             it = m_events.erase(it);
-            break;
         }
     }
 }
@@ -305,8 +337,9 @@ json::Value HttpContext::build_message(const Request& request, Id id) {
     else {
         message["params"].push_back(request.m_value);
     }
-    if (EventType::CALL_METHOD == request.get_type() ||
-        EventType::CALL_METHOD_ASYNC == request.get_type()) {
+    if (EventTypeU((EventType::CALL_METHOD
+        | EventType::CALL_METHOD_ASYNC) & request.get_type()))
+    {
         message["id"] = id;
     }
     return message;

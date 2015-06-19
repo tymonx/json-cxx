@@ -44,19 +44,49 @@
 #ifndef JSON_CXX_RPC_CLIENT_EVENT_TYPE_HPP
 #define JSON_CXX_RPC_CLIENT_EVENT_TYPE_HPP
 
+#include <cstdint>
+#include <type_traits>
+
 namespace json {
 namespace rpc {
 namespace client {
 
-enum class EventType {
-    UNDEFINED                   = 0x00,
-    CALL_METHOD                 = 0x01,
-    CALL_METHOD_ASYNC           = 0x02,
-    SEND_NOTIFICATION           = 0x04,
-    SEND_NOTIFICATION_ASYNC     = 0x08,
-    CREATE_CONTEXT              = 0x10,
-    DESTROY_CONTEXT             = 0x20
+enum class EventType : std::uint32_t {
+    UNDEFINED                   = 0,
+    CALL_METHOD                 = 1 << 0,
+    CALL_METHOD_ASYNC           = 1 << 1,
+    SEND_NOTIFICATION           = 1 << 2,
+    SEND_NOTIFICATION_ASYNC     = 1 << 3,
+    CREATE_CONTEXT              = 1 << 4,
+    DESTROY_CONTEXT             = 1 << 5
 };
+
+using EventTypeU = std::underlying_type<EventType>::type;
+
+static inline
+EventType operator|(EventType lhs, EventType rhs) {
+    return EventType(EventTypeU(lhs) | EventTypeU(rhs));
+}
+
+static inline
+EventType operator&(EventType lhs, EventType rhs) {
+    return EventType(EventTypeU(lhs) & EventTypeU(rhs));
+}
+
+static inline
+EventType operator~(EventType lhs) {
+    return EventType(~EventTypeU(lhs));
+}
+
+static inline
+bool operator==(EventType lhs, EventType rhs) {
+    return EventTypeU(lhs) == EventTypeU(rhs);
+}
+
+static inline
+bool operator!=(EventType lhs, EventType rhs) {
+    return EventTypeU(lhs) != EventTypeU(rhs);
+}
 
 } /* client */
 } /* rpc */

@@ -117,7 +117,7 @@ private:
             struct InfoRead*, unsigned)>;
 
     struct InfoRead {
-        HttpContext* context;
+        HttpContext* context{nullptr};
         InfoReadCallback callback{};
         CurlEasyPtr curl_easy{nullptr};
     };
@@ -141,6 +141,8 @@ private:
     json::Value build_message(const Request& request, Id id);
     void handle_pipe(struct InfoRead*, unsigned curl_code);
     Error handle_pipe_response(Pipeline& pipe);
+    Error handle_pipe_method(Pipeline& pipe);
+    Error handle_pipe_notification(Pipeline& pipe);
     bool handle_event_timeout(EventList::iterator& it);
     void handle_event_request(EventList::iterator& it);
     Error check_response(const Value& value);
