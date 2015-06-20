@@ -57,14 +57,18 @@
 #include <unistd.h>
 
 using json::rpc::Error;
+using json::rpc::client::Event;
 using json::rpc::client::HttpContext;
 using json::rpc::client::HttpProactor;
+using json::rpc::client::DestroyContext;
 
 void HttpProactor::CurlMultiDeleter::operator ()(void* curl_multi) {
     curl_multi_cleanup(curl_multi);
 }
 
 HttpProactor::HttpProactor() {
+    curl_global_init(CURL_GLOBAL_ALL);
+
     m_curl_multi = CurlMultiPtr{curl_multi_init()};
     if (nullptr == m_curl_multi) {
         throw std::exception();
@@ -87,7 +91,14 @@ HttpProactor::~HttpProactor() {
     m_task_done = true;
     notify();
     m_thread.join();
+    /* Finish job */
+    task();
     close(m_eventfd);
+
+    m_contexts.clear();
+    m_curl_multi.reset(nullptr);
+
+    curl_global_cleanup();
 }
 
 void HttpProactor::notify() {
@@ -121,9 +132,14 @@ void HttpProactor::handle_create_context(EventList::iterator& it) {
     m_contexts.emplace_back(new HttpContext{
         it->get()->get_client(),
         static_cast<CreateContext*>(it->get())->get_http_protocol(),
-        m_curl_multi.get(), m_executor
+        *this
     });
     it = m_events.erase(it);
+}
+
+static inline
+void destroy_context(Event* event) {
+    static_cast<DestroyContext*>(event)->m_result.set_value();
 }
 
 void HttpProactor::handle_destroy_context(EventList::iterator& it) {
@@ -135,7 +151,7 @@ void HttpProactor::handle_destroy_context(EventList::iterator& it) {
     if (m_contexts.end() != context) {
         if (!context->get()->active()) {
             m_contexts.erase(context);
-            m_executor.push_event(std::move(*it));
+            destroy_context(it->get());
             it = m_events.erase(it);
         }
         else {
@@ -143,7 +159,7 @@ void HttpProactor::handle_destroy_context(EventList::iterator& it) {
         }
     }
     else {
-        m_executor.push_event(std::move(*it));
+        destroy_context(it->get());
         it = m_events.erase(it);
     }
 }
@@ -191,7 +207,7 @@ void HttpProactor::dispatch_events() {
 }
 
 void HttpProactor::task() {
-    while (!m_task_done) {
+    do {
         waiting_for_events();
 
         get_events();
@@ -204,7 +220,7 @@ void HttpProactor::task() {
         curl_multi_perform(m_curl_multi.get(), &m_running_handles);
 
         read_processing();
-    }
+    } while (!m_task_done || !m_events.empty());
 }
 
 void HttpProactor::context_processing() {

@@ -46,6 +46,7 @@
 #include <json/deserializer.hpp>
 
 #include <json/rpc/client/request.hpp>
+#include <json/rpc/client/http_proactor.hpp>
 #include <json/rpc/client/call_method.hpp>
 #include <json/rpc/client/send_notification.hpp>
 
@@ -60,9 +61,8 @@ using json::rpc::client::SendNotification;
 using json::rpc::client::HttpContext;
 
 HttpContext::HttpContext(const Client* client, const HttpProtocol& protocol,
-        void* curl_multi, Executor& executor) :
-    m_client{client}, m_curl_multi{curl_multi}, m_protocol{protocol},
-    m_executor{executor}
+        HttpProactor& proactor) :
+    m_client{client}, m_protocol{protocol}, m_proactor{proactor}
 {
     std::string http_header{};
     struct ::curl_slist* headers{nullptr};
@@ -110,7 +110,8 @@ HttpContext::HttpContext(const Client* client, const HttpProtocol& protocol,
 HttpContext::~HttpContext() {
     for (auto it = m_pipelines.begin(); it != m_pipelines.end(); ++it) {
         if (nullptr != it->event) {
-            curl_multi_remove_handle(m_curl_multi, it->curl_easy.get());
+            curl_multi_remove_handle(m_proactor.get_curl_multi(),
+                    it->curl_easy.get());
         }
     }
 }
@@ -120,14 +121,21 @@ void HttpContext::handle_pipe(struct InfoRead* info_read,
     auto pipe = static_cast<Pipeline*>(info_read);
 
     if (CURLE_OK == curl_code) {
-        m_executor.push_event(std::move(pipe->event));
+        m_proactor.get_executor().push_event(std::move(pipe->event));
     }
     else {
-        m_events.push_back(std::move(pipe->event));
+        if (!m_proactor.task_done()) {
+            m_events.push_back(std::move(pipe->event));
+        }
+        else {
+            m_proactor.get_executor().push_event(std::move(pipe->event),
+                    {Error::INTERNAL_ERROR, "Cannot finish job"});;
+        }
     }
 
     pipe->event = nullptr;
-    curl_multi_remove_handle(m_curl_multi, pipe->curl_easy.get());
+    curl_multi_remove_handle(m_proactor.get_curl_multi(),
+            pipe->curl_easy.get());
     --m_pipes_active;
 }
 
@@ -168,8 +176,8 @@ void HttpContext::CurlSlistDeleter::operator()(struct curl_slist* curl_slist) {
 bool HttpContext::handle_event_timeout(EventList::iterator& it) {
     if (TimePoint(0_ms) != (*it)->get_time_live()) {
         if (std::chrono::steady_clock::now() > (*it)->get_time_live()) {
-            m_executor.push_event(std::move(*it), {Error::INTERNAL_ERROR,
-                    "Timeout occur"});
+            m_proactor.get_executor().push_event(std::move(*it),
+                    {Error::INTERNAL_ERROR, "Timeout occur"});
             it = m_events.erase(it);
             return true;
         }
@@ -193,7 +201,8 @@ void HttpContext::handle_event_request(EventList::iterator& it) {
                     static_cast<const Request&>(*pipe->event), pipe->id);
             curl_easy_setopt(pipe->curl_easy.get(), CURLOPT_POSTFIELDSIZE,
                     pipe->request.size());
-            curl_multi_add_handle(m_curl_multi, pipe->curl_easy.get());
+            curl_multi_add_handle(m_proactor.get_curl_multi(),
+                    pipe->curl_easy.get());
             it = m_events.erase(it);
             ++m_pipes_active;
             return;
@@ -214,7 +223,8 @@ void HttpContext::dispatch_events() {
             handle_event_request(it);
         }
         else {
-            m_executor.push_event(std::move(*it), {Error::INTERNAL_ERROR,
+            m_proactor.get_executor().push_event(std::move(*it),
+                    {Error::INTERNAL_ERROR,
                     "Client context cannot handle event object"});
             it = m_events.erase(it);
         }

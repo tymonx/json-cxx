@@ -51,7 +51,6 @@
 #include <json/rpc/client/event.hpp>
 #include <json/rpc/client/executor.hpp>
 #include <json/rpc/client/http_protocol.hpp>
-#include <json/rpc/client/executor.hpp>
 
 #include <list>
 #include <string>
@@ -76,7 +75,7 @@ class HttpProactor;
 class HttpContext {
 public:
     HttpContext(const Client* client, const HttpProtocol& protocol,
-            void* curl_multi, Executor&);
+            HttpProactor&);
 
     ~HttpContext();
 
@@ -149,12 +148,11 @@ private:
     Error check_response(const Value& value);
 
     const Client* m_client;
-    void* m_curl_multi;
     CurlSlistPtr m_headers{nullptr};
     Pipelines::size_type m_pipes_active{0};
     Pipelines m_pipelines{};
     HttpProtocol m_protocol{};
-    Executor& m_executor;
+    HttpProactor& m_proactor;
     EventList m_events{};
 };
 

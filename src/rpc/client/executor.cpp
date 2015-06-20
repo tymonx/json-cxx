@@ -47,7 +47,6 @@
 
 #include <json/rpc/client/request.hpp>
 #include <json/rpc/client/call_method.hpp>
-#include <json/rpc/client/destroy_context.hpp>
 #include <json/rpc/client/send_notification.hpp>
 
 #include <iostream>
@@ -61,7 +60,6 @@ using json::rpc::client::Event;
 using json::rpc::client::Request;
 using json::rpc::client::Executor;
 using json::rpc::client::CallMethod;
-using json::rpc::client::DestroyContext;
 using json::rpc::client::SendNotification;
 
 Executor::Executor() : m_thread{&Executor::task, this} { }
@@ -243,18 +241,6 @@ void send_notification_async(Event* _event) {
     }
 }
 
-static
-void destroy_context(Event* _event) {
-    DestroyContext* event = static_cast<DestroyContext*>(_event);
-    if (!event->get_error()) {
-        event->m_result.set_value();
-    }
-    else {
-        event->m_result.set_exception(
-                std::make_exception_ptr(event->get_error()));
-    }
-}
-
 void Executor::event_dispatcher(EventPtr event) {
     switch (event->get_type()) {
     case EventType::CALL_METHOD:
@@ -270,8 +256,6 @@ void Executor::event_dispatcher(EventPtr event) {
         send_notification_async(event.get());
         break;
     case EventType::DESTROY_CONTEXT:
-        destroy_context(event.get());
-        break;
     case EventType::CREATE_CONTEXT:
     case EventType::UNDEFINED:
     default:

@@ -75,6 +75,12 @@ public:
     unsigned get_max_pipeline_length() const {
         return DEFAULT_MAX_PIPELINE_LENGTH;
     }
+
+    bool task_done() const { return m_task_done; }
+
+    void* get_curl_multi() { return m_curl_multi.get(); }
+
+    Executor& get_executor() { return m_executor; }
 private:
     struct CurlMultiDeleter {
         void operator ()(void*);
