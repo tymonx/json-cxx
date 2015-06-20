@@ -138,7 +138,7 @@ void HttpProactor::handle_create_context(EventList::iterator& it) {
 }
 
 static inline
-void destroy_context(Event* event) {
+void destroy_context_event(Event* event) {
     static_cast<DestroyContext*>(event)->m_result.set_value();
 }
 
@@ -151,7 +151,7 @@ void HttpProactor::handle_destroy_context(EventList::iterator& it) {
     if (m_contexts.end() != context) {
         if (!context->get()->active()) {
             m_contexts.erase(context);
-            destroy_context(it->get());
+            destroy_context_event(it->get());
             it = m_events.erase(it);
         }
         else {
@@ -159,7 +159,7 @@ void HttpProactor::handle_destroy_context(EventList::iterator& it) {
         }
     }
     else {
-        destroy_context(it->get());
+        destroy_context_event(it->get());
         it = m_events.erase(it);
     }
 }
