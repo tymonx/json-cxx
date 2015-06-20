@@ -77,7 +77,7 @@ public:
 
     const TimePoint& get_time_live() const { return m_time_live; }
 
-    void set_error(const Error& error) { m_error = error; }
+    void set_error(const Error& error);
 
     const Error& get_error() const { return m_error; }
 private:
