@@ -49,7 +49,9 @@
 #include <json/json.hpp>
 #include <json/rpc/list.hpp>
 #include <json/rpc/client/event.hpp>
+#include <json/rpc/client/executor.hpp>
 #include <json/rpc/client/http_protocol.hpp>
+#include <json/rpc/client/executor.hpp>
 
 #include <list>
 #include <string>
@@ -74,7 +76,7 @@ class HttpProactor;
 class HttpContext {
 public:
     HttpContext(const Client* client, const HttpProtocol& protocol,
-            void* curl_multi);
+            void* curl_multi, Executor&);
 
     ~HttpContext();
 
@@ -127,7 +129,6 @@ private:
         EventPtr event{nullptr};
         std::string::size_type request_pos{};
         std::string request{};
-        std::string response{};
     };
 
     using Pipelines = std::vector<Pipeline>;
@@ -153,6 +154,7 @@ private:
     Pipelines::size_type m_pipes_active{0};
     Pipelines m_pipelines{};
     HttpProtocol m_protocol{};
+    Executor& m_executor;
     EventList m_events{};
 };
 

@@ -121,7 +121,7 @@ void HttpProactor::handle_create_context(EventList::iterator& it) {
     m_contexts.emplace_back(new HttpContext{
         it->get()->get_client(),
         static_cast<CreateContext*>(it->get())->get_http_protocol(),
-        m_curl_multi.get()
+        m_curl_multi.get(), m_executor
     });
     it = m_events.erase(it);
 }
@@ -135,7 +135,7 @@ void HttpProactor::handle_destroy_context(EventList::iterator& it) {
     if (m_contexts.end() != context) {
         if (!context->get()->active()) {
             m_contexts.erase(context);
-            it->get()->complete();
+            m_executor.push_event(std::move(*it));
             it = m_events.erase(it);
         }
         else {
@@ -143,7 +143,7 @@ void HttpProactor::handle_destroy_context(EventList::iterator& it) {
         }
     }
     else {
-        it->get()->complete();
+        m_executor.push_event(std::move(*it));
         it = m_events.erase(it);
     }
 }
@@ -161,7 +161,7 @@ void HttpProactor::handle_events_context(EventList::iterator& it) {
         (*context)->splice_event(m_events, it++);
     }
     else {
-        (*it)->complete(Error{Error::INTERNAL_ERROR,
+        m_executor.push_event(std::move(*it), {Error::INTERNAL_ERROR,
                 "Client context doesn't exist"});
         it = m_events.erase(it);
     }

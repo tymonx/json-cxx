@@ -36,40 +36,53 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/message.hpp
+ * @file json/rpc/client/executor.hpp
  *
  * @brief JSON client message interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_REQUEST_HPP
-#define JSON_CXX_RPC_CLIENT_REQUEST_HPP
+#ifndef JSON_CXX_RPC_CLIENT_EXECUTOR_HPP
+#define JSON_CXX_RPC_CLIENT_EXECUTOR_HPP
 
-#include <json/json.hpp>
+#include <json/rpc/error.hpp>
 #include <json/rpc/client/event.hpp>
 
-#include <string>
+#include <list>
+#include <mutex>
+#include <atomic>
+#include <thread>
+#include <condition_variable>
 
 namespace json {
 namespace rpc {
 namespace client {
 
-class Request : public Event {
+class Executor {
 public:
-    Request(EventType type, Client* client,
-            const std::string& name, const Value& value) :
-        Event{type, client}, m_response{}, m_name{name}, m_value{value} { }
+    Executor();
 
-    virtual ~Request();
+    ~Executor();
 
-    const std::string& get_response() const { return m_response; }
+    void push_event(EventPtr event);
 
-    std::string m_response;
-    std::string m_name;
-    Value m_value;
+    void push_event(EventPtr event, const Error& error) {
+        event->set_error(error);
+        push_event(std::move(event));
+    }
+private:
+    void task();
+    void event_dispatcher(EventPtr event);
+
+    EventList m_events{};
+    EventList m_events_background{};
+    std::mutex m_mutex{};
+    std::thread m_thread{};
+    volatile std::atomic<bool> m_stop{false};
+    std::condition_variable m_cond_variable{};
 };
 
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_REQUEST_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_EXECUTOR_HPP */

@@ -71,30 +71,26 @@ public:
 
     EventType get_type() const { return m_type; }
 
-    void complete(const Error& error = {Error::OK});
-
-    bool is_complete() const { return m_completed; }
-
     void set_time_live(const Miliseconds& time_live);
 
     const TimePoint& get_time_live() const { return m_time_live; }
+
+    void set_error(const Error& error) { m_error = error; }
+
+    const Error& get_error() const { return m_error; }
 private:
     Event(const Event&) = delete;
     Event(Event&&) = delete;
     Event& operator=(const Event&) = delete;
     Event& operator=(Event&&) = delete;
 
-    bool m_completed{false};
     EventType m_type{EventType::UNDEFINED};
     Client* m_client{nullptr};
     TimePoint m_time_live{0_ms};
+    Error m_error{Error::OK};
 };
 
-struct EventDeleter {
-    void operator()(Event* event);
-};
-
-using EventPtr = std::unique_ptr<Event, EventDeleter>;
+using EventPtr = std::unique_ptr<Event>;
 using EventList = std::list<EventPtr>;
 
 } /* client */

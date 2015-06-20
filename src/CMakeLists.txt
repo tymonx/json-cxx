@@ -44,6 +44,7 @@ add_library(json-cxx STATIC
     rpc/client/event.cpp
     rpc/client/request.cpp
     rpc/client/proactor.cpp
+    rpc/client/executor.cpp
     rpc/client/create_context.cpp
     rpc/client/destroy_context.cpp
     rpc/client/call_method.cpp

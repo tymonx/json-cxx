@@ -43,103 +43,10 @@
 
 #include <json/rpc/client/event.hpp>
 
-#include <json/rpc/client/call_method.hpp>
-#include <json/rpc/client/destroy_context.hpp>
-#include <json/rpc/client/send_notification.hpp>
-
-#include <future>
-
-using json::rpc::Error;
 using json::rpc::client::Event;
-using json::rpc::client::EventDeleter;
-using json::rpc::client::CallMethod;
-using json::rpc::client::DestroyContext;
-using json::rpc::client::SendNotification;
 
 Event::~Event() { }
 
 void Event::set_time_live(const Miliseconds& time_live) {
     m_time_live = std::chrono::steady_clock::now() + time_live;
-}
-
-static
-void call_method(Event* _event, const Error& error) {
-    CallMethod* event = static_cast<CallMethod*>(_event);
-    if (!error) {
-        event->m_result.set_value(event->m_value);
-    }
-    else {
-        event->m_result.set_exception(std::make_exception_ptr(error));
-    }
-}
-
-static
-void call_method_async(const Event* _event, const Error& error) {
-    const CallMethod* event = static_cast<const CallMethod*>(_event);
-    if (nullptr == event->m_callback) { return; }
-    std::async(std::launch::async, event->m_callback,
-            event->m_value, error);
-}
-
-static
-void send_notification(Event* _event, const Error& error) {
-    SendNotification* event = static_cast<SendNotification*>(_event);
-    if (!error) {
-        event->m_result.set_value();
-    }
-    else {
-        event->m_result.set_exception(std::make_exception_ptr(error));
-    }
-}
-
-static
-void send_notification_async(const Event* _event, const Error& error) {
-    const SendNotification* event = static_cast<const SendNotification*>(_event);
-    if (nullptr == event->m_callback) { return; }
-    std::async(std::launch::async, event->m_callback, error);
-}
-
-static
-void destroy_context(Event* _event, const Error& error) {
-    DestroyContext* event = static_cast<DestroyContext*>(_event);
-    if (!error) {
-        event->m_result.set_value();
-    }
-    else {
-        event->m_result.set_exception(std::make_exception_ptr(error));
-    }
-}
-
-void Event::complete(const Error& error) {
-    m_completed = true;
-
-    switch (m_type) {
-    case EventType::CALL_METHOD:
-        call_method(this, error);
-        break;
-    case EventType::CALL_METHOD_ASYNC:
-        call_method_async(this, error);
-        break;
-    case EventType::SEND_NOTIFICATION:
-        send_notification(this, error);
-        break;
-    case EventType::SEND_NOTIFICATION_ASYNC:
-        send_notification_async(this, error);
-        break;
-    case EventType::DESTROY_CONTEXT:
-        destroy_context(this, error);
-        break;
-    case EventType::CREATE_CONTEXT:
-    case EventType::UNDEFINED:
-    default:
-        break;
-    }
-}
-
-void EventDeleter::operator()(Event* event) {
-    if (!event->is_complete()) {
-        event->complete(Error{Error::INTERNAL_ERROR,
-                "Event deleted without completetion"});
-    }
-    delete event;
 }

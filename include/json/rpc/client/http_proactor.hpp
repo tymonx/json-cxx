@@ -102,6 +102,7 @@ private:
     int m_eventfd{0};
     int m_running_handles{0};
 
+    Executor m_executor{};
     EventList m_events{};
     EventList m_events_background{};
     HttpContextList m_contexts{};
