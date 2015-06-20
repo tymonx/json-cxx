@@ -66,9 +66,9 @@ namespace client {
  * */
 class Client {
 public:
-    using NotificationCallback = std::function<void(const Error&)>;
+    using NotificationCallback = std::function<void(Client*, const Error&)>;
     using NotificationFuture = std::future<void>;
-    using MethodCallback = std::function<void(const json::Value&, const Error&)>;
+    using MethodCallback = std::function<void(Client*, const Value&, const Error&)>;
     using MethodFuture = std::future<json::Value>;
 
     Client(const client::HttpProtocol& protocol);

@@ -69,6 +69,8 @@ public:
 
     const Client* get_client() const { return m_client; }
 
+    Client* get_client() { return m_client; }
+
     EventType get_type() const { return m_type; }
 
     void set_time_live(const Miliseconds& time_live);

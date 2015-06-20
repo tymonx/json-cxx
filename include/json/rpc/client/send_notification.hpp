@@ -58,7 +58,7 @@ namespace client {
 
 class SendNotification : public Request {
 public:
-    using Callback = std::function<void(const Error&)>;
+    using Callback = std::function<void(Client*, const Error&)>;
 
     SendNotification(Client* client,
             const std::string& name, const Value& value) :
@@ -74,6 +74,8 @@ public:
 
     Callback m_callback{nullptr};
     std::promise<void> m_result{};
+
+    void processing();
 };
 
 } /* client */

@@ -47,7 +47,6 @@
 #define JSON_CXX_RPC_CLIENT_HTTP_CONTEXT_HPP
 
 #include <json/json.hpp>
-#include <json/rpc/list.hpp>
 #include <json/rpc/client/event.hpp>
 #include <json/rpc/client/executor.hpp>
 #include <json/rpc/client/http_protocol.hpp>
@@ -124,7 +123,6 @@ private:
     };
 
     struct Pipeline : public InfoRead {
-        Id id{0};
         EventPtr event{nullptr};
         std::string::size_type request_pos{};
         std::string request{};
@@ -138,14 +136,10 @@ private:
     static size_t read_function(char* buffer, size_t size, size_t nmemb,
             void* userdata);
 
-    json::Value build_message(const Request& request, Id id);
     void handle_pipe(struct InfoRead*, unsigned curl_code);
-    Error handle_pipe_response(Pipeline& pipe);
-    Error handle_pipe_method(Pipeline& pipe);
-    Error handle_pipe_notification(Pipeline& pipe);
     bool handle_event_timeout(EventList::iterator& it);
     void handle_event_request(EventList::iterator& it);
-    Error check_response(const Value& value);
+    Value build_message(Request& request, Id id);
 
     const Client* m_client;
     CurlSlistPtr m_headers{nullptr};

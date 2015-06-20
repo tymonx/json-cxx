@@ -59,7 +59,7 @@ namespace client {
 
 class CallMethod : public Request {
 public:
-    using Callback = std::function<void(const json::Value&, const Error&)>;
+    using Callback = std::function<void(Client*, const json::Value&, const Error&)>;
 
     CallMethod(Client* client,
             const std::string& name, const Value& value) :
@@ -74,6 +74,16 @@ public:
 
     Callback m_callback{nullptr};
     std::promise<json::Value> m_result{};
+
+    void set_id(const Value& id) { m_id = id; }
+
+    const Value& get_id() const { return m_id; }
+
+    void processing();
+private:
+    void check_response(const Value& value);
+
+    Value m_id{};
 };
 
 } /* client */

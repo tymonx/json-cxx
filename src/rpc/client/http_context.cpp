@@ -56,6 +56,9 @@
 
 using json::Deserializer;
 using json::rpc::Error;
+using json::rpc::client::Request;
+using json::rpc::client::EventType;
+using json::rpc::client::EventTypeU;
 using json::rpc::client::CallMethod;
 using json::rpc::client::SendNotification;
 using json::rpc::client::HttpContext;
@@ -79,10 +82,8 @@ HttpContext::HttpContext(const Client* client, const HttpProtocol& protocol,
     m_headers = std::move(CurlSlistPtr{headers});
 
     /* Pipelines */
-    Id id{0};
     m_pipelines.resize(pipeline_size);
     for (auto& pipe : m_pipelines) {
-        pipe.id = id++;
         pipe.curl_easy.reset(curl_easy_init());
         if (nullptr == pipe.curl_easy) {
             throw std::bad_alloc();
@@ -144,7 +145,7 @@ size_t HttpContext::write_function(char* buffer, size_t size, size_t nmemb,
 {
     Pipeline* pipe = static_cast<Pipeline*>(userdata);
     size_t copy = size * nmemb;
-    static_cast<Request*>(&*pipe->event)->m_response.append(buffer, copy);
+    static_cast<Request&>(*pipe->event).get_response().append(buffer, copy);
     return copy;
 }
 
@@ -185,27 +186,51 @@ bool HttpContext::handle_event_timeout(EventList::iterator& it) {
     return false;
 }
 
+json::Value HttpContext::build_message(Request& request, Id id) {
+    json::Value message;
+    message["jsonrpc"] = "2.0";
+    message["method"] = request.get_name();
+    if (request.get_value().is_object() || request.get_value().is_array()) {
+        message["params"] = request.get_value();
+    }
+    else {
+        message["params"].push_back(request.get_value());
+    }
+    if (EventTypeU((EventType::CALL_METHOD
+        | EventType::CALL_METHOD_ASYNC) & request.get_type()))
+    {
+        CallMethod& call_method = static_cast<CallMethod&>(request);
+        if (nullptr == m_protocol.get_id_builder()) {
+            call_method.set_id(id);
+        }
+        else {
+            call_method.set_id(m_protocol.get_id_builder()(id));
+        }
+        message["id"] = call_method.get_id();
+    }
+    return message;
+}
+
 void HttpContext::handle_event_request(EventList::iterator& it) {
     if (m_pipes_active < m_pipelines.size()) {
-        auto pipe = std::find_if(
-            m_pipelines.begin(),
-            m_pipelines.end(),
-            [] (const Pipeline& p) { return nullptr == p.event; }
-        );
-        if (m_pipelines.end() != pipe) {
-            pipe->event = std::move(*it);
-            pipe->request.clear();
-            pipe->request_pos = 0;
-            static_cast<Request&>(*pipe->event).m_response.clear();
-            pipe->request << build_message(
-                    static_cast<const Request&>(*pipe->event), pipe->id);
-            curl_easy_setopt(pipe->curl_easy.get(), CURLOPT_POSTFIELDSIZE,
-                    pipe->request.size());
-            curl_multi_add_handle(m_proactor.get_curl_multi(),
-                    pipe->curl_easy.get());
-            it = m_events.erase(it);
-            ++m_pipes_active;
-            return;
+        Id id{0};
+        for (auto& pipe : m_pipelines) {
+            if (nullptr == pipe.event) {
+                pipe.event = std::move(*it);
+                Request& request = static_cast<Request&>(*pipe.event);
+                pipe.request.clear();
+                pipe.request_pos = 0;
+                request.get_response().clear();
+                pipe.request << build_message(request, id);
+                curl_easy_setopt(pipe.curl_easy.get(), CURLOPT_POSTFIELDSIZE,
+                        pipe.request.size());
+                curl_multi_add_handle(m_proactor.get_curl_multi(),
+                        pipe.curl_easy.get());
+                it = m_events.erase(it);
+                ++m_pipes_active;
+                return;
+            }
+            ++id;
         }
     }
     ++it;
@@ -229,22 +254,4 @@ void HttpContext::dispatch_events() {
             it = m_events.erase(it);
         }
     }
-}
-
-json::Value HttpContext::build_message(const Request& request, Id id) {
-    json::Value message;
-    message["jsonrpc"] = "2.0";
-    message["method"] = request.m_name;
-    if (request.m_value.is_object() || request.m_value.is_array()) {
-        message["params"] = request.m_value;
-    }
-    else {
-        message["params"].push_back(request.m_value);
-    }
-    if (EventTypeU((EventType::CALL_METHOD
-        | EventType::CALL_METHOD_ASYNC) & request.get_type()))
-    {
-        message["id"] = id;
-    }
-    return message;
 }

@@ -61,8 +61,18 @@ public:
 
     virtual ~Request();
 
+    void set_response(const std::string& response) { m_response = response; }
+
     const std::string& get_response() const { return m_response; }
 
+    std::string& get_response() { return m_response; }
+
+    void set_value(const Value& value) { m_value = value; }
+
+    const Value& get_value() const { return m_value; }
+
+    const std::string& get_name() const { return m_name; }
+private:
     std::string m_response;
     std::string m_name;
     Value m_value;

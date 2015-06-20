@@ -50,6 +50,7 @@
 #include <string>
 #include <chrono>
 #include <utility>
+#include <functional>
 #include <unordered_map>
 
 namespace json {
@@ -61,6 +62,7 @@ public:
     using Url = std::string;
     using Header = std::pair<std::string, std::string>;
     using Headers = std::unordered_map<std::string, std::string>;
+    using IdBuilder = std::function<std::string(unsigned)>;
 
     static constexpr const char DEFAULT_URL[] = "localhost";
 
@@ -111,12 +113,19 @@ public:
     }
 
     const Headers& get_headers() const { return m_headers; }
+
+    void set_id_builder(IdBuilder id_builder) { m_id_builder = id_builder; }
+
+    IdBuilder& get_id_builder() { return m_id_builder; }
+
+    const IdBuilder& get_id_builder() const { return m_id_builder; }
 private:
     Url m_url{DEFAULT_URL};
     unsigned m_pipeline_length{DEFAULT_PIPELINE_LENGTH};
     Miliseconds m_time_live_ms{DEFAULT_TIME_LIVE_MS};
     Miliseconds m_time_timeout_ms{DEFAULT_TIMEOUT_MS};
     Headers m_headers{};
+    IdBuilder m_id_builder{nullptr};
 };
 
 } /* client */
