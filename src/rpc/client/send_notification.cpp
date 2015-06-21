@@ -49,7 +49,6 @@ SendNotification::~SendNotification() { }
 
 void SendNotification::processing() {
     if (!get_error() && (0 != get_response().size())) {
-        set_error({Error::PARSE_ERROR, "Notification response: \'" +
-                get_response() + "\'"});
+        set_error({Error::INTERNAL_ERROR});
     }
 }

@@ -58,29 +58,47 @@ using json::rpc::client::Executor;
 using json::rpc::client::CallMethod;
 using json::rpc::client::SendNotification;
 
-Executor::Executor() : m_thread{&Executor::task, this} { }
+Executor::Executor(size_t threads) {
+    m_threads.resize(threads);
+    for (auto& thread : m_threads) {
+        thread = std::thread{&Executor::task, this};
+    }
+}
 
 Executor::~Executor() {
     m_stop = true;
-    m_cond_variable.notify_one();
-    m_thread.join();
-    /* Finish all tasks */
-    task();
+    m_cond_variable.notify_all();
+    for (auto& thread : m_threads) {
+        if (thread.joinable()) { thread.join(); }
+    }
+    /* Finish all events */
+    while (!m_events.empty()) { task(); }
+}
+
+void Executor::push_event(EventPtr&& event) {
+    std::unique_lock<std::mutex> lock(m_mutex);
+    m_events.push_back(std::move(event));
+    lock.unlock();
+    m_cond_variable.notify_all();
 }
 
 void Executor::task() {
     std::unique_lock<std::mutex> lock(m_mutex, std::defer_lock);
+    EventPtr event{nullptr};
 
     do {
         lock.lock();
         m_cond_variable.wait(lock,
-            [this] { return !m_events_background.empty() || m_stop; });
-        m_events.splice(m_events.end(), m_events_background);
+            [this] { return !m_events.empty() || m_stop; });
+        if (!m_events.empty()) {
+            event = std::move(m_events.front());
+            m_events.pop_front();
+        }
         lock.unlock();
 
-        while (!m_events.empty()) {
-            event_dispatcher(m_events.front().get());
-            m_events.pop_front();
+        if (nullptr != event) {
+            event_dispatcher(event.get());
+            event = nullptr;
         }
     } while(!m_stop);
 }
@@ -156,13 +174,6 @@ void Executor::execute(EventPtr&& event) {
     default:
         break;
     }
-}
-
-void Executor::push_event(EventPtr&& event) {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    m_events_background.push_back(std::move(event));
-    lock.unlock();
-    m_cond_variable.notify_one();
 }
 
 void Executor::event_dispatcher(Event* event) {

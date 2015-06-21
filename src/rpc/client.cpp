@@ -52,17 +52,17 @@
 using namespace json::rpc;
 using namespace json::rpc::client;
 
-Client::~Client() { disconnect(); }
+Client::~Client() { disconnect().get(); }
 
 void Client::connect() {
     m_proactor.push_event(EventPtr{new CreateContext{m_id}});
 }
 
-void Client::disconnect() {
+std::future<void> Client::disconnect() {
     auto event = EventPtr{new DestroyContext{m_id}};
     auto result = static_cast<DestroyContext&>(*event).m_result.get_future();
     m_proactor.push_event(std::move(event));
-    result.get();
+    return result;
 }
 
 Client::MethodFuture Client::method(const std::string& name,

@@ -177,8 +177,7 @@ void CurlProactor::handle_events_context(EventList::iterator& it) {
         (*context)->splice_event(m_events, it++);
     }
     else {
-        m_executor.execute(std::move(*it), {Error::INTERNAL_ERROR,
-                "Client context doesn't exist"});
+        m_executor.execute(std::move(*it), {Error::INTERNAL_ERROR});
         it = m_events.erase(it);
     }
 }

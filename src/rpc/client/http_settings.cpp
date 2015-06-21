@@ -45,8 +45,6 @@
 
 using json::rpc::client::HttpSettings;
 
-constexpr const char HttpSettings::DEFAULT_URL[];
-
 constexpr const json::rpc::Miliseconds HttpSettings::DEFAULT_TIMEOUT_MS;
 
 constexpr const json::rpc::Miliseconds HttpSettings::DEFAULT_TIME_LIVE_MS;

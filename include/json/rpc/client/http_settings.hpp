@@ -62,8 +62,6 @@ public:
     using Headers = std::unordered_map<std::string, std::string>;
     using IdBuilder = std::function<std::string(unsigned)>;
 
-    static constexpr const char DEFAULT_URL[] = "localhost";
-
     static constexpr const unsigned DEFAULT_PIPELINE_LENGTH = 8;
 
     static constexpr const Miliseconds DEFAULT_TIME_LIVE_MS = 0_ms;

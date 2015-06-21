@@ -80,9 +80,9 @@ public:
     const Value& get_id() const { return m_id; }
 
     void processing();
-private:
-    void check_response(const Value& value);
 
+    bool valid_response(const Value& value);
+private:
     Value m_id{};
 };
 

@@ -62,13 +62,12 @@ public:
 
     SendNotification(Client* client,
             const std::string& name, const Value& value) :
-        Request{EventType::SEND_NOTIFICATION, client,
-            name, value} { }
+        Request{EventType::SEND_NOTIFICATION, client, name, value} { }
 
     SendNotification(Client* client,
             const std::string& name, const Value& value, Callback callback) :
-        Request{EventType::SEND_NOTIFICATION_ASYNC, client,
-            name, value}, m_callback{callback} { }
+        Request{EventType::SEND_NOTIFICATION_ASYNC, client, name, value},
+        m_callback{callback} { }
 
     virtual ~SendNotification() final;
 

@@ -51,6 +51,7 @@
 #include <mutex>
 #include <atomic>
 #include <thread>
+#include <vector>
 #include <condition_variable>
 
 namespace json {
@@ -59,7 +60,9 @@ namespace client {
 
 class Executor {
 public:
-    Executor();
+    static constexpr const size_t DEFAULT_THREADS = 4;
+
+    Executor(size_t threads = DEFAULT_THREADS);
 
     ~Executor();
 
@@ -70,14 +73,15 @@ public:
         execute(std::move(event));
     }
 private:
+    using ThreadsPool = std::vector<std::thread>;
+
     void task();
     void event_dispatcher(Event* event);
     void push_event(EventPtr&& event);
 
     EventList m_events{};
-    EventList m_events_background{};
     std::mutex m_mutex{};
-    std::thread m_thread{};
+    ThreadsPool m_threads{};
     volatile std::atomic<bool> m_stop{false};
     std::condition_variable m_cond_variable{};
 };

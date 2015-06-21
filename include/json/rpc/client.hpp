@@ -128,7 +128,7 @@ public:
             NotificationCallback result);
 
     void connect();
-    void disconnect();
+    std::future<void> disconnect();
 protected:
     Client* const m_id{nullptr};
     client::Proactor& m_proactor;

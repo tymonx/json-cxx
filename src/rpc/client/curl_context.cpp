@@ -128,7 +128,7 @@ void CurlContext::handle_pipe(struct InfoRead* info_read,
         }
         else {
             m_proactor.get_executor().execute(std::move(pipe->event),
-                    {Error::INTERNAL_ERROR, "Cannot finish job"});;
+                    {Error::INTERNAL_ERROR});;
         }
     }
 
@@ -176,7 +176,7 @@ bool CurlContext::handle_event_timeout(EventList::iterator& it) {
     if (TimePoint(0_ms) != (*it)->get_time_live()) {
         if (std::chrono::steady_clock::now() > (*it)->get_time_live()) {
             m_proactor.get_executor().execute(std::move(*it),
-                    {Error::INTERNAL_ERROR, "Timeout occur"});
+                    {Error::INTERNAL_ERROR});
             it = m_events.erase(it);
             return true;
         }
@@ -247,8 +247,7 @@ void CurlContext::dispatch_events() {
         }
         else {
             m_proactor.get_executor().execute(std::move(*it),
-                    {Error::INTERNAL_ERROR,
-                    "Client context cannot handle event object"});
+                    {Error::INTERNAL_ERROR});
             it = m_events.erase(it);
         }
     }

@@ -45,4 +45,6 @@
 
 using json::rpc::client::HttpClient;
 
+constexpr const char HttpClient::DEFAULT_URL[];
+
 HttpClient::~HttpClient() { }

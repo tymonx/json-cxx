@@ -47,6 +47,9 @@
 using json::rpc::client::CurlClient;
 using json::rpc::client::CurlProactor;
 
+CurlClient::CurlClient(const HttpSettings& settings) :
+    HttpClient{settings, CurlProactor::get_instance()} { }
+
 CurlClient::CurlClient(const std::string& url, const HttpSettings& settings) :
     HttpClient{url, settings, CurlProactor::get_instance()} { }
 
