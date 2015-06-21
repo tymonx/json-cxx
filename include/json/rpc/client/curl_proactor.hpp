@@ -41,11 +41,12 @@
  * @brief JSON client reactor interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_HTTP_PROACTOR_HPP
-#define JSON_CXX_RPC_CLIENT_HTTP_PROACTOR_HPP
+#ifndef JSON_CXX_RPC_CLIENT_CURL_PROACTOR_HPP
+#define JSON_CXX_RPC_CLIENT_CURL_PROACTOR_HPP
 
 #include <json/rpc/client/proactor.hpp>
-#include <json/rpc/client/http_context.hpp>
+#include <json/rpc/client/curl_context.hpp>
+#include <json/rpc/client/executor.hpp>
 
 #include <mutex>
 #include <atomic>
@@ -57,18 +58,18 @@ namespace json {
 namespace rpc {
 namespace client {
 
-class HttpProactor : public Proactor {
+class CurlProactor : public Proactor {
 public:
     static const constexpr unsigned DEFAULT_MAX_PIPELINE_LENGTH = 8;
 
-    static Proactor& get_instance() {
-        static HttpProactor proactor{};
+    static CurlProactor& get_instance() {
+        static CurlProactor proactor{};
         return proactor;
     }
 
-    HttpProactor();
+    CurlProactor();
 
-    virtual ~HttpProactor() final;
+    virtual ~CurlProactor() final;
 
     virtual void push_event(EventPtr&& event) final;
 
@@ -111,7 +112,7 @@ private:
     Executor m_executor{};
     EventList m_events{};
     EventList m_events_background{};
-    HttpContextList m_contexts{};
+    CurlContextList m_contexts{};
 
     std::mutex m_mutex{};
 };
@@ -120,4 +121,4 @@ private:
 }
 }
 
-#endif /* JSON_CXX_RPC_CLIENT_HTTP_PROACTOR_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_CURL_PROACTOR_HPP */

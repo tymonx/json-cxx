@@ -45,7 +45,43 @@
 
 using json::rpc::Error;
 
-Error::Error(Code code) : m_code{code} { }
+constexpr const char Error::MSG_UNKNOWN_ERROR[];
+constexpr const char Error::MSG_PARSE_ERROR[];
+constexpr const char Error::MSG_INVALID_REQUEST[];
+constexpr const char Error::MSG_METHOD_NOT_FOUND[];
+constexpr const char Error::MSG_INVALID_PARAMS[];
+constexpr const char Error::MSG_INTERNAL_ERROR[];
+constexpr const char Error::MSG_SERVER_ERROR[];
+
+Error::Error(Code code) : m_code{code} {
+    switch (m_code) {
+    case OK:
+        break;
+    case PARSE_ERROR:
+        m_message = MSG_PARSE_ERROR;
+        break;
+    case INVALID_REQUEST:
+        m_message = MSG_INVALID_REQUEST;
+        break;
+    case METHOD_NOT_FOUND:
+        m_message = MSG_METHOD_NOT_FOUND;
+        break;
+    case INVALID_PARAMS:
+        m_message = MSG_INVALID_PARAMS;
+        break;
+    case INTERNAL_ERROR:
+        m_message = MSG_INTERNAL_ERROR;
+        break;
+    default:
+        if ((-SERVER_ERROR >= m_code) && (m_code <= -SERVER_ERROR_MAX)) {
+            m_message = MSG_SERVER_ERROR;
+        }
+        else {
+            m_message = MSG_UNKNOWN_ERROR;
+        }
+        break;
+    }
+}
 
 Error::Error(Code code, const Message& message, const Data& data) :
         m_code{code}, m_message{message}, m_data{data} { }

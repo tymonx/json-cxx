@@ -40,18 +40,22 @@ add_library(json-cxx STATIC
     writter/counter.cpp
     writter/string.cpp
     rpc/client.cpp
+    rpc/server.cpp
     rpc/error.cpp
-    rpc/client/event.cpp
-    rpc/client/request.cpp
-    rpc/client/proactor.cpp
-    rpc/client/executor.cpp
-    rpc/client/create_context.cpp
-    rpc/client/destroy_context.cpp
+    rpc/server/microhttpd_server.cpp
     rpc/client/call_method.cpp
+    rpc/client/create_context.cpp
+    rpc/client/curl_client.cpp
+    rpc/client/curl_context.cpp
+    rpc/client/curl_proactor.cpp
+    rpc/client/destroy_context.cpp
+    rpc/client/event.cpp
+    rpc/client/executor.cpp
+    rpc/client/http_client.cpp
+    rpc/client/http_settings.cpp
+    rpc/client/proactor.cpp
+    rpc/client/request.cpp
     rpc/client/send_notification.cpp
-    rpc/client/http_context.cpp
-    rpc/client/http_protocol.cpp
-    rpc/client/http_proactor.cpp
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES Clang)

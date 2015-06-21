@@ -38,14 +38,13 @@
  *
  * @file json/rpc/client/http_protocol.hpp
  *
- * @brief JSON client protocol IPv4 protocol
+ * @brief HTTP JSON client settings interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_HTTP_PROTOCOL_HPP
-#define JSON_CXX_RPC_CLIENT_HTTP_PROTOCOL_HPP
+#ifndef JSON_CXX_RPC_CLIENT_HTTP_SETTINGS_HPP
+#define JSON_CXX_RPC_CLIENT_HTTP_SETTINGS_HPP
 
 #include <json/rpc/time.hpp>
-#include <json/rpc/client/protocol_type.hpp>
 
 #include <string>
 #include <chrono>
@@ -57,9 +56,8 @@ namespace json {
 namespace rpc {
 namespace client {
 
-class HttpProtocol {
+class HttpSettings {
 public:
-    using Url = std::string;
     using Header = std::pair<std::string, std::string>;
     using Headers = std::unordered_map<std::string, std::string>;
     using IdBuilder = std::function<std::string(unsigned)>;
@@ -72,16 +70,14 @@ public:
 
     static constexpr const Miliseconds DEFAULT_TIMEOUT_MS = 1000_ms;
 
-    HttpProtocol(const Url& url = DEFAULT_URL) : m_url{url} { }
+    HttpSettings() { }
 
-    HttpProtocol(const HttpProtocol&) = default;
-    HttpProtocol(HttpProtocol&&) = default;
-    HttpProtocol& operator=(const HttpProtocol&) = default;
-    HttpProtocol& operator=(HttpProtocol&&) = default;
+    HttpSettings(const HttpSettings&) = default;
+    HttpSettings(HttpSettings&&) = default;
+    HttpSettings& operator=(const HttpSettings&) = default;
+    HttpSettings& operator=(HttpSettings&&) = default;
 
-    ~HttpProtocol();
-
-    const Url& get_url() const { return m_url; }
+    virtual ~HttpSettings();
 
     void set_pipeline_length(unsigned pipeline_length);
 
@@ -120,7 +116,6 @@ public:
 
     const IdBuilder& get_id_builder() const { return m_id_builder; }
 private:
-    Url m_url{DEFAULT_URL};
     unsigned m_pipeline_length{DEFAULT_PIPELINE_LENGTH};
     Miliseconds m_time_live_ms{DEFAULT_TIME_LIVE_MS};
     Miliseconds m_time_timeout_ms{DEFAULT_TIMEOUT_MS};
@@ -132,4 +127,4 @@ private:
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_HTTP_PROTOCOL_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_HTTP_SETTINGS_HPP */

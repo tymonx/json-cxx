@@ -36,30 +36,65 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/create_context.hpp
+ * @file json/rpc/server/microhttpd_server.hpp
  *
- * @brief Create context event
+ * @brief JSON client interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP
-#define JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP
+#ifndef JSON_CXX_RPC_MICROHTTPD_SERVER_HPP
+#define JSON_CXX_RPC_MICROHTTPD_SERVER_HPP
 
-#include <json/rpc/client/event.hpp>
+#include <json/rpc/server.hpp>
+
+#include <memory>
+
+struct MHD_Daemon;
+struct MHD_Connection;
 
 namespace json {
 namespace rpc {
-namespace client {
+namespace server {
 
-class CreateContext : public Event {
+/*!
+ * JSON server class
+ * */
+class MicrohttpdServer : public json::rpc::Server {
 public:
-    CreateContext(Client* client) :
-        Event{EventType::CREATE_CONTEXT, client} { }
+    using Port = std::uint16_t;
 
-    virtual ~CreateContext() final;
+    static constexpr const Port DEFAULT_PORT = 80;
+
+    MicrohttpdServer(Port port = DEFAULT_PORT);
+
+    virtual ~MicrohttpdServer() final;
+
+    virtual void start() final;
+
+    virtual void stop() final;
+private:
+    struct MicrohttpdDeleter {
+        void operator()(struct ::MHD_Daemon*);
+    };
+
+    using MicrohttpdPtr = std::unique_ptr<::MHD_Daemon, MicrohttpdDeleter>;
+
+    Port m_port{};
+    MicrohttpdPtr m_mhd{nullptr};
+
+    static int send_response(struct ::MHD_Connection* connection,
+            unsigned status, const std::string& message);
+
+    static int method_handler(void* cls, struct ::MHD_Connection *connection,
+        const char* url, const char* method, const char* version,
+        const char* upload_data, size_t* upload_data_size, void** con_cls);
+
+    static int method_post(void* cls, struct ::MHD_Connection* connection,
+            const char* url, const char* method, const char* version,
+            const char* upload_data, size_t* upload_data_size, void** con_cls);
 };
 
-} /* client */
-} /* rpc */
-} /* json */
+}
+}
+}
 
-#endif /* JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP */
+#endif /* JSON_CXX_RPC_MICROHTTPD_SERVER_HPP */

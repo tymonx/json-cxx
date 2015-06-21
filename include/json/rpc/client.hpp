@@ -45,21 +45,17 @@
 #define JSON_CXX_RPC_CLIENT_HPP
 
 #include <json/json.hpp>
-#include <json/rpc/time.hpp>
 #include <json/rpc/error.hpp>
 
+#include <future>
 #include <string>
 #include <functional>
-#include <future>
 
 namespace json {
 namespace rpc {
 
 /* Forward declarations */
-namespace client {
-    class HttpProtocol;
-    class Proactor;
-}
+namespace client { class Proactor; }
 
 /*!
  * JSON Client class
@@ -71,14 +67,9 @@ public:
     using MethodCallback = std::function<void(Client*, const Value&, const Error&)>;
     using MethodFuture = std::future<json::Value>;
 
-    Client(const client::HttpProtocol& protocol);
+    Client(client::Proactor& proactor) : m_id{this}, m_proactor{proactor} { }
 
-    Client(const Client&) = delete;
-    Client(Client&&) = delete;
-    Client& operator=(const Client&) = delete;
-    Client& operator=(Client&&) = delete;
-
-    ~Client();
+    virtual ~Client();
 
     /*!
      * @brief Call JSON-RPC method
@@ -136,9 +127,16 @@ public:
     void notification(const std::string& name, const json::Value& params,
             NotificationCallback result);
 
-private:
+    void connect();
+    void disconnect();
+protected:
     Client* const m_id{nullptr};
     client::Proactor& m_proactor;
+private:
+    Client(const Client&) = delete;
+    Client(Client&&) = delete;
+    Client& operator=(const Client&) = delete;
+    Client& operator=(Client&&) = delete;
 };
 
 }

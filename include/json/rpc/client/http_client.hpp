@@ -36,30 +36,46 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/create_context.hpp
+ * @file json/rpc/client/http_client.hpp
  *
- * @brief Create context event
+ * @brief HTTP JSON RPC client interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP
-#define JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP
+#ifndef JSON_CXX_RPC_HTTP_CLIENT_HPP
+#define JSON_CXX_RPC_HTTP_CLIENT_HPP
 
-#include <json/rpc/client/event.hpp>
+#include <json/rpc/client.hpp>
+#include <json/rpc/client/http_settings.hpp>
 
 namespace json {
 namespace rpc {
 namespace client {
 
-class CreateContext : public Event {
+/*!
+ * JSON Client class
+ * */
+class HttpClient : public json::rpc::Client {
 public:
-    CreateContext(Client* client) :
-        Event{EventType::CREATE_CONTEXT, client} { }
+    using Url = std::string;
 
-    virtual ~CreateContext() final;
+    HttpClient(const Url& url, const HttpSettings& settings,
+            Proactor& proactor) : Client{proactor}, m_url{url},
+        m_settings{settings} { }
+
+    virtual ~HttpClient();
+
+    const Url& get_url() const { return m_url; }
+
+    HttpSettings& get_settings() { return m_settings; }
+
+    const HttpSettings& get_settings() const { return m_settings; }
+private:
+    Url m_url{};
+    HttpSettings m_settings{};
 };
 
-} /* client */
-} /* rpc */
-} /* json */
+}
+}
+}
 
-#endif /* JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP */
+#endif /* JSON_CXX_RPC_HTTP_CLIENT_HPP */

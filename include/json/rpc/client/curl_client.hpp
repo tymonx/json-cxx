@@ -36,30 +36,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/create_context.hpp
+ * @file json/rpc/client/curl_client.hpp
  *
- * @brief Create context event
+ * @brief HTTP JSON RPC client interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP
-#define JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP
+#ifndef JSON_CXX_RPC_CURL_CLIENT_HPP
+#define JSON_CXX_RPC_CURL_CLIENT_HPP
 
-#include <json/rpc/client/event.hpp>
+#include <json/rpc/client/http_client.hpp>
+#include <json/rpc/client/http_settings.hpp>
 
 namespace json {
 namespace rpc {
 namespace client {
 
-class CreateContext : public Event {
+/*!
+ * JSON Client class
+ * */
+class CurlClient : public HttpClient {
 public:
-    CreateContext(Client* client) :
-        Event{EventType::CREATE_CONTEXT, client} { }
+    CurlClient(const std::string& url, const HttpSettings& settings = {});
 
-    virtual ~CreateContext() final;
+    virtual ~CurlClient();
 };
 
-} /* client */
-} /* rpc */
-} /* json */
+}
+}
+}
 
-#endif /* JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP */
+#endif /* JSON_CXX_RPC_CURL_CLIENT_HPP */

@@ -49,10 +49,6 @@
 #include <json/rpc/client/call_method.hpp>
 #include <json/rpc/client/send_notification.hpp>
 
-#include <iostream>
-
-using namespace std;
-
 using json::Value;
 using json::Deserializer;
 using json::rpc::Error;

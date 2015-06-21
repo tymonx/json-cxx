@@ -45,15 +45,4 @@
 
 using json::rpc::client::CreateContext;
 
-CreateContext::~CreateContext() {
-    switch (m_type) {
-    case ProtocolType::HTTP:
-        m_http_protocol.~HttpProtocol();
-        break;
-    case ProtocolType::SERIAL:
-    case ProtocolType::UDP:
-    case ProtocolType::UNDEFINED:
-    default:
-        break;
-    }
-}
+CreateContext::~CreateContext() { }

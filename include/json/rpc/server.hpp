@@ -36,29 +36,70 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/http_protocol.cpp
+ * @file json/rpc/client.hpp
  *
- * @brief JSON client protocol IPv4 protocol
+ * @brief JSON client interface
  * */
 
-#include <json/rpc/client/http_protocol.hpp>
+#ifndef JSON_CXX_RPC_SERVER_HPP
+#define JSON_CXX_RPC_SERVER_HPP
 
-using json::rpc::client::HttpProtocol;
+#include <json/json.hpp>
+#include <json/rpc/error.hpp>
 
-constexpr const char HttpProtocol::DEFAULT_URL[];
+#include <map>
+#include <functional>
 
-constexpr const json::rpc::Miliseconds HttpProtocol::DEFAULT_TIMEOUT_MS;
+namespace json {
+namespace rpc {
 
-constexpr const json::rpc::Miliseconds HttpProtocol::DEFAULT_TIME_LIVE_MS;
+/*!
+ * JSON Client class
+ * */
+class Server {
+public:
+    using Notification = std::function<void(const Value&)>;
+    using Method = std::function<void(const Value&, Value&)>;
+    using MethodId = std::function<void(const Value&, Value&, const Value&)>;
 
-HttpProtocol::~HttpProtocol() { }
+    Server();
 
-void HttpProtocol::set_pipeline_length(unsigned pipeline_length) {
-    if (!pipeline_length) { m_pipeline_length = DEFAULT_PIPELINE_LENGTH; }
-    else { m_pipeline_length = pipeline_length; }
+    virtual ~Server();
+
+    virtual void start() = 0;
+
+    virtual void stop() = 0;
+
+    void add_command(const std::string& name, const Value& params,
+            const Notification& notification);
+
+    void add_command(const std::string& name, const Value& params,
+            const Method& method);
+
+    void add_command(const std::string& name, const Value& params,
+            const MethodId& method_id);
+protected:
+    void execute(const std::string& request, std::string& response);
+private:
+    using CommandCallback = MethodId;
+
+    struct Command {
+        Value params;
+        CommandCallback callback;
+    };
+
+    using Commands = std::multimap<std::string, Command>;
+
+    bool equal_params(const Value&, const Value&);
+
+    bool valid_request(const Value& value);
+    Value create_response(const Value&, const Value& id);
+    Value create_error(const Error& error, const Value& id);
+
+    Commands m_commands{};
+};
+
+}
 }
 
-void HttpProtocol::add_header(const Header& header) {
-    if (header.first.empty() || header.second.empty()) { return; }
-    m_headers.emplace(header.first, header.second);
-}
+#endif /* JSON_CXX_RPC_SERVER_HPP */

@@ -36,27 +36,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/protocol_type.hpp
+ * @file json/rpc/client/http_settings.cpp
  *
- * @brief JSON client protocol types
+ * @brief HTTP JSON client settings implementation
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_PROTOCOL_TYPE_HPP
-#define JSON_CXX_RPC_CLIENT_PROTOCOL_TYPE_HPP
+#include <json/rpc/client/http_settings.hpp>
 
-namespace json {
-namespace rpc {
-namespace client {
+using json::rpc::client::HttpSettings;
 
-enum class ProtocolType {
-    UNDEFINED = 0,
-    HTTP,
-    UDP,
-    SERIAL
-};
+constexpr const char HttpSettings::DEFAULT_URL[];
 
-} /* client */
-} /* rpc */
-} /* json */
+constexpr const json::rpc::Miliseconds HttpSettings::DEFAULT_TIMEOUT_MS;
 
-#endif /* JSON_CXX_RPC_CLIENT_PROTOCOL_TYPE_HPP */
+constexpr const json::rpc::Miliseconds HttpSettings::DEFAULT_TIME_LIVE_MS;
+
+HttpSettings::~HttpSettings() { }
+
+void HttpSettings::set_pipeline_length(unsigned pipeline_length) {
+    if (!pipeline_length) { m_pipeline_length = DEFAULT_PIPELINE_LENGTH; }
+    else { m_pipeline_length = pipeline_length; }
+}
+
+void HttpSettings::add_header(const Header& header) {
+    if (header.first.empty() || header.second.empty()) { return; }
+    m_headers.emplace(header.first, header.second);
+}

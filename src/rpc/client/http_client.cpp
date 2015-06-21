@@ -36,30 +36,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/create_context.hpp
+ * @file json/rpc/client/http_client.cpp
  *
- * @brief Create context event
+ * @brief HTTP JSON RPC client implementation
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP
-#define JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP
+#include <json/rpc/client/http_client.hpp>
 
-#include <json/rpc/client/event.hpp>
+using json::rpc::client::HttpClient;
 
-namespace json {
-namespace rpc {
-namespace client {
-
-class CreateContext : public Event {
-public:
-    CreateContext(Client* client) :
-        Event{EventType::CREATE_CONTEXT, client} { }
-
-    virtual ~CreateContext() final;
-};
-
-} /* client */
-} /* rpc */
-} /* json */
-
-#endif /* JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP */
+HttpClient::~HttpClient() { }

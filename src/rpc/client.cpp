@@ -43,10 +43,7 @@
 
 #include <json/rpc/client.hpp>
 
-#include <json/rpc/client/http_context.hpp>
-#include <json/rpc/client/http_protocol.hpp>
-#include <json/rpc/client/http_proactor.hpp>
-
+#include <json/rpc/client/proactor.hpp>
 #include <json/rpc/client/call_method.hpp>
 #include <json/rpc/client/send_notification.hpp>
 #include <json/rpc/client/create_context.hpp>
@@ -55,13 +52,13 @@
 using namespace json::rpc;
 using namespace json::rpc::client;
 
-Client::Client(const HttpProtocol& protocol) : m_id{this},
-    m_proactor{HttpProactor::get_instance()}
-{
-    m_proactor.push_event(EventPtr{new CreateContext{m_id, protocol}});
+Client::~Client() { disconnect(); }
+
+void Client::connect() {
+    m_proactor.push_event(EventPtr{new CreateContext{m_id}});
 }
 
-Client::~Client() {
+void Client::disconnect() {
     auto event = EventPtr{new DestroyContext{m_id}};
     auto result = static_cast<DestroyContext&>(*event).m_result.get_future();
     m_proactor.push_event(std::move(event));

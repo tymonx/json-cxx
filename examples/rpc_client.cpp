@@ -1,6 +1,5 @@
 #include <json/json.hpp>
-#include <json/rpc/client.hpp>
-#include <json/rpc/client/http_protocol.hpp>
+#include <json/rpc/client/curl_client.hpp>
 
 #include <iostream>
 #include <chrono>
@@ -9,16 +8,19 @@ using namespace json;
 using json::rpc::operator "" _ms;
 
 int main() {
-    rpc::client::HttpProtocol http{"localhost:6666"};
-    http.set_id_builder([] (unsigned id) {
+    rpc::client::CurlClient client{"localhost:6666"};
+    client.get_settings().set_id_builder([] (unsigned id) {
         return "DUPA-" + std::to_string(id);
     });
-    rpc::Client client(http);
+    client.connect();
 
     auto start = std::chrono::system_clock::now();
 
     for (unsigned i = 0; i < 100; ++i) {
-    client.method("xxx", 8,
+    client.method("xxx", {
+            Pair{"b", "Hej!!!"},
+            Pair{"a", true}
+        },
         [] (rpc::Client*, const Value& v, const rpc::Error& error) {
             if (error) {
                 std::cout << "Error: " << error.what() << " " << error.get_code() << std::endl;

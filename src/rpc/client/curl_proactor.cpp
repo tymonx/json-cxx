@@ -41,14 +41,15 @@
  * @brief JSON client reactor interface
  * */
 
-#include <json/rpc/client/http_proactor.hpp>
-#include <json/rpc/client/http_context.hpp>
-#include <json/rpc/error.hpp>
+#include <json/rpc/client/curl_proactor.hpp>
+#include <json/rpc/client/curl_context.hpp>
+#include <json/rpc/client/http_settings.hpp>
+#include <json/rpc/client/http_client.hpp>
 
+#include <json/rpc/error.hpp>
 #include <json/rpc/client/create_context.hpp>
 #include <json/rpc/client/destroy_context.hpp>
 
-#include <iostream>
 #include <exception>
 #include <algorithm>
 #include <curl/curl.h>
@@ -58,15 +59,16 @@
 
 using json::rpc::Error;
 using json::rpc::client::Event;
-using json::rpc::client::HttpContext;
-using json::rpc::client::HttpProactor;
+using json::rpc::client::CurlContext;
+using json::rpc::client::HttpSettings;
+using json::rpc::client::CurlProactor;
 using json::rpc::client::DestroyContext;
 
-void HttpProactor::CurlMultiDeleter::operator ()(void* curl_multi) {
+void CurlProactor::CurlMultiDeleter::operator ()(void* curl_multi) {
     curl_multi_cleanup(curl_multi);
 }
 
-HttpProactor::HttpProactor() {
+CurlProactor::CurlProactor() {
     curl_global_init(CURL_GLOBAL_ALL);
 
     m_curl_multi = CurlMultiPtr{curl_multi_init()};
@@ -84,10 +86,10 @@ HttpProactor::HttpProactor() {
             DEFAULT_MAX_PIPELINE_LENGTH);
     curl_multi_setopt(m_curl_multi.get(), CURLMOPT_MAX_HOST_CONNECTIONS, 1UL);
 
-    m_thread = std::thread{&HttpProactor::task, this};
+    m_thread = std::thread{&CurlProactor::task, this};
 }
 
-HttpProactor::~HttpProactor() {
+CurlProactor::~CurlProactor() {
     m_task_done = true;
     notify();
     m_thread.join();
@@ -101,24 +103,24 @@ HttpProactor::~HttpProactor() {
     curl_global_cleanup();
 }
 
-void HttpProactor::notify() {
+void CurlProactor::notify() {
     std::uint64_t event{1};
     write(m_eventfd, &event, sizeof(event));
 }
 
-void HttpProactor::push_event(EventPtr&& event) {
+void CurlProactor::push_event(EventPtr&& event) {
     std::unique_lock<std::mutex> lock(m_mutex);
     m_events_background.push_back(std::move(event));
     lock.unlock();
     notify();
 }
 
-void HttpProactor::get_events() {
+void CurlProactor::get_events() {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_events.splice(m_events.end(), m_events_background);
 }
 
-void HttpProactor::waiting_for_events() {
+void CurlProactor::waiting_for_events() {
     std::uint64_t event{0};
     struct curl_waitfd waitfd[1]{};
     waitfd[0].fd = m_eventfd;
@@ -128,12 +130,9 @@ void HttpProactor::waiting_for_events() {
     read(m_eventfd, &event, sizeof(event));
 }
 
-void HttpProactor::handle_create_context(EventList::iterator& it) {
-    m_contexts.emplace_back(new HttpContext{
-        it->get()->get_client(),
-        static_cast<CreateContext*>(it->get())->get_http_protocol(),
-        *this
-    });
+void CurlProactor::handle_create_context(EventList::iterator& it) {
+    m_contexts.emplace_back(new CurlContext{
+            static_cast<const HttpClient*>((*it)->get_client()), *this});
     it = m_events.erase(it);
 }
 
@@ -142,9 +141,9 @@ void destroy_context_event(Event* event) {
     static_cast<DestroyContext*>(event)->m_result.set_value();
 }
 
-void HttpProactor::handle_destroy_context(EventList::iterator& it) {
+void CurlProactor::handle_destroy_context(EventList::iterator& it) {
     auto context = std::find_if(m_contexts.begin(), m_contexts.end(),
-        [&it] (const HttpContextPtr& ctx) {
+        [&it] (const CurlContextPtr& ctx) {
             return ctx->get_client() == it->get()->get_client();
         }
     );
@@ -164,15 +163,16 @@ void HttpProactor::handle_destroy_context(EventList::iterator& it) {
     }
 }
 
-void HttpProactor::handle_events_context(EventList::iterator& it) {
+void CurlProactor::handle_events_context(EventList::iterator& it) {
     auto context = std::find_if(m_contexts.begin(), m_contexts.end(),
-        [&it] (const HttpContextPtr& ctx) {
+        [&it] (const CurlContextPtr& ctx) {
             return ctx->get_client() == (*it)->get_client();
         }
     );
     if (m_contexts.end() != context) {
-        if (0_ms != (*context)->get_protocol().get_time_live()) {
-            (*it)->set_time_live((*context)->get_protocol().get_time_live());
+        if (0_ms != (*context)->get_client()->get_settings().get_time_live()) {
+            (*it)->set_time_live(
+                    (*context)->get_client()->get_settings().get_time_live());
         }
         (*context)->splice_event(m_events, it++);
     }
@@ -183,7 +183,7 @@ void HttpProactor::handle_events_context(EventList::iterator& it) {
     }
 }
 
-void HttpProactor::dispatch_events() {
+void CurlProactor::dispatch_events() {
     for (auto it = m_events.begin(); it != m_events.end();) {
         switch (it->get()->get_type()) {
         case EventType::CREATE_CONTEXT:
@@ -206,7 +206,7 @@ void HttpProactor::dispatch_events() {
     }
 }
 
-void HttpProactor::task() {
+void CurlProactor::task() {
     do {
         waiting_for_events();
 
@@ -223,15 +223,15 @@ void HttpProactor::task() {
     } while (!m_task_done || !m_events.empty());
 }
 
-void HttpProactor::context_processing() {
+void CurlProactor::context_processing() {
     for (auto& context : m_contexts) {
         context->dispatch_events();
     }
 }
 
-void HttpProactor::read_processing() {
+void CurlProactor::read_processing() {
     CURLMsg* message;
-    struct HttpContext::InfoRead* info_read;
+    struct CurlContext::InfoRead* info_read;
     int msgs_in_queue;
     do {
         msgs_in_queue = 0;

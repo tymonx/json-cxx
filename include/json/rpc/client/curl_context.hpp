@@ -43,13 +43,11 @@
  * Message used for communication between clients and proactor
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_HTTP_CONTEXT_HPP
-#define JSON_CXX_RPC_CLIENT_HTTP_CONTEXT_HPP
+#ifndef JSON_CXX_RPC_CLIENT_CURL_CONTEXT_HPP
+#define JSON_CXX_RPC_CLIENT_CURL_CONTEXT_HPP
 
 #include <json/json.hpp>
 #include <json/rpc/client/event.hpp>
-#include <json/rpc/client/executor.hpp>
-#include <json/rpc/client/http_protocol.hpp>
 
 #include <list>
 #include <string>
@@ -62,23 +60,20 @@ struct curl_slist;
 
 namespace json {
 namespace rpc {
-
-class Client;
-
 namespace client {
 
 /* Forward declaration */
 class Request;
-class HttpProactor;
+class CurlProactor;
+class HttpClient;
 
-class HttpContext {
+class CurlContext {
 public:
-    HttpContext(const Client* client, const HttpProtocol& protocol,
-            HttpProactor&);
+    CurlContext(const HttpClient* client, CurlProactor&);
 
-    ~HttpContext();
+    ~CurlContext();
 
-    const Client* get_client() const { return m_client; }
+    const HttpClient* get_client() const { return m_client; }
 
     void splice_event(EventList& other, EventList::const_iterator it) {
         m_events.splice(m_events.end(), other, it);
@@ -89,16 +84,14 @@ public:
     bool active() const {
         return !m_events.empty() || m_pipes_active;
     }
-
-    const HttpProtocol& get_protocol() const { return m_protocol; }
 private:
-    friend class HttpProactor;
+    friend class CurlProactor;
 
-    HttpContext(const HttpContext&) = delete;
-    HttpContext(HttpContext&&) = delete;
+    CurlContext(const CurlContext&) = delete;
+    CurlContext(CurlContext&&) = delete;
 
-    HttpContext& operator=(const HttpContext&) = delete;
-    HttpContext& operator=(HttpContext&&) = delete;
+    CurlContext& operator=(const CurlContext&) = delete;
+    CurlContext& operator=(CurlContext&&) = delete;
 
     struct CurlEasyDeleter {
         void operator()(void* curl_easy);
@@ -113,11 +106,11 @@ private:
     using Id = unsigned;
     using CurlEasyPtr = std::unique_ptr<void, CurlEasyDeleter>;
     using CurlSlistPtr = std::unique_ptr<struct ::curl_slist, CurlSlistDeleter>;
-    using InfoReadCallback = std::function<void(HttpContext*,
+    using InfoReadCallback = std::function<void(CurlContext*,
             struct InfoRead*, unsigned)>;
 
     struct InfoRead {
-        HttpContext* context{nullptr};
+        CurlContext* context{nullptr};
         InfoReadCallback callback{};
         CurlEasyPtr curl_easy{nullptr};
     };
@@ -141,17 +134,16 @@ private:
     void handle_event_request(EventList::iterator& it);
     Value build_message(Request& request, Id id);
 
-    const Client* m_client;
+    const HttpClient* m_client;
     CurlSlistPtr m_headers{nullptr};
     Pipelines::size_type m_pipes_active{0};
     Pipelines m_pipelines{};
-    HttpProtocol m_protocol{};
-    HttpProactor& m_proactor;
+    CurlProactor& m_proactor;
     EventList m_events{};
 };
 
-using HttpContextPtr = std::unique_ptr<HttpContext>;
-using HttpContextList = std::list<HttpContextPtr>;
+using CurlContextPtr = std::unique_ptr<CurlContext>;
+using CurlContextList = std::list<CurlContextPtr>;
 
 } /* client */
 } /* rpc */
