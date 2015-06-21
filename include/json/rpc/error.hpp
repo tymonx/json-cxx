@@ -64,7 +64,9 @@ public:
     static const Code INVALID_PARAMS      = -32602;
     static const Code INTERNAL_ERROR      = -32603;
 
-    Error(Code code = OK, const Message& message = "", const Data& data = {});
+    Error(Code code = OK);
+    Error(Code code, const Message& message, const Data& data = {});
+    Error(Code code, const char* message, const Data& data = {});
 
     Error(const Error&) = default;
     Error(Error&&) = default;

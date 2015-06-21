@@ -117,7 +117,7 @@ void CallMethod::processing() {
     deserializer >> value;
     check_response(value);
     if (get_error()) {
-        return set_error({Error::PARSE_ERROR,
+        return set_error({get_error().get_code(),
                 "Invalid response: \'" + get_response() +
                 "\' " + get_error().what()});
     }

@@ -122,14 +122,14 @@ void HttpContext::handle_pipe(struct InfoRead* info_read,
     auto pipe = static_cast<Pipeline*>(info_read);
 
     if (CURLE_OK == curl_code) {
-        m_proactor.get_executor().push_event(std::move(pipe->event));
+        m_proactor.get_executor().execute(std::move(pipe->event));
     }
     else {
         if (!m_proactor.task_done()) {
             m_events.push_back(std::move(pipe->event));
         }
         else {
-            m_proactor.get_executor().push_event(std::move(pipe->event),
+            m_proactor.get_executor().execute(std::move(pipe->event),
                     {Error::INTERNAL_ERROR, "Cannot finish job"});;
         }
     }
@@ -177,7 +177,7 @@ void HttpContext::CurlSlistDeleter::operator()(struct curl_slist* curl_slist) {
 bool HttpContext::handle_event_timeout(EventList::iterator& it) {
     if (TimePoint(0_ms) != (*it)->get_time_live()) {
         if (std::chrono::steady_clock::now() > (*it)->get_time_live()) {
-            m_proactor.get_executor().push_event(std::move(*it),
+            m_proactor.get_executor().execute(std::move(*it),
                     {Error::INTERNAL_ERROR, "Timeout occur"});
             it = m_events.erase(it);
             return true;
@@ -248,7 +248,7 @@ void HttpContext::dispatch_events() {
             handle_event_request(it);
         }
         else {
-            m_proactor.get_executor().push_event(std::move(*it),
+            m_proactor.get_executor().execute(std::move(*it),
                     {Error::INTERNAL_ERROR,
                     "Client context cannot handle event object"});
             it = m_events.erase(it);

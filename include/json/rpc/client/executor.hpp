@@ -63,15 +63,16 @@ public:
 
     ~Executor();
 
-    void push_event(EventPtr event);
+    void execute(EventPtr&& event);
 
-    void push_event(EventPtr event, const Error& error) {
+    void execute(EventPtr&& event, const Error& error) {
         event->set_error(error);
-        push_event(std::move(event));
+        execute(std::move(event));
     }
 private:
     void task();
-    void event_dispatcher(EventPtr event);
+    void event_dispatcher(Event* event);
+    void push_event(EventPtr&& event);
 
     EventList m_events{};
     EventList m_events_background{};

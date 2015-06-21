@@ -52,7 +52,7 @@ namespace client {
 
 class Proactor {
 public:
-    virtual void push_event(EventPtr event) = 0;
+    virtual void push_event(EventPtr&& event) = 0;
     virtual ~Proactor();
 };
 

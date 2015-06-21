@@ -62,18 +62,18 @@ Client::Client(const HttpProtocol& protocol) : m_id{this},
 }
 
 Client::~Client() {
-    auto event = new DestroyContext{m_id};
-    auto result = event->m_result.get_future();
-    m_proactor.push_event(EventPtr{event});
+    auto event = EventPtr{new DestroyContext{m_id}};
+    auto result = static_cast<DestroyContext&>(*event).m_result.get_future();
+    m_proactor.push_event(std::move(event));
     result.get();
 }
 
 Client::MethodFuture Client::method(const std::string& name,
         const json::Value& params)
 {
-    auto event = new CallMethod{m_id, name, params};
-    auto result = event->m_result.get_future();
-    m_proactor.push_event(EventPtr{event});
+    auto event = EventPtr{new CallMethod{m_id, name, params}};
+    auto result = static_cast<CallMethod&>(*event).m_result.get_future();
+    m_proactor.push_event(std::move(event));
     return result;
 }
 
@@ -87,9 +87,9 @@ void Client::method(const std::string& name, const json::Value& params,
 Client::NotificationFuture Client::notification(const std::string& name,
         const json::Value& params)
 {
-    auto event = new SendNotification{m_id, name, params};
-    auto result = event->m_result.get_future();
-    m_proactor.push_event(EventPtr{event});
+    auto event = EventPtr{new SendNotification{m_id, name, params}};
+    auto result = static_cast<SendNotification&>(*event).m_result.get_future();
+    m_proactor.push_event(std::move(event));
     return result;
 }
 

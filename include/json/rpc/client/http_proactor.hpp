@@ -70,7 +70,7 @@ public:
 
     virtual ~HttpProactor() final;
 
-    virtual void push_event(EventPtr event) final;
+    virtual void push_event(EventPtr&& event) final;
 
     unsigned get_max_pipeline_length() const {
         return DEFAULT_MAX_PIPELINE_LENGTH;

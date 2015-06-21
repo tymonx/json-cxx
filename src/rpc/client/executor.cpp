@@ -83,24 +83,16 @@ void Executor::task() {
         lock.unlock();
 
         while (!m_events.empty()) {
-            event_dispatcher(std::move(m_events.front()));
+            event_dispatcher(m_events.front().get());
             m_events.pop_front();
         }
     } while(!m_stop);
-}
-
-void Executor::push_event(EventPtr event) {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    m_events_background.push_back(std::move(event));
-    lock.unlock();
-    m_cond_variable.notify_one();
 }
 
 static
 void call_method(Event* _event) {
     CallMethod* event = static_cast<CallMethod*>(_event);
     event->processing();
-
     if (!event->get_error()) {
         event->m_result.set_value(event->get_value());
     }
@@ -113,21 +105,18 @@ void call_method(Event* _event) {
 static
 void call_method_async(Event* _event) {
     CallMethod* event = static_cast<CallMethod*>(_event);
-    if (nullptr != event->m_callback) {
-        event->processing();
-        try {
-            event->m_callback(event->get_client(), event->get_value(),
-                    event->get_error());
-        }
-        catch (...) { }
+    event->processing();
+    try {
+        event->m_callback(event->get_client(), event->get_value(),
+                event->get_error());
     }
+    catch (...) { }
 }
 
 static
 void send_notification(Event* _event) {
     SendNotification* event = static_cast<SendNotification*>(_event);
     event->processing();
-
     if (!event->get_error()) {
         event->m_result.set_value();
     }
@@ -140,29 +129,56 @@ void send_notification(Event* _event) {
 static
 void send_notification_async(Event* _event) {
     SendNotification* event = static_cast<SendNotification*>(_event);
-    if (nullptr != event->m_callback) {
-        event->processing();
-        try {
-            event->m_callback(event->get_client(), event->get_error());
-        }
-        catch (...) { }
+    event->processing();
+    try {
+        event->m_callback(event->get_client(), event->get_error());
     }
+    catch (...) { }
 }
 
-void Executor::event_dispatcher(EventPtr event) {
+void Executor::execute(EventPtr&& event) {
     switch (event->get_type()) {
     case EventType::CALL_METHOD:
         call_method(event.get());
         break;
-    case EventType::CALL_METHOD_ASYNC:
-        call_method_async(event.get());
-        break;
     case EventType::SEND_NOTIFICATION:
         send_notification(event.get());
         break;
-    case EventType::SEND_NOTIFICATION_ASYNC:
-        send_notification_async(event.get());
+    case EventType::CALL_METHOD_ASYNC:
+        if (nullptr != static_cast<CallMethod&>(*event).m_callback) {
+            push_event(std::move(event));
+        }
         break;
+    case EventType::SEND_NOTIFICATION_ASYNC:
+        if (nullptr != static_cast<SendNotification&>(*event).m_callback) {
+            push_event(std::move(event));
+        }
+        break;
+    case EventType::DESTROY_CONTEXT:
+    case EventType::CREATE_CONTEXT:
+    case EventType::UNDEFINED:
+    default:
+        break;
+    }
+}
+
+void Executor::push_event(EventPtr&& event) {
+    std::unique_lock<std::mutex> lock(m_mutex);
+    m_events_background.push_back(std::move(event));
+    lock.unlock();
+    m_cond_variable.notify_one();
+}
+
+void Executor::event_dispatcher(Event* event) {
+    switch (event->get_type()) {
+    case EventType::CALL_METHOD_ASYNC:
+        call_method_async(event);
+        break;
+    case EventType::SEND_NOTIFICATION_ASYNC:
+        send_notification_async(event);
+        break;
+    case EventType::CALL_METHOD:
+    case EventType::SEND_NOTIFICATION:
     case EventType::DESTROY_CONTEXT:
     case EventType::CREATE_CONTEXT:
     case EventType::UNDEFINED:

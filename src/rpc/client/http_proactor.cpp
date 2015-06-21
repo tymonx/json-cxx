@@ -106,7 +106,7 @@ void HttpProactor::notify() {
     write(m_eventfd, &event, sizeof(event));
 }
 
-void HttpProactor::push_event(EventPtr event) {
+void HttpProactor::push_event(EventPtr&& event) {
     std::unique_lock<std::mutex> lock(m_mutex);
     m_events_background.push_back(std::move(event));
     lock.unlock();
@@ -177,7 +177,7 @@ void HttpProactor::handle_events_context(EventList::iterator& it) {
         (*context)->splice_event(m_events, it++);
     }
     else {
-        m_executor.push_event(std::move(*it), {Error::INTERNAL_ERROR,
+        m_executor.execute(std::move(*it), {Error::INTERNAL_ERROR,
                 "Client context doesn't exist"});
         it = m_events.erase(it);
     }
