@@ -170,9 +170,8 @@ void CurlProactor::handle_events_context(EventList::iterator& it) {
         }
     );
     if (m_contexts.end() != context) {
-        if (0_ms != (*context)->get_client()->get_settings().get_time_live()) {
-            (*it)->set_time_live(
-                    (*context)->get_client()->get_settings().get_time_live());
+        if (0_ms != (*context)->get_time_live()) {
+            (*it)->set_time_live((*context)->get_time_live());
         }
         (*context)->splice_event(m_events, it++);
     }

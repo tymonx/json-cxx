@@ -65,6 +65,8 @@ CurlContext::CurlContext(const HttpClient* client, CurlProactor& proactor) :
     m_client{client}, m_proactor{proactor}
 {
     const HttpSettings& settings = m_client->get_settings();
+    m_id_builder = settings.get_id_builder();
+    m_time_live = settings.get_time_live();
     std::string http_header{};
     struct ::curl_slist* headers{nullptr};
     unsigned pipeline_size{settings.get_pipeline_length()};
@@ -198,11 +200,11 @@ json::Value CurlContext::build_message(Request& request, Id id) {
         | EventType::CALL_METHOD_ASYNC) & request.get_type()))
     {
         CallMethod& call_method = static_cast<CallMethod&>(request);
-        if (nullptr == m_client->get_settings().get_id_builder()) {
+        if (nullptr == m_id_builder) {
             call_method.set_id(id);
         }
         else {
-            call_method.set_id(m_client->get_settings().get_id_builder()(id));
+            call_method.set_id(m_id_builder(id));
         }
         message["id"] = call_method.get_id();
     }

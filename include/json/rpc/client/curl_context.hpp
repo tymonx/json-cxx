@@ -48,6 +48,7 @@
 
 #include <json/json.hpp>
 #include <json/rpc/client/event.hpp>
+#include <json/rpc/client/http_settings.hpp>
 
 #include <list>
 #include <string>
@@ -84,6 +85,8 @@ public:
     bool active() const {
         return !m_events.empty() || m_pipes_active;
     }
+
+    const Miliseconds& get_time_live() const { return m_time_live; }
 private:
     friend class CurlProactor;
 
@@ -140,6 +143,8 @@ private:
     Pipelines m_pipelines{};
     CurlProactor& m_proactor;
     EventList m_events{};
+    HttpSettings::IdBuilder m_id_builder{nullptr};
+    Miliseconds m_time_live{0_ms};
 };
 
 using CurlContextPtr = std::unique_ptr<CurlContext>;
