@@ -40,7 +40,7 @@ include(AddGnuCompiler)
 include(AddClangCompiler)
 include(AddCodeCoverage OPTIONAL)
 
-find_package(GoogleTest)
+#find_package(GoogleTest)
 
 include_directories(
     include

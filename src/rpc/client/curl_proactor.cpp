@@ -105,7 +105,8 @@ CurlProactor::~CurlProactor() {
 
 void CurlProactor::notify() {
     std::uint64_t event{1};
-    write(m_eventfd, &event, sizeof(event));
+    ssize_t err = write(m_eventfd, &event, sizeof(event));
+    (void)err;
 }
 
 void CurlProactor::push_event(EventPtr&& event) {
@@ -127,7 +128,8 @@ void CurlProactor::waiting_for_events() {
     waitfd[0].events = CURL_WAIT_POLLIN | CURL_WAIT_POLLPRI;
 
     curl_multi_wait(m_curl_multi.get(), waitfd, 1, 1000, nullptr);
-    read(m_eventfd, &event, sizeof(event));
+    ssize_t err = read(m_eventfd, &event, sizeof(event));
+    (void)err;
 }
 
 void CurlProactor::handle_create_context(EventList::iterator& it) {

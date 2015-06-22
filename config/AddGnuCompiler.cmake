@@ -46,9 +46,9 @@ function (gnu_compiler_processing)
         -Wconversion
         -Wdisabled-optimization
         -Wdouble-promotion
-        #-Werror
+        -Werror
         -Wextra
-        #-Wfatal-errors
+        -Wfatal-errors
         -Wfloat-equal
         -Wformat-nonliteral
         -Wformat-security
@@ -133,8 +133,13 @@ function (gnu_compiler_processing)
         -Wno-missing-field-initializers
     )
 
-    set(C_FLAGS     ${C_FLAGS}   ${COMMON_WARNINGS} ${C_WARNINGS})
-    set(CXX_FLAGS   ${CXX_FLAGS} ${COMMON_WARNINGS} ${CXX_WARNINGS})
+    set(EXTRA_FLAGS
+        -fPIE
+        -fPIC
+    )
+
+    set(C_FLAGS     ${C_FLAGS}   ${COMMON_WARNINGS} ${C_WARNINGS}   ${EXTRA_FLAGS})
+    set(CXX_FLAGS   ${CXX_FLAGS} ${COMMON_WARNINGS} ${CXX_WARNINGS} ${EXTRA_FLAGS})
 
     set(C_FLAGS     ${C_FLAGS}   ${CMAKE_C_FLAGS})
     set(CXX_FLAGS   ${CXX_FLAGS} ${CMAKE_CXX_FLAGS})
@@ -145,11 +150,11 @@ function (gnu_compiler_processing)
     string(REGEX REPLACE ";" " " LD_FLAGS   "${LD_FLAGS}")
 
     set(COMPILER_DEBUG      "-O0 -g3 -ggdb")
-    set(COMPILER_RELEASE    "-pg -O3 -DNDEBUG -fdata-sections -ffunction-sections")
+    set(COMPILER_RELEASE    "-pg -O3 -DNDEBUG -fdata-sections -ffunction-sections -fstack-protector-strong")
     set(COMPILER_COVERAGE   "-O0 -g --coverage")
 
     set(LINKER_DEBUG        "")
-    set(LINKER_RELEASE      "-Wl,--gc-sections")
+    set(LINKER_RELEASE      "-Wl,--gc-sections -z noexecstack -z relro -z now")
     set(LINKER_COVERAGE     "--coverage")
 
     if(NOT CMAKE_BUILD_TYPE)

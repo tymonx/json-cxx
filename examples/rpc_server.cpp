@@ -18,27 +18,25 @@ int main(int argc, char* argv[]) {
 
     MicrohttpdServer server(port);
 
-    server.add_command(Server::MethodsIdVector{{
-        {
-            "command1", {
-                Pair{"a", Value::Type::BOOLEAN},
-                Pair{"b", Value::Type::STRING}
-            },
-            [] (const Value& request, Value& response, const Value& id) {
-                cout << "Request: " << request << " id: " << id << endl;
-                response = "Response from command1!!!";
-            }
+    server.add_command(
+        "command1", {
+            Pair{"a", Value::Type::BOOLEAN},
+            Pair{"b", Value::Type::STRING}
         },
-        {
-            "command2", {
-                Value::Type::NUMBER
-            },
-            [] (const Value& request, Value& response, const Value& id) {
-                cout << "Request: " << request << " id: " << id << endl;
-                response = "Response from command2!!!";
-            }
+        [] (const Value& request, Value& response, const Value& id) {
+            cout << "Request: " << request << " id: " << id << endl;
+            response = "Response from command1!!!";
         }
-    }});
+    );
+    server.add_command(
+        "command2", {
+            Value::Type::NUMBER
+        },
+        [] (const Value& request, Value& response, const Value& id) {
+            cout << "Request: " << request << " id: " << id << endl;
+            response = "Response from command2!!!";
+        }
+    );
 
     server.start();
     cout << "Daemon started..." << endl;

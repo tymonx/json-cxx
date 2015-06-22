@@ -92,12 +92,12 @@ public:
     template<class T>
     using CommandsVector = std::vector<CommandEntry<T>>;
 
-    template<class T, size_t N>
-    using CommandsArray = std::array<CommandEntry<T>, N>;
-
     using MethodsVector = CommandsVector<Method>;
     using MethodsIdVector = CommandsVector<MethodId>;
     using NotitificationsVector = CommandsVector<Notification>;
+
+    template<class T, size_t N>
+    using CommandsArray = std::array<CommandEntry<T>, N>;
 
     template<size_t N>
     using MethodsArray = CommandsArray<Method, N>;
