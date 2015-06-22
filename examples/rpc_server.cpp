@@ -7,6 +7,7 @@ using std::endl;
 using json::Pair;
 using json::Value;
 using json::rpc::server::MicrohttpdServer;
+using json::rpc::Server;
 
 int main(int argc, char* argv[]) {
     MicrohttpdServer::Port port = 6666;
@@ -17,16 +18,27 @@ int main(int argc, char* argv[]) {
 
     MicrohttpdServer server(port);
 
-    server.add_command(
-        "xxx", {
-            Pair{"a", Value::Type::BOOLEAN},
-            Pair{"b", Value::Type::STRING}
+    server.add_command(Server::MethodsIdVector{{
+        {
+            "command1", {
+                Pair{"a", Value::Type::BOOLEAN},
+                Pair{"b", Value::Type::STRING}
+            },
+            [] (const Value& request, Value& response, const Value& id) {
+                cout << "Request: " << request << " id: " << id << endl;
+                response = "Response from command1!!!";
+            }
         },
-        [] (const Value& request, Value& response, const Value& id) {
-            cout << "Request: " << request << " id: " << id << endl;
-            response = "Dupa!!!";
+        {
+            "command2", {
+                Value::Type::NUMBER
+            },
+            [] (const Value& request, Value& response, const Value& id) {
+                cout << "Request: " << request << " id: " << id << endl;
+                response = "Response from command2!!!";
+            }
         }
-    );
+    }});
 
     server.start();
     cout << "Daemon started..." << endl;

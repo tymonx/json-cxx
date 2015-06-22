@@ -38,7 +38,7 @@
  *
  * @file json/rpc/time.hpp
  *
- * @brief JSON client message interface
+ * @brief JSON RPC time utilities
  * */
 
 #ifndef JSON_CXX_RPC_TIME_HPP

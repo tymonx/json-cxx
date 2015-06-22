@@ -36,11 +36,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/message.hpp
+ * @file json/rpc/client/curl_context.hpp
  *
- * @brief JSON client message interface
- *
- * Message used for communication between clients and proactor
+ * @brief CURL context for CURL proactor
  * */
 
 #ifndef JSON_CXX_RPC_CLIENT_CURL_CONTEXT_HPP
@@ -154,4 +152,4 @@ using CurlContextList = std::list<CurlContextPtr>;
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_HTTP_CONTEXT_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_CURL_CONTEXT_HPP */

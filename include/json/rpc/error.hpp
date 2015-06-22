@@ -38,7 +38,7 @@
  *
  * @file json/rpc/error.hpp
  *
- * @brief JSON client interface
+ * @brief JSON RPC error interface
  * */
 
 #ifndef JSON_CXX_RPC_ERROR_HPP

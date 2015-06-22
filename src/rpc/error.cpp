@@ -36,9 +36,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client.cpp
+ * @file json/rpc/error.cpp
  *
- * @brief JSON client implementation
+ * @brief JSON RPC error implementation
  * */
 
 #include <json/rpc/error.hpp>

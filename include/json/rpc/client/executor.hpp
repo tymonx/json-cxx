@@ -38,7 +38,7 @@
  *
  * @file json/rpc/client/executor.hpp
  *
- * @brief JSON client message interface
+ * @brief JSON responses executor for client. Threads pool implementation
  * */
 
 #ifndef JSON_CXX_RPC_CLIENT_EXECUTOR_HPP

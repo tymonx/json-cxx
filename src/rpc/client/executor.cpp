@@ -38,7 +38,7 @@
  *
  * @file json/rpc/client/executor.cpp
  *
- * @brief JSON client protocol IPv4 protocol
+ * @brief JSON RPC client executor implementation
  * */
 
 #include <json/rpc/client/executor.hpp>
@@ -60,16 +60,16 @@ using json::rpc::client::SendNotification;
 
 Executor::Executor(size_t threads) {
     m_threads.resize(threads);
-    for (auto& thread : m_threads) {
-        thread = std::thread{&Executor::task, this};
+    for (auto it = m_threads.begin(); it != m_threads.end(); ++it) {
+        *it = std::thread{&Executor::task, this};
     }
 }
 
 Executor::~Executor() {
     m_stop = true;
     m_cond_variable.notify_all();
-    for (auto& thread : m_threads) {
-        if (thread.joinable()) { thread.join(); }
+    for (auto it = m_threads.begin(); it != m_threads.end(); ++it) {
+        if (it->joinable()) { it->join(); }
     }
     /* Finish all events */
     while (!m_events.empty()) { task(); }

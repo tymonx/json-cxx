@@ -36,7 +36,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/http_protocol.hpp
+ * @file json/rpc/client/http_settings.hpp
  *
  * @brief HTTP JSON client settings interface
  * */

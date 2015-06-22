@@ -38,11 +38,11 @@
  *
  * @file json/rpc/client/destroy_context.hpp
  *
- * @brief JSON client message interface
+ * @brief Destroy context event
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EVENT_DESTROY_CONTEXT_HPP
-#define JSON_CXX_RPC_CLIENT_EVENT_DESTROY_CONTEXT_HPP
+#ifndef JSON_CXX_RPC_CLIENT_DESTROY_CONTEXT_HPP
+#define JSON_CXX_RPC_CLIENT_DESTROY_CONTEXT_HPP
 
 #include <json/rpc/client/event.hpp>
 
@@ -66,4 +66,4 @@ public:
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_EVENT_DESTROY_CONTEXT_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_DESTROY_CONTEXT_HPP */

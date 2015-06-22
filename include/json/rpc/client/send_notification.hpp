@@ -38,7 +38,7 @@
  *
  * @file json/rpc/client/send_notification.hpp
  *
- * @brief JSON client message interface
+ * @brief JSON client send notification event
  * */
 
 #ifndef JSON_CXX_RPC_CLIENT_SEND_NOTIFICATION_HPP

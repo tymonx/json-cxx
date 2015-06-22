@@ -36,9 +36,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/create_http_context.cpp
+ * @file json/rpc/client/create_context.cpp
  *
- * @brief JSON client protocol IPv4 protocol
+ * @brief JSON RPC create context event implementation
  * */
 
 #include <json/rpc/client/create_context.hpp>

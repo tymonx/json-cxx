@@ -36,9 +36,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/reactor.cpp
+ * @file json/rpc/client/curl_proactor.cpp
  *
- * @brief JSON client reactor interface
+ * @brief HTTP JSON RPC client proactor implementation based on CURL library
  * */
 
 #include <json/rpc/client/curl_proactor.hpp>

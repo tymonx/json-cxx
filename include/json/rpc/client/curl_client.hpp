@@ -38,7 +38,7 @@
  *
  * @file json/rpc/client/curl_client.hpp
  *
- * @brief HTTP JSON RPC client interface
+ * @brief HTTP JSON RPC client based on CURL library
  * */
 
 #ifndef JSON_CXX_RPC_CURL_CLIENT_HPP
@@ -52,7 +52,7 @@ namespace rpc {
 namespace client {
 
 /*!
- * JSON Client class
+ * HTTP JSON RPC client based on curl library
  * */
 class CurlClient : public HttpClient {
 public:

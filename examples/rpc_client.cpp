@@ -17,20 +17,33 @@ int main() {
     auto start = std::chrono::system_clock::now();
 
     for (unsigned i = 0; i < 100; ++i) {
-    client.method("xxx", {
-            Pair{"b", "Hej!!!"},
-            Pair{"a", true}
-        },
-        [] (rpc::Client*, const Value& v, const rpc::Error& error) {
-            if (error) {
-                std::cout << "Error: " << error.what() << " " << error.get_code() << std::endl;
+        client.method("command1", {
+                Pair{"b", "Hej!!!"},
+                Pair{"a", true}
+            },
+            [] (rpc::Client*, const Value& v, const rpc::Error& error) {
+                if (error) {
+                    std::cout << "Error: " << error.what() << " " << error.get_code() << std::endl;
+                }
+                else {
+                    std::cout << "OK: " << v << std::endl;
+                }
+                (void)v;
             }
-            else {
-                std::cout << "OK: " << v << std::endl;
+        );
+        client.method("command2", {
+                13
+            },
+            [] (rpc::Client*, const Value& v, const rpc::Error& error) {
+                if (error) {
+                    std::cout << "Error: " << error.what() << " " << error.get_code() << std::endl;
+                }
+                else {
+                    std::cout << "OK: " << v << std::endl;
+                }
+                (void)v;
             }
-            (void)v;
-        }
-    );
+        );
     }
 
     auto stop = std::chrono::system_clock::now();

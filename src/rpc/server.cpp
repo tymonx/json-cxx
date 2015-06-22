@@ -112,7 +112,7 @@ void Server::add_command(const std::string& name, const Value& params,
 {
     if (nullptr == method_id) { return; }
 
-    Command command{nullptr, method_id};
+    CommandMapEntry command{nullptr, method_id};
     command.callback = method_id;
     if (params.is_object() || params.is_array()) {
         command.params = params;
@@ -123,7 +123,7 @@ void Server::add_command(const std::string& name, const Value& params,
 
     auto it_range = m_commands.equal_range(name);
     if (std::none_of(it_range.first, it_range.second,
-        [&command, this] (Commands::const_reference& cmd) {
+        [&command, this] (CommandsMap::const_reference& cmd) {
             return !equal_params(cmd.second.params, command.params);
         }
     )) {
@@ -203,7 +203,7 @@ void Server::execute(const std::string& request, std::string& response) {
     }
 
     auto it = std::find_if(it_range.first, it_range.second,
-        [&vrequest, this] (Commands::const_reference& cmd) {
+        [&vrequest, this] (CommandsMap::const_reference& cmd) {
             return equal_params(cmd.second.params, vrequest["params"]);
         }
     );
@@ -215,7 +215,9 @@ void Server::execute(const std::string& request, std::string& response) {
     }
 
     try {
-        it->second.callback(vrequest["params"], vresponse, id);
+        if (nullptr != it->second.callback) {
+            it->second.callback(vrequest["params"], vresponse, id);
+        }
         if (id_present) {
             response << create_response(vresponse, id);
         }

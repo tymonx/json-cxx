@@ -36,9 +36,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/http_context.cpp
+ * @file json/rpc/client/curl_context.cpp
  *
- * @brief JSON client message interface
+ * @brief HTTP JSON RPC client context implementation for proactor based on
+ *        CURL library
  * */
 
 #include <json/rpc/client/curl_context.hpp>

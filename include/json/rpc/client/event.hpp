@@ -38,7 +38,7 @@
  *
  * @file json/rpc/client/event.hpp
  *
- * @brief JSON client message interface
+ * @brief Event message for proactor
  *
  * Message used for communication between clients and proactor
  * */

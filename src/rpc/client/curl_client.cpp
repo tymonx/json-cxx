@@ -36,9 +36,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/http_client.cpp
+ * @file json/rpc/client/curl_client.cpp
  *
- * @brief HTTP JSON RPC client implementation
+ * @brief HTTP JSON RPC client based on CURL library implementation
  * */
 
 #include <json/rpc/client/curl_client.hpp>

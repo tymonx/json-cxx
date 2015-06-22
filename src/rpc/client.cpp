@@ -38,7 +38,7 @@
  *
  * @file json/rpc/client.cpp
  *
- * @brief JSON client implementation
+ * @brief JSON RPC client implementation
  * */
 
 #include <json/rpc/client.hpp>

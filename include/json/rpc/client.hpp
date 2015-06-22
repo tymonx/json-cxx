@@ -38,7 +38,7 @@
  *
  * @file json/rpc/client.hpp
  *
- * @brief JSON client interface
+ * @brief JSON RPC client interface
  * */
 
 #ifndef JSON_CXX_RPC_CLIENT_HPP

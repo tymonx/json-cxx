@@ -38,9 +38,7 @@
  *
  * @file json/rpc/client/call_method.hpp
  *
- * @brief JSON client message interface
- *
- * Message used for communication between clients and proactor
+ * @brief JSON client call method event
  * */
 
 #ifndef JSON_CXX_RPC_CLIENT_CALL_METHOD_HPP

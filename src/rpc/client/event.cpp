@@ -38,7 +38,7 @@
  *
  * @file json/rpc/client/event.cpp
  *
- * @brief JSON client message interface
+ * @brief JSON RPC client event implementation
  * */
 
 #include <json/rpc/client/event.hpp>

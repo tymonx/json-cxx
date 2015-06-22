@@ -38,7 +38,7 @@
  *
  * @file json/rpc/client/call_method.cpp
  *
- * @brief JSON client protocol IPv4 protocol
+ * @brief JSON call method event implementation
  * */
 
 #include <json/rpc/client/call_method.hpp>

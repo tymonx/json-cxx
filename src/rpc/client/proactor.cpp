@@ -36,9 +36,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/reactor.cpp
+ * @file json/rpc/client/proactor.cpp
  *
- * @brief JSON client reactor interface
+ * @brief JSON client proactor interface
  * */
 
 #include <json/rpc/client/proactor.hpp>

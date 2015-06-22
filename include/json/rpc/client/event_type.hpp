@@ -38,7 +38,7 @@
  *
  * @file json/rpc/client/event_type.hpp
  *
- * @brief JSON client message interface
+ * @brief Event type
  * */
 
 #ifndef JSON_CXX_RPC_CLIENT_EVENT_TYPE_HPP

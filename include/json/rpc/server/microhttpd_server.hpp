@@ -38,7 +38,7 @@
  *
  * @file json/rpc/server/microhttpd_server.hpp
  *
- * @brief JSON client interface
+ * @brief HTTP JSON RPC server based on Microhttpd library
  * */
 
 #ifndef JSON_CXX_RPC_MICROHTTPD_SERVER_HPP

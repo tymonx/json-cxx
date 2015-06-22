@@ -36,9 +36,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client.hpp
+ * @file json/rpc/server.hpp
  *
- * @brief JSON client interface
+ * @brief JSON RPC server interface
  * */
 
 #ifndef JSON_CXX_RPC_SERVER_HPP
@@ -48,6 +48,9 @@
 #include <json/rpc/error.hpp>
 
 #include <map>
+#include <array>
+#include <tuple>
+#include <vector>
 #include <functional>
 
 namespace json {
@@ -78,25 +81,53 @@ public:
 
     void add_command(const std::string& name, const Value& params,
             const MethodId& method_id);
+
+    template<class T>
+    struct CommandEntry {
+        std::string name;
+        Value params;
+        T callback;
+    };
+
+    template<class T>
+    using CommandsVector = std::vector<CommandEntry<T>>;
+
+    template<class T, size_t N>
+    using CommandsArray = std::array<CommandEntry<T>, N>;
+
+    using MethodsVector = CommandsVector<Method>;
+    using MethodsIdVector = CommandsVector<MethodId>;
+    using NotitificationsVector = CommandsVector<Notification>;
+
+    template<size_t N>
+    using MethodsArray = CommandsArray<Method, N>;
+    template<size_t N>
+    using MethodsIdArray = CommandsArray<MethodId, N>;
+    template<size_t N>
+    using NotitificationsArray = CommandsArray<Notification, N>;
+
+    template<class T>
+    void add_command(const T& commands) {
+        for (const auto& command : commands) {
+            add_command(command.name, command.params, command.callback);
+        }
+    }
 protected:
     void execute(const std::string& request, std::string& response);
 private:
-    using CommandCallback = MethodId;
-
-    struct Command {
+    struct CommandMapEntry {
         Value params;
-        CommandCallback callback;
+        MethodId callback;
     };
 
-    using Commands = std::multimap<std::string, Command>;
+    using CommandsMap = std::multimap<std::string, CommandMapEntry>;
 
     bool equal_params(const Value&, const Value&);
-
     bool valid_request(const Value& value);
     Value create_response(const Value&, const Value& id);
     Value create_error(const Error& error, const Value& id);
 
-    Commands m_commands{};
+    CommandsMap m_commands{};
 };
 
 }

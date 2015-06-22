@@ -36,9 +36,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/event.cpp
+ * @file json/rpc/client/request.cpp
  *
- * @brief JSON client message interface
+ * @brief JSON client message implementation
  * */
 
 #include <json/rpc/client/request.hpp>

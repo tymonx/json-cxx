@@ -38,7 +38,7 @@
  *
  * @file json/rpc/client/send_notification.cpp
  *
- * @brief JSON client protocol IPv4 protocol
+ * @brief JSON client send notification event implementation
  * */
 
 #include <json/rpc/client/send_notification.hpp>

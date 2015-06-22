@@ -38,7 +38,7 @@
  *
  * @file json/rpc/client/destroy_context.cpp
  *
- * @brief JSON client message interface
+ * @brief JSON client destroy context event
  * */
 
 #include <json/rpc/client/destroy_context.hpp>
