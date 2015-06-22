@@ -112,6 +112,7 @@ public:
             add_command(command.name, command.params, command.callback);
         }
     }
+
 protected:
     void execute(const std::string& request, std::string& response);
 private:
