@@ -66,39 +66,39 @@ void Server::add_command(const std::string& name, const Value& params,
     add_command(name, params, MethodId(std::bind(method, _1, _2)));
 }
 
-bool Server::equal_params(const Value& lhs, const Value& rhs) {
+bool Server::equal_params(const Value& cmd_params, const Value& rsp_params) {
     bool valid;
 
-    if (lhs.get_type() != rhs.get_type()) {
-        valid = false;
-    }
-    else if (lhs.size() != rhs.size()) {
-        valid = false;
-    }
-    else if (lhs.is_object()) {
+    if (cmd_params.empty() && rsp_params.empty()) {
         valid = true;
-        for (auto it = lhs.cbegin(); it != lhs.cend(); ++it) {
-            if (!rhs.is_member(it.key())) {
-                valid = false;
-                break;
-            }
-            else if (rhs[it.key()].get_type() != it->get_type()) {
+    }
+    else if (cmd_params.get_type() != rsp_params.get_type()) {
+        valid = false;
+    }
+    else if (cmd_params.size() != rsp_params.size()) {
+        valid = false;
+    }
+    else if (Value::Type::ARRAY == cmd_params.get_type()) {
+        valid = true;
+        for (size_t idx = 0; idx < cmd_params.size(); ++idx) {
+            if (cmd_params[idx].get_type() != rsp_params[idx].get_type()) {
                 valid = false;
                 break;
             }
         }
     }
-    else if (lhs.is_array()) {
+    else if (Value::Type::OBJECT == cmd_params.get_type()) {
         valid = true;
-        for (size_t idx = 0; idx < lhs.size(); ++idx) {
-            if (lhs[idx].get_type() != rhs[idx].get_type()) {
+        for (auto it = cmd_params.cbegin(); it != cmd_params.cend(); ++it) {
+            if (!rsp_params.is_member(it.key())) {
+                valid = false;
+                break;
+            }
+            else if (rsp_params[it.key()].get_type() != it->get_type()) {
                 valid = false;
                 break;
             }
         }
-    }
-    else if (lhs.is_null()) {
-        valid = true;
     }
     else {
         valid = false;
@@ -136,15 +136,19 @@ bool Server::valid_request(const Value& value) {
     if (value["jsonrpc"] != "2.0") { return false; }
     if (!value["method"].is_string()) { return false; }
 
-    if (4 == value.size()) {
-        if (!value.is_member("params") || !value.is_member("id")) {
+    bool is_id = value.is_member("id");
+    bool is_params = value.is_member("params");
+    if (is_params) {
+        if (!value["params"].is_array() && !value["params"].is_object()) {
             return false;
         }
     }
+
+    if (4 == value.size()) {
+        if (!is_params || !is_id) { return false; }
+    }
     else if (3 == value.size()) {
-        if (!value.is_member("params") && !value.is_member("id")) {
-            return false;
-        }
+        if (!is_params && !is_id) { return false; }
     }
     else if (2 != value.size()) { return false; }
 
@@ -215,9 +219,7 @@ void Server::execute(const std::string& request, std::string& response) {
     }
 
     try {
-        if (nullptr != it->second.callback) {
-            it->second.callback(vrequest["params"], vresponse, id);
-        }
+        it->second.callback(vrequest["params"], vresponse, id);
         if (id_present) {
             response << create_response(vresponse, id);
         }
