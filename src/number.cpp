@@ -166,8 +166,8 @@ Number& Number::operator+=(const Number& number) {
     return *this;
 }
 
-bool json::operator==(const Number& num1, const Number& num2) {
-    bool result = false;
+bool operator==(const Number& num1, const Number& num2) {
+    bool result;
 
     switch (num1.get_type()) {
     case Number::Type::INT:
@@ -179,6 +179,48 @@ bool json::operator==(const Number& num1, const Number& num2) {
     case Number::Type::DOUBLE:
         result = std::fabs(num1.m_double - Double(num2)) <
             std::numeric_limits<Double>::epsilon();
+        break;
+    default:
+        result = false;
+        break;
+    }
+
+    return result;
+}
+
+bool operator<(const Number& num1, const Number& num2) {
+    bool result;
+
+    switch (num1.get_type()) {
+    case Number::Type::INT:
+        result = (num1.m_int < Int(num2));
+        break;
+    case Number::Type::UINT:
+        result = (num1.m_uint < Uint(num2));
+        break;
+    case Number::Type::DOUBLE:
+        result = (num1.m_double < Double(num2));
+        break;
+    default:
+        result = false;
+        break;
+    }
+
+    return result;
+}
+
+bool Number::operator!() const {
+    bool result;
+
+    switch (get_type()) {
+    case Number::Type::INT:
+        result = !m_int;
+        break;
+    case Number::Type::UINT:
+        result = !m_uint;
+        break;
+    case Number::Type::DOUBLE:
+        result = std::fabs(m_double) < std::numeric_limits<Double>::epsilon();
         break;
     default:
         result = false;
