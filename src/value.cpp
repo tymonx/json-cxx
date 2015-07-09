@@ -401,7 +401,12 @@ bool Value::is_member(const std::string& key) const {
 
 bool Value::is_member(const char* key) const {
     if (!is_object()) { return false; }
-    return (std::cref((*this)[key]) != g_null_value);
+
+    for (const auto& pair : m_object) {
+        if (key == pair.first) { return true; }
+    }
+
+    return false;
 }
 
 size_t Value::erase(const char* key) {
