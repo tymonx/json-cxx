@@ -65,14 +65,13 @@ add_library(json-cxx-rpc-server
     rpc/server/microhttpd_server.cpp
 )
 
-
 if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
     set_source_files_properties(value.cpp PROPERTIES
         COMPILE_FLAGS "-Wno-global-constructors"
     )
 endif()
 
-install (TARGETS json-cxx
+install (TARGETS json-cxx json-cxx-rpc-client json-cxx-rpc-server
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
