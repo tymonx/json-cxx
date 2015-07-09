@@ -39,10 +39,11 @@ add_library(json-cxx
     writter.cpp
     writter/counter.cpp
     writter/string.cpp
-    rpc/client.cpp
-    rpc/server.cpp
+)
+
+add_library(json-cxx-rpc-client
     rpc/error.cpp
-    rpc/server/microhttpd_server.cpp
+    rpc/client.cpp
     rpc/client/call_method.cpp
     rpc/client/create_context.cpp
     rpc/client/curl_client.cpp
@@ -57,6 +58,13 @@ add_library(json-cxx
     rpc/client/request.cpp
     rpc/client/send_notification.cpp
 )
+
+add_library(json-cxx-rpc-server
+    rpc/error.cpp
+    rpc/server.cpp
+    rpc/server/microhttpd_server.cpp
+)
+
 
 if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
     set_source_files_properties(value.cpp PROPERTIES
