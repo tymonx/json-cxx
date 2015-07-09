@@ -39,15 +39,15 @@ target_link_libraries(performance
 
 add_executable(rpc-client rpc_client.cpp)
 target_link_libraries(rpc-client
-    json-cxx
     json-cxx-rpc-client
+    json-cxx
     curl
 )
 
 add_executable(rpc-server rpc_server.cpp)
 target_link_libraries(rpc-server
-    json-cxx
     json-cxx-rpc-server
-    pthread
+    json-cxx
     microhttpd
+    pthread
 )
