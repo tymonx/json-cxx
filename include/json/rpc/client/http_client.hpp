@@ -56,27 +56,14 @@ namespace client {
  * */
 class HttpClient : public json::rpc::Client {
 public:
-    using Url = std::string;
+    static constexpr const char* const DEFAULT_URL = "localhost:8080";
 
-    static constexpr const char DEFAULT_URL[] = "localhost";
-
-    HttpClient(const HttpSettings& settings, Proactor& proactor) :
-        Client{proactor}, m_url{DEFAULT_URL}, m_settings{settings} { }
-
-    HttpClient(const Url& url, const HttpSettings& settings,
-            Proactor& proactor) : Client{proactor}, m_url{url},
-        m_settings{settings} { }
+    HttpClient(Proactor& proactor,
+            const HttpSettings& http_settings = {DEFAULT_URL});
 
     virtual ~HttpClient();
 
-    const Url& get_url() const { return m_url; }
-
-    HttpSettings& get_settings() { return m_settings; }
-
-    const HttpSettings& get_settings() const { return m_settings; }
-private:
-    Url m_url{};
-    HttpSettings m_settings{};
+    void set_http_settings(const HttpSettings& http_settings);
 };
 
 }

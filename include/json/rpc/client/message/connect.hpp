@@ -36,30 +36,39 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/create_context.hpp
+ * @file json/rpc/client/message/connect.hpp
  *
  * @brief Create context event
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP
-#define JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP
+#ifndef JSON_CXX_RPC_CLIENT_MESSAGE_CONNECT_HPP
+#define JSON_CXX_RPC_CLIENT_MESSAGE_CONNECT_HPP
 
-#include <json/rpc/client/event.hpp>
+#include <json/rpc/client/message.hpp>
+
+#include <future>
 
 namespace json {
 namespace rpc {
 namespace client {
+namespace message {
 
-class CreateContext : public Event {
+class Connect : public Message {
 public:
-    CreateContext(Client* client) :
-        Event{EventType::CREATE_CONTEXT, client} { }
+    Connect(Client* client);
 
-    virtual ~CreateContext() final;
+    virtual ~Connect() final;
+
+    void set_result() { m_result.set_value(); }
+
+    std::future<void> get_result() { return m_result.get_future(); }
+private:
+    std::promise<void> m_result{};
 };
 
+} /* message */
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_CREATE_CONTEXT_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_MESSAGE_CONNECT_HPP */

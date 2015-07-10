@@ -36,72 +36,51 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/server.hpp
+ * @file json/rpc/client/call_method_sync.hpp
  *
- * @brief JSON RPC server interface
+ * @brief JSON client call method event
  * */
 
-#ifndef JSON_CXX_RPC_SERVER_HPP
-#define JSON_CXX_RPC_SERVER_HPP
+#ifndef JSON_CXX_RPC_CLIENT_CALL_METHOD_SYNC_HPP
+#define JSON_CXX_RPC_CLIENT_CALL_METHOD_SYNC_HPP
 
 #include <json/json.hpp>
 #include <json/rpc/error.hpp>
+#include <json/rpc/client/message.hpp>
 
-#include <map>
-#include <functional>
+#include <string>
+#include <future>
 
 namespace json {
 namespace rpc {
+namespace client {
+namespace message {
 
-/*!
- * JSON Client class
- * */
-class Server {
+class CallMethodSync : public Message {
 public:
-    using Notification = std::function<void(const Value&)>;
-    using Method = std::function<void(const Value&, Value&)>;
-    using MethodId = std::function<void(const Value&, Value&, const Value&)>;
-    using MethodHandler = std::function<void(const MethodId&, const Value&,
-            Value&, const Value&)>;
+    CallMethodSync(Client* client,
+            const std::string& name, const Value& params);
 
-    Server() { }
+    virtual ~CallMethodSync() final;
 
-    virtual ~Server();
+    const std::string& get_name() const { return m_name; }
 
-    virtual void start() = 0;
+    const Value& get_params() const { return m_params; }
 
-    virtual void stop() = 0;
+    void set_result(const Value& result) { m_result.set_value(result); }
 
-    void add_command(const std::string& name, const Notification& notification);
+    void set_exception(const std::exception_ptr& ptr) { m_result.set_exception(ptr); }
 
-    void add_command(const std::string& name, const Method& method);
-
-    void add_command(const std::string& name, const MethodId& method_id);
-
-    template<class T>
-    void add_command(const T& commands) {
-        for (const auto& command : commands) {
-            add_command(command.first, command.second);
-        }
-    }
-
-    void set_method_handler(const MethodHandler& method_handler) {
-        m_method_handler = method_handler;
-    }
-protected:
-    void execute(const std::string& request, std::string& response);
+    std::future<Value> get_result() { return m_result.get_future(); }
 private:
-    using CommandsMap = std::map<std::string, MethodId>;
-
-    bool valid_request(const Value& value);
-    Value create_response(const Value&, const Value& id);
-    Value create_error(const Error& error, const Value& id);
-
-    CommandsMap m_commands{};
-    MethodHandler m_method_handler{nullptr};
+    std::string m_name{};
+    Value m_params{};
+    std::promise<Value> m_result{};
 };
 
-}
-}
+} /* message */
+} /* client */
+} /* rpc */
+} /* json */
 
-#endif /* JSON_CXX_RPC_SERVER_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_CALL_METHOD_SYNC_HPP */

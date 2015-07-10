@@ -36,19 +36,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/send_notification.cpp
+ * @file json/rpc/client/call_method_sync.cpp
  *
- * @brief JSON client send notification event implementation
+ * @brief JSON call method sync implementation
  * */
 
-#include <json/rpc/client/send_notification.hpp>
+#include <json/rpc/client/message/call_method_async.hpp>
 
-using json::rpc::client::SendNotification;
+using json::rpc::client::message::CallMethodAsync;
 
-SendNotification::~SendNotification() { }
+CallMethodAsync::CallMethodAsync(Client* client, const std::string& name,
+        const Value& params, const Callback& callback) :
+    Message{MessageType::CALL_METHOD_ASYNC, client}, m_name{name},
+    m_params{params}, m_callback{callback} { }
 
-void SendNotification::processing() {
-    if (!get_error() && (0 != get_response().size())) {
-        set_error({Error::INTERNAL_ERROR});
-    }
-}
+CallMethodAsync::~CallMethodAsync() { }

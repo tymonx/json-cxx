@@ -36,56 +36,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/call_method.hpp
+ * @file json/rpc/client/message/set_error_to_exception.hpp
  *
- * @brief JSON client call method event
+ * @brief Create context event
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_CALL_METHOD_HPP
-#define JSON_CXX_RPC_CLIENT_CALL_METHOD_HPP
+#ifndef JSON_CXX_RPC_CLIENT_SET_ERROR_TO_EXCEPTION_HPP
+#define JSON_CXX_RPC_CLIENT_SET_ERROR_TO_EXCEPTION_HPP
 
-#include <json/json.hpp>
+#include <json/rpc/client/message.hpp>
+
 #include <json/rpc/error.hpp>
-#include <json/rpc/client/request.hpp>
 
-#include <string>
-#include <future>
+#include <exception>
+#include <functional>
 
 namespace json {
 namespace rpc {
 namespace client {
+namespace message {
 
-class CallMethod : public Request {
+class SetErrorToException : public Message {
 public:
-    using Callback = std::function<void(Client*, const json::Value&, const Error&)>;
+    using Callback = std::function<std::exception_ptr(const Error&)>;
 
-    CallMethod(Client* client,
-            const std::string& name, const Value& value) :
-        Request{EventType::CALL_METHOD, client, name, value} { }
+    SetErrorToException(Client* client, const Callback& callback);
 
-    CallMethod(Client* client,
-            const std::string& name, const Value& value, Callback callback) :
-        Request{EventType::CALL_METHOD_ASYNC, client, name, value},
-        m_callback{callback} { }
+    virtual ~SetErrorToException() final;
 
-    virtual ~CallMethod() final;
-
-    Callback m_callback{nullptr};
-    std::promise<json::Value> m_result{};
-
-    void set_id(const Value& id) { m_id = id; }
-
-    const Value& get_id() const { return m_id; }
-
-    void processing();
-
-    bool valid_response(const Value& value);
+    const Callback& get_callback() const { return m_callback; }
 private:
-    Value m_id{};
+    Callback m_callback{nullptr};
 };
 
+} /* message */
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_CALL_METHOD_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_SET_ERROR_TO_EXCEPTION_HPP */

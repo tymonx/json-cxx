@@ -45,7 +45,8 @@
 #define JSON_CXX_RPC_CLIENT_CURL_CONTEXT_HPP
 
 #include <json/json.hpp>
-#include <json/rpc/client/event.hpp>
+#include <json/rpc/client.hpp>
+#include <json/rpc/client/message.hpp>
 #include <json/rpc/client/http_settings.hpp>
 
 #include <list>
@@ -62,32 +63,30 @@ namespace rpc {
 namespace client {
 
 /* Forward declaration */
-class Request;
-class CurlProactor;
 class HttpClient;
 
 class CurlContext {
 public:
-    CurlContext(const HttpClient* client, CurlProactor&);
+    CurlContext(HttpClient* client, void* curl_multi);
 
     ~CurlContext();
 
+    HttpClient* get_client() { return m_client; }
+
     const HttpClient* get_client() const { return m_client; }
 
-    void splice_event(EventList& other, EventList::const_iterator it) {
-        m_events.splice(m_events.end(), other, it);
+    void splice_message(MessageList& other, MessageList::const_iterator it) {
+        m_messages.splice(m_messages.end(), other, it);
     }
 
     void dispatch_events();
 
     bool active() const {
-        return !m_events.empty() || m_pipes_active;
+        return !m_messages.empty() || m_pipes_active;
     }
 
     const Miliseconds& get_time_live() const { return m_time_live; }
 private:
-    friend class CurlProactor;
-
     CurlContext(const CurlContext&) = delete;
     CurlContext(CurlContext&&) = delete;
 
@@ -117,9 +116,10 @@ private:
     };
 
     struct Pipeline : public InfoRead {
-        EventPtr event{nullptr};
+        MessagePtr message{nullptr};
         std::string::size_type request_pos{};
         std::string request{};
+        std::string response{};
     };
 
     using Pipelines = std::vector<Pipeline>;
@@ -131,17 +131,18 @@ private:
             void* userdata);
 
     void handle_pipe(struct InfoRead*, unsigned curl_code);
-    bool handle_event_timeout(EventList::iterator& it);
-    void handle_event_request(EventList::iterator& it);
-    Value build_message(Request& request, Id id);
+    bool handle_event_timeout(MessageList::iterator& it);
+    void handle_event_request(MessageList::iterator& it);
+    //Value build_message(Request& request, Id id);
 
-    const HttpClient* m_client;
+    HttpClient* m_client;
+    void* m_curl_multi;
     CurlSlistPtr m_headers{nullptr};
     Pipelines::size_type m_pipes_active{0};
     Pipelines m_pipelines{};
-    CurlProactor& m_proactor;
-    EventList m_events{};
-    HttpSettings::IdBuilder m_id_builder{nullptr};
+    MessageList m_messages{};
+    Client::IdBuilder m_id_builder{nullptr};
+    Client::ErrorToException m_erro_to_exception{nullptr};
     Miliseconds m_time_live{0_ms};
 };
 

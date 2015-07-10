@@ -45,16 +45,9 @@
 
 using json::rpc::client::HttpSettings;
 
-constexpr const json::rpc::Miliseconds HttpSettings::DEFAULT_TIMEOUT_MS;
+constexpr const json::rpc::Miliseconds HttpSettings::UNKNOWN_TIME_LIVE_MS;
 
-constexpr const json::rpc::Miliseconds HttpSettings::DEFAULT_TIME_LIVE_MS;
-
-HttpSettings::~HttpSettings() { }
-
-void HttpSettings::set_pipeline_length(unsigned pipeline_length) {
-    if (!pipeline_length) { m_pipeline_length = DEFAULT_PIPELINE_LENGTH; }
-    else { m_pipeline_length = pipeline_length; }
-}
+constexpr const json::rpc::Miliseconds HttpSettings::UNKNOWN_TIME_TIMEOUT_MS;
 
 void HttpSettings::add_header(const Header& header) {
     if (header.first.empty() || header.second.empty()) { return; }

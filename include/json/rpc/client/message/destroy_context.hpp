@@ -36,49 +36,37 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/send_notification.hpp
+ * @file json/rpc/client/destroy_context.hpp
  *
- * @brief JSON client send notification event
+ * @brief Destroy context event
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_SEND_NOTIFICATION_HPP
-#define JSON_CXX_RPC_CLIENT_SEND_NOTIFICATION_HPP
+#ifndef JSON_CXX_RPC_CLIENT_MESSAGE_DESTROY_CONTEXT_HPP
+#define JSON_CXX_RPC_CLIENT_MESSAGE_DESTROY_CONTEXT_HPP
 
-#include <json/json.hpp>
-#include <json/rpc/error.hpp>
-#include <json/rpc/client/request.hpp>
+#include <json/rpc/client/message.hpp>
 
-#include <string>
 #include <future>
-#include <functional>
 
 namespace json {
 namespace rpc {
 namespace client {
+namespace message {
 
-class SendNotification : public Request {
+class DestroyContext : public Message {
 public:
-    using Callback = std::function<void(Client*, const Error&)>;
+    DestroyContext(Client* client);
 
-    SendNotification(Client* client,
-            const std::string& name, const Value& value) :
-        Request{EventType::SEND_NOTIFICATION, client, name, value} { }
+    virtual ~DestroyContext() final;
 
-    SendNotification(Client* client,
-            const std::string& name, const Value& value, Callback callback) :
-        Request{EventType::SEND_NOTIFICATION_ASYNC, client, name, value},
-        m_callback{callback} { }
-
-    virtual ~SendNotification() final;
-
-    Callback m_callback{nullptr};
+    std::future<void> get_result() { return m_result.get_future(); }
+private:
     std::promise<void> m_result{};
-
-    void processing();
 };
 
+} /* message */
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_SEND_NOTIFICATION_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_MESSAGE_DESTROY_CONTEXT_HPP */

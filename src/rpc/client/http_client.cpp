@@ -42,9 +42,26 @@
  * */
 
 #include <json/rpc/client/http_client.hpp>
+#include <json/rpc/client/proactor.hpp>
+
+#include <json/rpc/client/message/set_http_settings.hpp>
 
 using json::rpc::client::HttpClient;
 
-constexpr const char HttpClient::DEFAULT_URL[];
+using namespace json::rpc::client;
+using namespace json::rpc::client::message;
+
+constexpr const char* const HttpClient::DEFAULT_URL;
+
+HttpClient::HttpClient(Proactor& proactor, const HttpSettings& http_settings) :
+    Client{proactor} {
+    m_proactor.push_event(MessagePtr{new SetHttpSettings{m_id,
+            http_settings}});
+}
+
+void HttpClient::set_http_settings(const HttpSettings& http_settings) {
+    m_proactor.push_event(MessagePtr{new SetHttpSettings{m_id,
+            http_settings}});
+}
 
 HttpClient::~HttpClient() { }

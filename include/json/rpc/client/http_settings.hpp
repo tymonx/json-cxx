@@ -60,26 +60,29 @@ class HttpSettings {
 public:
     using Header = std::pair<std::string, std::string>;
     using Headers = std::unordered_map<std::string, std::string>;
-    using IdBuilder = std::function<std::string(unsigned)>;
+    using PipelineLength = unsigned;
 
-    static constexpr const unsigned DEFAULT_PIPELINE_LENGTH = 8;
+    static constexpr const auto UNKNOWN_PIPELINE_LENGTH = PipelineLength(-1);
 
-    static constexpr const Miliseconds DEFAULT_TIME_LIVE_MS = 0_ms;
+    static constexpr const auto UNKNOWN_TIME_LIVE_MS = Miliseconds(-1);
 
-    static constexpr const Miliseconds DEFAULT_TIMEOUT_MS = 1000_ms;
+    static constexpr const auto UNKNOWN_TIME_TIMEOUT_MS = Miliseconds(-1);
 
     HttpSettings() { }
 
-    HttpSettings(const HttpSettings&) = default;
-    HttpSettings(HttpSettings&&) = default;
-    HttpSettings& operator=(const HttpSettings&) = default;
-    HttpSettings& operator=(HttpSettings&&) = default;
+    HttpSettings(const std::string& url) : m_url{url} { }
 
-    virtual ~HttpSettings();
+    void set_url(const std::string& url) { m_url = url; }
 
-    void set_pipeline_length(unsigned pipeline_length);
+    const std::string& get_url() const { return m_url; }
 
-    unsigned get_pipeline_length() const { return m_pipeline_length; }
+    void set_pipeline_length(const PipelineLength& pipeline_length) {
+        m_pipeline_length = pipeline_length;
+    }
+
+    const PipelineLength& get_pipeline_length() const {
+        return m_pipeline_length;
+    }
 
     void set_timeout(const Seconds& timeout_sec) {
         set_timeout(std::chrono::duration_cast<Miliseconds>(timeout_sec));
@@ -102,23 +105,14 @@ public:
     const Miliseconds& get_timeout() const { return m_time_timeout_ms; }
 
     void add_header(const Header& header);
-    void remove_header(const Header& header) {
-        m_headers.erase(header.first);
-    }
 
     const Headers& get_headers() const { return m_headers; }
-
-    void set_id_builder(IdBuilder id_builder) { m_id_builder = id_builder; }
-
-    IdBuilder& get_id_builder() { return m_id_builder; }
-
-    const IdBuilder& get_id_builder() const { return m_id_builder; }
 private:
-    unsigned m_pipeline_length{DEFAULT_PIPELINE_LENGTH};
-    Miliseconds m_time_live_ms{DEFAULT_TIME_LIVE_MS};
-    Miliseconds m_time_timeout_ms{DEFAULT_TIMEOUT_MS};
+    std::string m_url{};
+    PipelineLength m_pipeline_length{UNKNOWN_PIPELINE_LENGTH};
+    Miliseconds m_time_live_ms{UNKNOWN_TIME_LIVE_MS};
+    Miliseconds m_time_timeout_ms{UNKNOWN_TIME_TIMEOUT_MS};
     Headers m_headers{};
-    IdBuilder m_id_builder{nullptr};
 };
 
 } /* client */

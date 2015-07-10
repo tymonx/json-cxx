@@ -50,6 +50,7 @@
 #include <future>
 #include <string>
 #include <functional>
+#include <exception>
 
 namespace json {
 namespace rpc {
@@ -66,8 +67,10 @@ public:
     using NotificationFuture = std::future<void>;
     using MethodCallback = std::function<void(Client*, const Value&, const Error&)>;
     using MethodFuture = std::future<json::Value>;
+    using IdBuilder = std::function<std::string(unsigned)>;
+    using ErrorToException = std::function<std::exception_ptr(const Error&)>;
 
-    Client(client::Proactor& proactor) : m_id{this}, m_proactor{proactor} { }
+    Client(client::Proactor& proactor);
 
     virtual ~Client();
 
@@ -127,8 +130,12 @@ public:
     void notification(const std::string& name, const json::Value& params,
             NotificationCallback result);
 
-    void connect();
+    std::future<void> connect();
     std::future<void> disconnect();
+
+    void set_id_builder(const IdBuilder& id_builder);
+
+    void set_error_to_exception(const ErrorToException& set_error_to_exception);
 protected:
     Client* const m_id{nullptr};
     client::Proactor& m_proactor;

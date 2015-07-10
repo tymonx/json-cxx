@@ -36,34 +36,35 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/destroy_context.hpp
+ * @file json/rpc/client/message_type.hpp
  *
- * @brief Destroy context event
+ * @brief Message type
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_DESTROY_CONTEXT_HPP
-#define JSON_CXX_RPC_CLIENT_DESTROY_CONTEXT_HPP
-
-#include <json/rpc/client/event.hpp>
-
-#include <future>
+#ifndef JSON_CXX_RPC_CLIENT_MESSAGE_TYPE_HPP
+#define JSON_CXX_RPC_CLIENT_MESSAGE_TYPE_HPP
 
 namespace json {
 namespace rpc {
 namespace client {
 
-class DestroyContext : public Event {
-public:
-    DestroyContext(Client* client) :
-        Event{EventType::DESTROY_CONTEXT, client} { }
-
-    virtual ~DestroyContext() final;
-
-    std::promise<void> m_result{};
+enum class MessageType {
+    UNDEFINED,
+    CALL_METHOD_SYNC,
+    CALL_METHOD_ASYNC,
+    SEND_NOTIFICATION_SYNC,
+    SEND_NOTIFICATION_ASYNC,
+    CREATE_CONTEXT,
+    DESTROY_CONTEXT,
+    CONNECT,
+    DISCONNECT,
+    SET_ID_BUILDER,
+    SET_HTTP_SETTINGS,
+    SET_ERROR_TO_EXCEPTION
 };
 
 } /* client */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_DESTROY_CONTEXT_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_MESSAGE_TYPE_HPP */

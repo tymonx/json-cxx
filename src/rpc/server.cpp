@@ -49,86 +49,23 @@
 using namespace std;
 using json::rpc::Server;
 
-Server::Server() { }
-
 Server::~Server() { }
 
-void Server::add_command(const std::string& name, const Value& params,
+void Server::add_command(const std::string& name,
         const Notification& notification) {
     using std::placeholders::_1;
-    add_command(name, params, MethodId(std::bind(notification, _1)));
+    add_command(name, MethodId(std::bind(notification, _1)));
 }
 
-void Server::add_command(const std::string& name, const Value& params,
-        const Method& method) {
+void Server::add_command(const std::string& name, const Method& method) {
     using std::placeholders::_1;
     using std::placeholders::_2;
-    add_command(name, params, MethodId(std::bind(method, _1, _2)));
+    add_command(name, MethodId(std::bind(method, _1, _2)));
 }
 
-bool Server::equal_params(const Value& cmd_params, const Value& rsp_params) {
-    bool valid;
-
-    if (cmd_params.empty() && rsp_params.empty()) {
-        valid = true;
-    }
-    else if (cmd_params.get_type() != rsp_params.get_type()) {
-        valid = false;
-    }
-    else if (cmd_params.size() != rsp_params.size()) {
-        valid = false;
-    }
-    else if (Value::Type::ARRAY == cmd_params.get_type()) {
-        valid = true;
-        for (size_t idx = 0; idx < cmd_params.size(); ++idx) {
-            if (cmd_params[idx].get_type() != rsp_params[idx].get_type()) {
-                valid = false;
-                break;
-            }
-        }
-    }
-    else if (Value::Type::OBJECT == cmd_params.get_type()) {
-        valid = true;
-        for (auto it = cmd_params.cbegin(); it != cmd_params.cend(); ++it) {
-            if (!rsp_params.is_member(it.key())) {
-                valid = false;
-                break;
-            }
-            else if (rsp_params[it.key()].get_type() != it->get_type()) {
-                valid = false;
-                break;
-            }
-        }
-    }
-    else {
-        valid = false;
-    }
-
-    return valid;
-}
-
-void Server::add_command(const std::string& name, const Value& params,
-        const MethodId& method_id)
-{
+void Server::add_command(const std::string& name, const MethodId& method_id) {
     if (nullptr == method_id) { return; }
-
-    CommandMapEntry command{nullptr, method_id};
-    command.callback = method_id;
-    if (params.is_object() || params.is_array()) {
-        command.params = params;
-    }
-    else if (!params.is_null()) {
-        command.params.push_back(params);
-    }
-
-    auto it_range = m_commands.equal_range(name);
-    if (std::none_of(it_range.first, it_range.second,
-        [&command, this] (CommandsMap::const_reference& cmd) {
-            return !equal_params(cmd.second.params, command.params);
-        }
-    )) {
-        m_commands.emplace(name, command);
-    }
+    m_commands[name] = method_id;
 }
 
 bool Server::valid_request(const Value& value) {
@@ -200,43 +137,29 @@ void Server::execute(const std::string& request, std::string& response) {
     id = vrequest["id"];
     id_present = vrequest.is_member("id");
 
-    auto it_range = m_commands.equal_range(vrequest["method"].as_string());
-    if (it_range.first == it_range.second) {
+    auto it = m_commands.find(vrequest["method"].as_string());
+    if (it == m_commands.cend()) {
         response << create_error({Error::METHOD_NOT_FOUND}, id);
         return;
     }
 
-    auto it = std::find_if(it_range.first, it_range.second,
-        [&vrequest, this] (CommandsMap::const_reference& cmd) {
-            return equal_params(cmd.second.params, vrequest["params"]);
-        }
-    );
-    if (it == it_range.second) {
-        if (id_present) {
-            response << create_error({Error::INVALID_PARAMS}, id);
-        }
-        return;
-    }
-
     try {
-        it->second.callback(vrequest["params"], vresponse, id);
-        if (id_present) {
-            response << create_response(vresponse, id);
+        if (nullptr == m_method_handler) {
+            it->second(vrequest["params"], vresponse, id);
         }
+        else {
+            m_method_handler(it->second, vrequest["params"], vresponse, id);
+        }
+        response << create_response(vresponse, id);
     }
     catch (const Error& error) {
-        if (id_present) {
-            response << create_error(error, id);
-        }
+        response << create_error(error, id);
     }
     catch (const std::exception& e) {
-        if (id_present) {
-            response << create_error({-1, e.what()}, id);
-        }
+        response << create_error({-1, e.what()}, id);
     }
     catch (...) {
-        if (id_present) {
-            response << create_error({-1}, id);
-        }
+        response << create_error({-1}, id);
     }
+    if (!id_present) { response.clear(); }
 }

@@ -36,13 +36,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/create_context.cpp
+ * @file json/rpc/client/message.cpp
  *
- * @brief JSON RPC create context event implementation
+ * @brief JSON RPC client message implementation
  * */
 
-#include <json/rpc/client/create_context.hpp>
+#include <json/rpc/client/message.hpp>
 
-using json::rpc::client::CreateContext;
+using json::rpc::client::Message;
 
-CreateContext::~CreateContext() { }
+Message::Message(MessageType type, Client* client) :
+    m_type{type}, m_client{client} { }
+
+Message::~Message() { }
+
+void Message::set_time_live(const Miliseconds& time_live) {
+    m_time_live = std::chrono::steady_clock::now() + time_live;
+}
+
+void Message::set_error(const Error& error) { m_error = error; }

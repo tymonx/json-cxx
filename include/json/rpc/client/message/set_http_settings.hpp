@@ -36,72 +36,36 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/server.hpp
+ * @file json/rpc/client/message/set_http_settings.hpp
  *
- * @brief JSON RPC server interface
+ * @brief Set http settings
  * */
 
-#ifndef JSON_CXX_RPC_SERVER_HPP
-#define JSON_CXX_RPC_SERVER_HPP
+#ifndef JSON_CXX_RPC_CLIENT_MESSAGE_HTTP_SETTINGS_HPP
+#define JSON_CXX_RPC_CLIENT_MESSAGE_HTTP_SETTINGS_HPP
 
-#include <json/json.hpp>
-#include <json/rpc/error.hpp>
-
-#include <map>
-#include <functional>
+#include <json/rpc/client/message.hpp>
+#include <json/rpc/client/http_settings.hpp>
 
 namespace json {
 namespace rpc {
+namespace client {
+namespace message {
 
-/*!
- * JSON Client class
- * */
-class Server {
+class SetHttpSettings : public Message {
 public:
-    using Notification = std::function<void(const Value&)>;
-    using Method = std::function<void(const Value&, Value&)>;
-    using MethodId = std::function<void(const Value&, Value&, const Value&)>;
-    using MethodHandler = std::function<void(const MethodId&, const Value&,
-            Value&, const Value&)>;
+    SetHttpSettings(Client* client, const HttpSettings& http_settings);
 
-    Server() { }
+    virtual ~SetHttpSettings() final;
 
-    virtual ~Server();
-
-    virtual void start() = 0;
-
-    virtual void stop() = 0;
-
-    void add_command(const std::string& name, const Notification& notification);
-
-    void add_command(const std::string& name, const Method& method);
-
-    void add_command(const std::string& name, const MethodId& method_id);
-
-    template<class T>
-    void add_command(const T& commands) {
-        for (const auto& command : commands) {
-            add_command(command.first, command.second);
-        }
-    }
-
-    void set_method_handler(const MethodHandler& method_handler) {
-        m_method_handler = method_handler;
-    }
-protected:
-    void execute(const std::string& request, std::string& response);
+    const HttpSettings& get_http_settings() const { return m_http_settings; }
 private:
-    using CommandsMap = std::map<std::string, MethodId>;
-
-    bool valid_request(const Value& value);
-    Value create_response(const Value&, const Value& id);
-    Value create_error(const Error& error, const Value& id);
-
-    CommandsMap m_commands{};
-    MethodHandler m_method_handler{nullptr};
+    HttpSettings m_http_settings{};
 };
 
-}
-}
+} /* message */
+} /* client */
+} /* rpc */
+} /* json */
 
-#endif /* JSON_CXX_RPC_SERVER_HPP */
+#endif /* JSON_CXX_RPC_CLIENT_MESSAGE_HTTP_MESSAGE_HPP */

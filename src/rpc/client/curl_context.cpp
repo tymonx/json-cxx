@@ -47,43 +47,37 @@
 #include <json/rpc/client/http_settings.hpp>
 #include <json/rpc/client/http_client.hpp>
 
-#include <json/rpc/client/request.hpp>
-#include <json/rpc/client/call_method.hpp>
-#include <json/rpc/client/send_notification.hpp>
+#include <json/rpc/client/message/call_method_sync.hpp>
+#include <json/rpc/client/message/call_method_async.hpp>
+#include <json/rpc/client/message/send_notification_sync.hpp>
+#include <json/rpc/client/message/send_notification_async.hpp>
+#include <json/rpc/client/message/create_context.hpp>
+#include <json/rpc/client/message/destroy_context.hpp>
+#include <json/rpc/client/message/connect.hpp>
+#include <json/rpc/client/message/disconnect.hpp>
+#include <json/rpc/client/message/set_id_builder.hpp>
+#include <json/rpc/client/message/set_error_to_exception.hpp>
+#include <json/rpc/client/message/set_http_settings.hpp>
 
 #include <curl/curl.h>
 #include <algorithm>
 
+using namespace json::rpc::client::message;
+
 using json::rpc::Error;
-using json::rpc::client::Request;
-using json::rpc::client::EventType;
-using json::rpc::client::EventTypeU;
-using json::rpc::client::CallMethod;
-using json::rpc::client::SendNotification;
 using json::rpc::client::CurlContext;
 
-CurlContext::CurlContext(const HttpClient* client, CurlProactor& proactor) :
-    m_client{client}, m_proactor{proactor}
+CurlContext::CurlContext(HttpClient* client, void* curl_multi) :
+    m_client{client}, m_curl_multi{curl_multi}
 {
-    const HttpSettings& settings = m_client->get_settings();
-    m_id_builder = settings.get_id_builder();
-    m_time_live = settings.get_time_live();
-    std::string http_header{};
-    struct ::curl_slist* headers{nullptr};
-    unsigned pipeline_size{settings.get_pipeline_length()};
     CURL* curl_easy;
-
-    for (const auto& header : settings.get_headers()) {
-        http_header = header.first + ": " + header.second;
-        headers = curl_slist_append(headers, http_header.c_str());
-    }
-
+    struct ::curl_slist* headers{nullptr};
     headers = curl_slist_append(headers, "Content-Type: application/json");
     headers = curl_slist_append(headers, "charset: utf-8");
-    m_headers = std::move(CurlSlistPtr{headers});
+    m_headers.reset(headers);
 
     /* Pipelines */
-    m_pipelines.resize(pipeline_size);
+    m_pipelines.resize(16);
     for (auto& pipe : m_pipelines) {
         pipe.curl_easy.reset(curl_easy_init());
         if (nullptr == pipe.curl_easy) {
@@ -92,7 +86,7 @@ CurlContext::CurlContext(const HttpClient* client, CurlProactor& proactor) :
         pipe.context = this;
         pipe.callback = &CurlContext::handle_pipe;
         curl_easy = pipe.curl_easy.get();
-        curl_easy_setopt(curl_easy, CURLOPT_URL, m_client->get_url().c_str());
+        curl_easy_setopt(curl_easy, CURLOPT_URL, HttpClient::DEFAULT_URL);
         curl_easy_setopt(curl_easy, CURLOPT_WRITEFUNCTION, write_function);
         curl_easy_setopt(curl_easy, CURLOPT_WRITEDATA, &pipe);
         curl_easy_setopt(curl_easy, CURLOPT_READFUNCTION, read_function);
@@ -102,8 +96,6 @@ CurlContext::CurlContext(const HttpClient* client, CurlProactor& proactor) :
         curl_easy_setopt(curl_easy, CURLOPT_HTTPHEADER, m_headers.get());
         curl_easy_setopt(curl_easy, CURLOPT_PROTOCOLS,
                 CURLPROTO_HTTP | CURLPROTO_HTTPS);
-        curl_easy_setopt(curl_easy, CURLOPT_TIMEOUT_MS,
-                settings.get_timeout().count());
         curl_easy_setopt(curl_easy, CURLOPT_PRIVATE,
                 static_cast<InfoRead*>(&pipe));
     }
@@ -111,9 +103,8 @@ CurlContext::CurlContext(const HttpClient* client, CurlProactor& proactor) :
 
 CurlContext::~CurlContext() {
     for (auto it = m_pipelines.begin(); it != m_pipelines.end(); ++it) {
-        if (nullptr != it->event) {
-            curl_multi_remove_handle(m_proactor.get_curl_multi(),
-                    it->curl_easy.get());
+        if (nullptr != it->message) {
+            curl_multi_remove_handle(m_curl_multi, it->curl_easy.get());
         }
     }
 }
@@ -123,21 +114,22 @@ void CurlContext::handle_pipe(struct InfoRead* info_read,
     auto pipe = static_cast<Pipeline*>(info_read);
 
     if (CURLE_OK == curl_code) {
-        m_proactor.get_executor().execute(std::move(pipe->event));
+        //m_proactor.get_executor().execute(std::move(pipe->event));
     }
     else {
+        /*
         if (!m_proactor.task_done()) {
             m_events.push_back(std::move(pipe->event));
         }
         else {
-            m_proactor.get_executor().execute(std::move(pipe->event),
-                    {Error::INTERNAL_ERROR});;
+            //m_proactor.get_executor().execute(std::move(pipe->event),
+            //        {Error::INTERNAL_ERROR});;
         }
+        */
     }
 
-    pipe->event = nullptr;
-    curl_multi_remove_handle(m_proactor.get_curl_multi(),
-            pipe->curl_easy.get());
+    pipe->message = nullptr;
+    curl_multi_remove_handle(m_curl_multi, pipe->curl_easy.get());
     --m_pipes_active;
 }
 
@@ -146,7 +138,7 @@ size_t CurlContext::write_function(char* buffer, size_t size, size_t nmemb,
 {
     Pipeline* pipe = static_cast<Pipeline*>(userdata);
     size_t copy = size * nmemb;
-    static_cast<Request&>(*pipe->event).get_response().append(buffer, copy);
+    pipe->response.append(buffer, copy);
     return copy;
 }
 
@@ -175,12 +167,12 @@ void CurlContext::CurlSlistDeleter::operator()(struct curl_slist* curl_slist) {
     curl_slist_free_all(curl_slist);
 }
 
-bool CurlContext::handle_event_timeout(EventList::iterator& it) {
+bool CurlContext::handle_event_timeout(MessageList::iterator& it) {
     if (TimePoint(0_ms) != (*it)->get_time_live()) {
         if (std::chrono::steady_clock::now() > (*it)->get_time_live()) {
-            m_proactor.get_executor().execute(std::move(*it),
-                    {Error::INTERNAL_ERROR});
-            it = m_events.erase(it);
+            //m_proactor.get_executor().execute(std::move(*it),
+            //        {Error::INTERNAL_ERROR});
+            it = m_messages.erase(it);
             return true;
         }
     }
@@ -197,8 +189,8 @@ json::Value CurlContext::build_message(Request& request, Id id) {
     else if (!request.get_value().is_null()) {
         message["params"].push_back(request.get_value());
     }
-    if (EventTypeU((EventType::CALL_METHOD
-        | EventType::CALL_METHOD_ASYNC) & request.get_type()))
+    if (MessageTypeU((MessageType::CALL_METHOD
+        | MessageType::CALL_METHOD_ASYNC) & request.get_type()))
     {
         CallMethod& call_method = static_cast<CallMethod&>(request);
         if (nullptr == m_id_builder) {
@@ -212,7 +204,7 @@ json::Value CurlContext::build_message(Request& request, Id id) {
     return message;
 }
 
-void CurlContext::handle_event_request(EventList::iterator& it) {
+void CurlContext::handle_event_request(MessageList::iterator& it) {
     if (m_pipes_active < m_pipelines.size()) {
         Id id{0};
         for (auto& pipe : m_pipelines) {
@@ -241,10 +233,10 @@ void CurlContext::dispatch_events() {
     for (auto it = m_events.begin(); it != m_events.end();) {
         if (handle_event_timeout(it)) { continue; }
 
-        if (EventTypeU((EventType::SEND_NOTIFICATION
-            | EventType::SEND_NOTIFICATION_ASYNC
-            | EventType::CALL_METHOD
-            | EventType::CALL_METHOD_ASYNC) & (*it)->get_type()))
+        if (MessageTypeU((MessageType::SEND_NOTIFICATION
+            | MessageType::SEND_NOTIFICATION_ASYNC
+            | MessageType::CALL_METHOD
+            | MessageType::CALL_METHOD_ASYNC) & (*it)->get_type()))
         {
             handle_event_request(it);
         }

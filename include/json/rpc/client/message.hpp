@@ -36,13 +36,66 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/destroy_context.cpp
+ * @file json/rpc/client/event.hpp
  *
- * @brief JSON client destroy context event
+ * @brief Event message for proactor
+ *
+ * Message used for communication between clients and proactor
  * */
 
-#include <json/rpc/client/destroy_context.hpp>
+#ifndef JSON_CXX_RPC_CLIENT_MESSAGE_HPP
+#define JSON_CXX_RPC_CLIENT_MESSAGE_HPP
 
-using json::rpc::client::DestroyContext;
+#include <json/rpc/time.hpp>
+#include <json/rpc/error.hpp>
+#include <json/rpc/client/message_type.hpp>
 
-DestroyContext::~DestroyContext() { }
+#include <list>
+#include <memory>
+
+namespace json {
+namespace rpc {
+
+class Client;
+
+namespace client {
+
+class Message {
+public:
+    Message(MessageType type, Client* client);
+
+    virtual ~Message();
+
+    const Client* get_client() const { return m_client; }
+
+    Client* get_client() { return m_client; }
+
+    MessageType get_type() const { return m_type; }
+
+    void set_time_live(const Miliseconds& time_live);
+
+    const TimePoint& get_time_live() const { return m_time_live; }
+
+    void set_error(const Error& error);
+
+    const Error& get_error() const { return m_error; }
+private:
+    Message(const Message&) = delete;
+    Message(Message&&) = delete;
+    Message& operator=(const Message&) = delete;
+    Message& operator=(Message&&) = delete;
+
+    MessageType m_type{MessageType::UNDEFINED};
+    Client* m_client{nullptr};
+    TimePoint m_time_live{0_ms};
+    Error m_error{Error::OK};
+};
+
+using MessagePtr = std::unique_ptr<Message>;
+using MessageList = std::list<MessagePtr>;
+
+} /* client */
+} /* rpc */
+} /* json */
+
+#endif /* JSON_CXX_RPC_CLIENT_MESSAGE_HPP */
