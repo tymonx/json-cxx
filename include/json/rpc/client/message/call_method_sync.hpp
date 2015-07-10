@@ -63,18 +63,30 @@ public:
 
     virtual ~CallMethodSync() final;
 
+    void set_id(const Value& id) { m_id = id; }
+
+    const Value& get_id() const { return m_id; }
+
+    std::string& get_response() { return m_response; }
+
+    const std::string& get_response() const { return m_response; }
+
     const std::string& get_name() const { return m_name; }
 
     const Value& get_params() const { return m_params; }
 
     void set_result(const Value& result) { m_result.set_value(result); }
 
-    void set_exception(const std::exception_ptr& ptr) { m_result.set_exception(ptr); }
+    void set_exception(const std::exception_ptr& ptr) {
+        m_result.set_exception(ptr);
+    }
 
     std::future<Value> get_result() { return m_result.get_future(); }
 private:
     std::string m_name{};
     Value m_params{};
+    Value m_id{};
+    std::string m_response{};
     std::promise<Value> m_result{};
 };
 

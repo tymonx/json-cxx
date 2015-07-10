@@ -71,7 +71,7 @@ public:
 
     virtual ~CurlProactor() final;
 
-    virtual void push_event(EventPtr&& event) final;
+    virtual void push_message(MessagePtr&& message) final;
 
     unsigned get_max_pipeline_length() const {
         return DEFAULT_MAX_PIPELINE_LENGTH;
@@ -80,8 +80,6 @@ public:
     bool task_done() const { return m_task_done; }
 
     void* get_curl_multi() { return m_curl_multi.get(); }
-
-    Executor& get_executor() { return m_executor; }
 private:
     struct CurlMultiDeleter {
         void operator ()(void*);
@@ -90,15 +88,14 @@ private:
     using CurlMultiPtr = std::unique_ptr<void, CurlMultiDeleter>;
 
     inline void notify();
-    inline void get_events();
-    void waiting_for_events();
-    void dispatch_events();
-    void handle_create_context(EventList::iterator& it);
-    void handle_destroy_context(EventList::iterator& it);
-    void handle_events_context(EventList::iterator& it);
+    inline void get_messages();
+    void waiting_for_messages();
+    void dispatch_messages();
+    void create_context(MessageList::iterator& it);
+    void destroy_context(MessageList::iterator& it);
+    void context_message(MessageList::iterator& it);
     inline void context_processing();
     void read_processing();
-
     void task();
 
     CurlMultiPtr m_curl_multi{nullptr};
@@ -109,9 +106,8 @@ private:
     int m_eventfd{0};
     int m_running_handles{0};
 
-    Executor m_executor{};
-    EventList m_events{};
-    EventList m_events_background{};
+    MessageList m_messages{};
+    MessageList m_messages_background{};
     CurlContextList m_contexts{};
 
     std::mutex m_mutex{};

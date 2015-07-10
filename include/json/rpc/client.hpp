@@ -130,8 +130,8 @@ public:
     void notification(const std::string& name, const json::Value& params,
             NotificationCallback result);
 
-    std::future<void> connect();
-    std::future<void> disconnect();
+    void connect();
+    void disconnect();
 
     void set_id_builder(const IdBuilder& id_builder);
 

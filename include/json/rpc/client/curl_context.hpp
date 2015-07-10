@@ -47,6 +47,7 @@
 #include <json/json.hpp>
 #include <json/rpc/client.hpp>
 #include <json/rpc/client/message.hpp>
+#include <json/rpc/client/executor.hpp>
 #include <json/rpc/client/http_settings.hpp>
 
 #include <list>
@@ -67,6 +68,28 @@ class HttpClient;
 
 class CurlContext {
 public:
+    struct InfoRead;
+
+    struct CurlEasyDeleter {
+        void operator()(void* curl_easy);
+    };
+
+    struct CurlSlistDeleter {
+        void operator()(struct ::curl_slist* curl_slist);
+    };
+
+    using Id = std::uint16_t;
+    using CurlEasyPtr = std::unique_ptr<void, CurlEasyDeleter>;
+    using CurlSlistPtr = std::unique_ptr<struct ::curl_slist, CurlSlistDeleter>;
+    using InfoReadCallback = std::function<void(CurlContext*,
+            struct InfoRead*, unsigned)>;
+
+    struct InfoRead {
+        CurlContext* context{nullptr};
+        InfoReadCallback callback{};
+        CurlEasyPtr curl_easy{nullptr};
+    };
+
     CurlContext(HttpClient* client, void* curl_multi);
 
     ~CurlContext();
@@ -79,47 +102,20 @@ public:
         m_messages.splice(m_messages.end(), other, it);
     }
 
-    void dispatch_events();
+    void dispatch_messages();
 
-    bool active() const {
-        return !m_messages.empty() || m_pipes_active;
-    }
-
-    const Miliseconds& get_time_live() const { return m_time_live; }
+    bool active() const { return !m_messages.empty() || (m_pipes_active > 0); }
 private:
     CurlContext(const CurlContext&) = delete;
     CurlContext(CurlContext&&) = delete;
-
     CurlContext& operator=(const CurlContext&) = delete;
     CurlContext& operator=(CurlContext&&) = delete;
-
-    struct CurlEasyDeleter {
-        void operator()(void* curl_easy);
-    };
-
-    struct CurlSlistDeleter {
-        void operator()(struct ::curl_slist* curl_slist);
-    };
-
-    struct InfoRead;
-
-    using Id = unsigned;
-    using CurlEasyPtr = std::unique_ptr<void, CurlEasyDeleter>;
-    using CurlSlistPtr = std::unique_ptr<struct ::curl_slist, CurlSlistDeleter>;
-    using InfoReadCallback = std::function<void(CurlContext*,
-            struct InfoRead*, unsigned)>;
-
-    struct InfoRead {
-        CurlContext* context{nullptr};
-        InfoReadCallback callback{};
-        CurlEasyPtr curl_easy{nullptr};
-    };
 
     struct Pipeline : public InfoRead {
         MessagePtr message{nullptr};
         std::string::size_type request_pos{};
         std::string request{};
-        std::string response{};
+        std::string* response{nullptr};
     };
 
     using Pipelines = std::vector<Pipeline>;
@@ -131,19 +127,32 @@ private:
             void* userdata);
 
     void handle_pipe(struct InfoRead*, unsigned curl_code);
-    bool handle_event_timeout(MessageList::iterator& it);
-    void handle_event_request(MessageList::iterator& it);
-    //Value build_message(Request& request, Id id);
+
+    void call_method_sync(MessageList::iterator& it);
+    void call_method_async(MessageList::iterator& it);
+    void send_notification_sync(MessageList::iterator& it);
+    void send_notification_async(MessageList::iterator& it);
+    void connect(MessageList::iterator& it);
+    void disconnect(MessageList::iterator& it);
+    void set_error_to_exception(MessageList::iterator& it);
+    void set_http_settings(MessageList::iterator& it);
+    void set_id_builder(MessageList::iterator& it);
+
+    bool message_expired(MessageList::iterator& it);
+    void add_request_to_pipe(MessagePtr&& message,
+            std::string&& request, std::string* response);
 
     HttpClient* m_client;
     void* m_curl_multi;
     CurlSlistPtr m_headers{nullptr};
+    bool m_is_connected{false};
+    Executor m_executor{};
     Pipelines::size_type m_pipes_active{0};
     Pipelines m_pipelines{};
     MessageList m_messages{};
     Client::IdBuilder m_id_builder{nullptr};
-    Client::ErrorToException m_erro_to_exception{nullptr};
-    Miliseconds m_time_live{0_ms};
+    Miliseconds m_time_live_ms{0_ms};
+    Id m_id{0};
 };
 
 using CurlContextPtr = std::unique_ptr<CurlContext>;

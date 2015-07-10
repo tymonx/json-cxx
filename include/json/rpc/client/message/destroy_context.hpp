@@ -59,6 +59,8 @@ public:
 
     virtual ~DestroyContext() final;
 
+    void set_result() { m_result.set_value(); }
+
     std::future<void> get_result() { return m_result.get_future(); }
 private:
     std::promise<void> m_result{};

@@ -46,8 +46,6 @@
 
 #include <json/rpc/client/message.hpp>
 
-#include <future>
-
 namespace json {
 namespace rpc {
 namespace client {
@@ -58,12 +56,6 @@ public:
     Disconnect(Client* client);
 
     virtual ~Disconnect() final;
-
-    void set_result() { m_result.set_value(); }
-
-    std::future<void> get_result() { return m_result.get_future(); }
-private:
-    std::promise<void> m_result{};
 };
 
 } /* message */

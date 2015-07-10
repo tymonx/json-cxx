@@ -8,8 +8,8 @@ using namespace json;
 using json::rpc::operator "" _ms;
 
 int main() {
-    rpc::client::CurlClient client{"localhost:6666"};
-    client.get_settings().set_id_builder([] (unsigned id) {
+    rpc::client::CurlClient client{{"localhost:6666"}};
+    client.set_id_builder([] (unsigned id) {
         return "DUPA-" + std::to_string(id);
     });
     client.connect();

@@ -44,19 +44,25 @@ add_library(json-cxx
 add_library(json-cxx-rpc-client
     rpc/error.cpp
     rpc/client.cpp
-    rpc/client/call_method.cpp
-    rpc/client/create_context.cpp
     rpc/client/curl_client.cpp
     rpc/client/curl_context.cpp
     rpc/client/curl_proactor.cpp
-    rpc/client/destroy_context.cpp
-    rpc/client/event.cpp
     rpc/client/executor.cpp
     rpc/client/http_client.cpp
     rpc/client/http_settings.cpp
+    rpc/client/message.cpp
     rpc/client/proactor.cpp
-    rpc/client/request.cpp
-    rpc/client/send_notification.cpp
+    rpc/client/message/call_method_async.cpp
+    rpc/client/message/call_method_sync.cpp
+    rpc/client/message/connect.cpp
+    rpc/client/message/create_context.cpp
+    rpc/client/message/destroy_context.cpp
+    rpc/client/message/disconnect.cpp
+    rpc/client/message/send_notification_sync.cpp
+    rpc/client/message/send_notification_async.cpp
+    rpc/client/message/set_error_to_exception.cpp
+    rpc/client/message/set_http_settings.cpp
+    rpc/client/message/set_id_builder.cpp
 )
 
 add_library(json-cxx-rpc-server

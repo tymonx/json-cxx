@@ -49,6 +49,12 @@ constexpr const json::rpc::Miliseconds HttpSettings::UNKNOWN_TIME_LIVE_MS;
 
 constexpr const json::rpc::Miliseconds HttpSettings::UNKNOWN_TIME_TIMEOUT_MS;
 
+HttpSettings::HttpSettings() { }
+
+HttpSettings::HttpSettings(const std::string& url) : m_url{url} { }
+
+HttpSettings::~HttpSettings() { }
+
 void HttpSettings::add_header(const Header& header) {
     if (header.first.empty() || header.second.empty()) { return; }
     m_headers.emplace(header.first, header.second);

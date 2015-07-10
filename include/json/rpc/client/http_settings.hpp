@@ -62,27 +62,24 @@ public:
     using Headers = std::unordered_map<std::string, std::string>;
     using PipelineLength = unsigned;
 
-    static constexpr const auto UNKNOWN_PIPELINE_LENGTH = PipelineLength(-1);
-
     static constexpr const auto UNKNOWN_TIME_LIVE_MS = Miliseconds(-1);
 
     static constexpr const auto UNKNOWN_TIME_TIMEOUT_MS = Miliseconds(-1);
 
-    HttpSettings() { }
+    HttpSettings();
 
-    HttpSettings(const std::string& url) : m_url{url} { }
+    HttpSettings(const std::string& url);
+
+    HttpSettings(const HttpSettings&) = default;
+    HttpSettings(HttpSettings&&) = default;
+    HttpSettings& operator=(const HttpSettings&) = default;
+    HttpSettings& operator=(HttpSettings&&) = default;
+
+    ~HttpSettings();
 
     void set_url(const std::string& url) { m_url = url; }
 
     const std::string& get_url() const { return m_url; }
-
-    void set_pipeline_length(const PipelineLength& pipeline_length) {
-        m_pipeline_length = pipeline_length;
-    }
-
-    const PipelineLength& get_pipeline_length() const {
-        return m_pipeline_length;
-    }
 
     void set_timeout(const Seconds& timeout_sec) {
         set_timeout(std::chrono::duration_cast<Miliseconds>(timeout_sec));
@@ -109,7 +106,6 @@ public:
     const Headers& get_headers() const { return m_headers; }
 private:
     std::string m_url{};
-    PipelineLength m_pipeline_length{UNKNOWN_PIPELINE_LENGTH};
     Miliseconds m_time_live_ms{UNKNOWN_TIME_LIVE_MS};
     Miliseconds m_time_timeout_ms{UNKNOWN_TIME_TIMEOUT_MS};
     Headers m_headers{};

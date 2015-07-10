@@ -53,5 +53,3 @@ Message::~Message() { }
 void Message::set_time_live(const Miliseconds& time_live) {
     m_time_live = std::chrono::steady_clock::now() + time_live;
 }
-
-void Message::set_error(const Error& error) { m_error = error; }

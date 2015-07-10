@@ -45,14 +45,8 @@
 #define JSON_CXX_RPC_CLIENT_EXECUTOR_HPP
 
 #include <json/rpc/error.hpp>
-#include <json/rpc/client/event.hpp>
-
-#include <list>
-#include <mutex>
-#include <atomic>
-#include <thread>
-#include <vector>
-#include <condition_variable>
+#include <json/rpc/client/message.hpp>
+#include <json/rpc/client.hpp>
 
 namespace json {
 namespace rpc {
@@ -60,30 +54,22 @@ namespace client {
 
 class Executor {
 public:
-    static constexpr const size_t DEFAULT_THREADS = 4;
+    using ErrorToException = Client::ErrorToException;
 
-    Executor(size_t threads = DEFAULT_THREADS);
+    void execute(MessagePtr& message, const Error& error = {Error::OK});
 
-    ~Executor();
-
-    void execute(EventPtr&& event);
-
-    void execute(EventPtr&& event, const Error& error) {
-        event->set_error(error);
-        execute(std::move(event));
+    void set_error_to_exception(const ErrorToException& error_to_exception) {
+        m_error_to_exception = error_to_exception;
     }
 private:
-    using ThreadsPool = std::vector<std::thread>;
+    void call_method_sync(Message& message, const Error& error);
+    void call_method_async(Message& message, const Error& error);
+    void send_notification_sync(Message& message, const Error& error);
+    void send_notification_async(Message& message, const Error& error);
+    void connect(Message& message, const Error& error);
+    void disconnect(Message& message, const Error& error);
 
-    void task();
-    void event_dispatcher(Event* event);
-    void push_event(EventPtr&& event);
-
-    EventList m_events{};
-    std::mutex m_mutex{};
-    ThreadsPool m_threads{};
-    volatile std::atomic<bool> m_stop{false};
-    std::condition_variable m_cond_variable{};
+    ErrorToException m_error_to_exception{nullptr};
 };
 
 } /* client */

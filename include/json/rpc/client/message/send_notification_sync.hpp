@@ -63,14 +63,25 @@ public:
 
     virtual ~SendNotificationSync() final;
 
+    std::string& get_response() { return m_response; }
+
+    const std::string& get_response() const { return m_response; }
+
+    const std::string& get_name() const { return m_name; }
+
+    const Value& get_params() const { return m_params; }
+
     void set_result() { m_result.set_value(); }
 
-    void set_exception(const std::exception_ptr& ptr) { m_result.set_exception(ptr); }
+    void set_exception(const std::exception_ptr& ptr) {
+        m_result.set_exception(ptr);
+    }
 
     std::future<void> get_result() { return m_result.get_future(); }
 private:
     std::string m_name{};
     Value m_params{};
+    std::string m_response{};
     std::promise<void> m_result{};
 };
 

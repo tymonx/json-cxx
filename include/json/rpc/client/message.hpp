@@ -47,7 +47,6 @@
 #define JSON_CXX_RPC_CLIENT_MESSAGE_HPP
 
 #include <json/rpc/time.hpp>
-#include <json/rpc/error.hpp>
 #include <json/rpc/client/message_type.hpp>
 
 #include <list>
@@ -75,10 +74,6 @@ public:
     void set_time_live(const Miliseconds& time_live);
 
     const TimePoint& get_time_live() const { return m_time_live; }
-
-    void set_error(const Error& error);
-
-    const Error& get_error() const { return m_error; }
 private:
     Message(const Message&) = delete;
     Message(Message&&) = delete;
@@ -88,7 +83,6 @@ private:
     MessageType m_type{MessageType::UNDEFINED};
     Client* m_client{nullptr};
     TimePoint m_time_live{0_ms};
-    Error m_error{Error::OK};
 };
 
 using MessagePtr = std::unique_ptr<Message>;

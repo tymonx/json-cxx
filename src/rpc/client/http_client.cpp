@@ -55,12 +55,12 @@ constexpr const char* const HttpClient::DEFAULT_URL;
 
 HttpClient::HttpClient(Proactor& proactor, const HttpSettings& http_settings) :
     Client{proactor} {
-    m_proactor.push_event(MessagePtr{new SetHttpSettings{m_id,
+    m_proactor.push_message(MessagePtr{new SetHttpSettings{m_id,
             http_settings}});
 }
 
 void HttpClient::set_http_settings(const HttpSettings& http_settings) {
-    m_proactor.push_event(MessagePtr{new SetHttpSettings{m_id,
+    m_proactor.push_message(MessagePtr{new SetHttpSettings{m_id,
             http_settings}});
 }
 

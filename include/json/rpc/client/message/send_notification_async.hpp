@@ -63,10 +63,21 @@ public:
     SendNotificationAsync(Client* client, const std::string& name,
             const Value& params, const Callback& callback);
 
+    std::string& get_response() { return m_response; }
+
+    const std::string& get_response() const { return m_response; }
+
+    const std::string& get_name() const { return m_name; }
+
+    const Value& get_params() const { return m_params; }
+
+    const Callback& get_callback() const { return m_callback; }
+
     virtual ~SendNotificationAsync() final;
 private:
     std::string m_name{};
     Value m_params{};
+    std::string m_response{};
     Callback m_callback{};
 };
 

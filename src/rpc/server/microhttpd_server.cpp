@@ -132,7 +132,7 @@ int MicrohttpdServer::method_handler(void* cls, struct MHD_Connection *connectio
 }
 
 void MicrohttpdServer::start() {
-    m_mhd = MicrohttpdPtr{MHD_start_daemon(MHD_USE_SELECT_INTERNALLY,
+    m_mhd = MicrohttpdPtr{MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION,
             m_port, nullptr, nullptr,
             method_handler, this,
             MHD_OPTION_END)};

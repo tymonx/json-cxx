@@ -61,67 +61,61 @@ using namespace json::rpc::client;
 using namespace json::rpc::client::message;
 
 Client::Client(client::Proactor& proactor) : m_id{this}, m_proactor{proactor} {
-    m_proactor.push_event(MessagePtr{new CreateContext{m_id}});
+    m_proactor.push_message(MessagePtr{new CreateContext{m_id}});
 }
 
 Client::~Client() {
-    MessagePtr event{new DestroyContext{m_id}};
-    auto result = static_cast<DestroyContext&>(*event).get_result();
-    m_proactor.push_event(std::move(event));
+    MessagePtr message{new DestroyContext{m_id}};
+    auto result = static_cast<DestroyContext&>(*message).get_result();
+    m_proactor.push_message(std::move(message));
     result.get();
 }
 
-std::future<void> Client::connect() {
-    MessagePtr event{new Connect{m_id}};
-    auto result = static_cast<Connect&>(*event).get_result();
-    m_proactor.push_event(std::move(event));
-    return result;
+void Client::connect() {
+    m_proactor.push_message(MessagePtr{new Connect{m_id}});
 }
 
-std::future<void> Client::disconnect() {
-    MessagePtr event{new Disconnect{m_id}};
-    auto result = static_cast<Disconnect&>(*event).get_result();
-    m_proactor.push_event(std::move(event));
-    return result;
+void Client::disconnect() {
+    m_proactor.push_message(MessagePtr{new Disconnect{m_id}});
 }
 
 void Client::set_id_builder(const IdBuilder& id_builder) {
-    m_proactor.push_event(MessagePtr{new SetIdBuilder{m_id, id_builder}});
+    m_proactor.push_message(MessagePtr{new SetIdBuilder{m_id, id_builder}});
 }
 
 void Client::set_error_to_exception(const ErrorToException& error_to_exception) {
-    m_proactor.push_event(MessagePtr{new SetErrorToException{m_id,
+    m_proactor.push_message(MessagePtr{new SetErrorToException{m_id,
             error_to_exception}});
 }
 
 Client::MethodFuture Client::method(const std::string& name,
         const json::Value& params)
 {
-    MessagePtr event{new CallMethodSync{m_id, name, params}};
-    auto result = static_cast<CallMethodSync&>(*event).get_result();
-    m_proactor.push_event(std::move(event));
+    MessagePtr message{new CallMethodSync{m_id, name, params}};
+    auto result = static_cast<CallMethodSync&>(*message).get_result();
+    m_proactor.push_message(std::move(message));
     return result;
 }
 
 void Client::method(const std::string& name, const json::Value& params,
         MethodCallback result)
 {
-    m_proactor.push_event(MessagePtr{new CallMethodAsync{m_id,
+    m_proactor.push_message(MessagePtr{new CallMethodAsync{m_id,
                 name, params, result}});
 }
 
 Client::NotificationFuture Client::notification(const std::string& name,
         const json::Value& params)
 {
-    MessagePtr event{new SendNotificationSync{m_id, name, params}};
-    auto result = static_cast<SendNotificationSync&>(*event).get_result();
-    m_proactor.push_event(std::move(event));
+    MessagePtr message{new SendNotificationSync{m_id, name, params}};
+    auto result = static_cast<SendNotificationSync&>(*message).get_result();
+    m_proactor.push_message(std::move(message));
     return result;
 }
 
 void Client::notification(const std::string& name, const json::Value& params,
         NotificationCallback result)
 {
-    m_proactor.push_event(MessagePtr{new SendNotificationAsync{m_id,
+    m_proactor.push_message(MessagePtr{new SendNotificationAsync{m_id,
             name, params, result}});
 }

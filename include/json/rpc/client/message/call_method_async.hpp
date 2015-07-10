@@ -65,6 +65,14 @@ public:
 
     virtual ~CallMethodAsync() final;
 
+    void set_id(const Value& id) { m_id = id; }
+
+    const Value& get_id() const { return m_id; }
+
+    std::string& get_response() { return m_response; }
+
+    const std::string& get_response() const { return m_response; }
+
     const std::string& get_name() const { return m_name; }
 
     const Value& get_params() const { return m_params; }
@@ -73,6 +81,8 @@ public:
 private:
     std::string m_name{};
     Value m_params{};
+    Value m_id{};
+    std::string m_response{};
     Callback m_callback{nullptr};
 };
 

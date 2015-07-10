@@ -44,151 +44,171 @@
 #include <json/rpc/client/executor.hpp>
 
 #include <json/json.hpp>
+#include <future>
 
-#include <json/rpc/client/request.hpp>
-#include <json/rpc/client/call_method.hpp>
-#include <json/rpc/client/send_notification.hpp>
+#include <json/rpc/client/message/call_method_sync.hpp>
+#include <json/rpc/client/message/call_method_async.hpp>
+#include <json/rpc/client/message/send_notification_sync.hpp>
+#include <json/rpc/client/message/send_notification_async.hpp>
+
+using namespace json::rpc::client::message;
 
 using json::Value;
 using json::Deserializer;
 using json::rpc::Error;
-using json::rpc::client::Event;
-using json::rpc::client::Request;
 using json::rpc::client::Executor;
-using json::rpc::client::CallMethod;
-using json::rpc::client::SendNotification;
 
-Executor::Executor(size_t threads) {
-    m_threads.resize(threads);
-    for (auto it = m_threads.begin(); it != m_threads.end(); ++it) {
-        *it = std::thread{&Executor::task, this};
+static bool
+valid_response(const Value& value, const Value& id) {
+    if (!value.is_object()) { return false; }
+    if (3 != value.size()) { return false; }
+    if (value["jsonrpc"] != "2.0") { return false; }
+    if (!value.is_member("id")) { return false; }
+
+    const auto& vid = value["id"];
+    if (!vid.is_number() && !vid.is_string() && !vid.is_null()) {
+        return false;
     }
-}
 
-Executor::~Executor() {
-    m_stop = true;
-    m_cond_variable.notify_all();
-    for (auto it = m_threads.begin(); it != m_threads.end(); ++it) {
-        if (it->joinable()) { it->join(); }
+    if (value.is_member("result")) {
+        if (vid != id) { return false; }
     }
-    /* Finish all events */
-    while (!m_events.empty()) { task(); }
-}
-
-void Executor::push_event(EventPtr&& event) {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    m_events.push_back(std::move(event));
-    lock.unlock();
-    m_cond_variable.notify_all();
-}
-
-void Executor::task() {
-    std::unique_lock<std::mutex> lock(m_mutex, std::defer_lock);
-    EventPtr event{nullptr};
-
-    do {
-        lock.lock();
-        m_cond_variable.wait(lock,
-            [this] { return !m_events.empty() || m_stop; });
-        if (!m_events.empty()) {
-            event = std::move(m_events.front());
-            m_events.pop_front();
+    else if (value.is_member("error")) {
+        auto& error = value["error"];
+        if (!error.is_object()) { return false; }
+        if (!error["code"].is_int()) { return false; }
+        if (!error["message"].is_string()) { return false; }
+        if (3 == error.size()) {
+            if (!error.is_member("data")) { return false; }
         }
-        lock.unlock();
+        else if (2 != error.size()) { return false; }
+        if ((vid != id) && !vid.is_null()) { return false; }
+    }
+    else { return false; }
 
-        if (nullptr != event) {
-            event_dispatcher(event.get());
-            event = nullptr;
-        }
-    } while(!m_stop);
+    return true;
 }
 
-static
-void call_method(Event* _event) {
-    CallMethod* event = static_cast<CallMethod*>(_event);
-    event->processing();
-    if (!event->get_error()) {
-        event->m_result.set_value(event->get_value());
+static Error
+processing_method(const std::string& response, const Value& id, Value& result) {
+    Value value;
+    Deserializer deserializer(response);
+    if (deserializer.is_invalid()) {
+        return {Error::PARSE_ERROR};
+    }
+    deserializer >> value;
+    if (!valid_response(value, id)) {
+        return {Error::PARSE_ERROR};
+    }
+    if (value.is_member("result")) {
+        result = value["result"];
     }
     else {
-        event->m_result.set_exception(
-                std::make_exception_ptr(event->get_error()));
+        return {
+            value["error"]["code"].as_int(),
+            value["error"]["message"].as_string(),
+            value["error"]["data"]
+        };
     }
+
+    return {Error::OK};
 }
 
-static
-void call_method_async(Event* _event) {
-    CallMethod* event = static_cast<CallMethod*>(_event);
-    event->processing();
-    try {
-        event->m_callback(event->get_client(), event->get_value(),
-                event->get_error());
-    }
-    catch (...) { }
+static Error
+processing_notification(const std::string& response) {
+    if (!response.empty()) { return {Error::INTERNAL_ERROR}; }
+    return {Error::OK};
 }
 
-static
-void send_notification(Event* _event) {
-    SendNotification* event = static_cast<SendNotification*>(_event);
-    event->processing();
-    if (!event->get_error()) {
-        event->m_result.set_value();
+void Executor::call_method_sync(Message& message, const Error& error) {
+    auto& msg = static_cast<CallMethodSync&>(message);
+    Error err{error};
+    Value result(Value::Type::NIL);
+
+    if (!err) {
+        err = processing_method(msg.get_response(), msg.get_id(), result);
+    }
+
+    if (!err) {
+        msg.set_result({});
     }
     else {
-        event->m_result.set_exception(
-                std::make_exception_ptr(event->get_error()));
-    }
-}
-
-static
-void send_notification_async(Event* _event) {
-    SendNotification* event = static_cast<SendNotification*>(_event);
-    event->processing();
-    try {
-        event->m_callback(event->get_client(), event->get_error());
-    }
-    catch (...) { }
-}
-
-void Executor::execute(EventPtr&& event) {
-    switch (event->get_type()) {
-    case EventType::CALL_METHOD:
-        call_method(event.get());
-        break;
-    case EventType::SEND_NOTIFICATION:
-        send_notification(event.get());
-        break;
-    case EventType::CALL_METHOD_ASYNC:
-        if (nullptr != static_cast<CallMethod&>(*event).m_callback) {
-            push_event(std::move(event));
+        if (m_error_to_exception) {
+            msg.set_exception(m_error_to_exception(err));
         }
-        break;
-    case EventType::SEND_NOTIFICATION_ASYNC:
-        if (nullptr != static_cast<SendNotification&>(*event).m_callback) {
-            push_event(std::move(event));
+        else {
+            msg.set_exception(std::make_exception_ptr(err));
         }
-        break;
-    case EventType::DESTROY_CONTEXT:
-    case EventType::CREATE_CONTEXT:
-    case EventType::UNDEFINED:
-    default:
-        break;
     }
 }
 
-void Executor::event_dispatcher(Event* event) {
-    switch (event->get_type()) {
-    case EventType::CALL_METHOD_ASYNC:
-        call_method_async(event);
+void Executor::call_method_async(Message& message, const Error& error) {
+    auto& msg = static_cast<CallMethodAsync&>(message);
+    Error err{error};
+    Value result(Value::Type::NIL);
+
+    if (!err) {
+        err = processing_method(msg.get_response(), msg.get_id(), result);
+    }
+
+    std::async(std::launch::async, msg.get_callback(),
+            msg.get_client(), result, err);
+}
+
+void Executor::send_notification_sync(Message& message, const Error& error) {
+    auto& msg = static_cast<SendNotificationSync&>(message);
+    Error err{error};
+
+    if (!err) {
+        err = processing_notification(msg.get_response());
+    }
+
+    if (!err) {
+        msg.set_result();
+    }
+    else {
+        if (m_error_to_exception) {
+            msg.set_exception(m_error_to_exception(err));
+        }
+        else {
+            msg.set_exception(std::make_exception_ptr(err));
+        }
+    }
+}
+
+void Executor::send_notification_async(Message& message, const Error& error) {
+    auto& msg = static_cast<SendNotificationAsync&>(message);
+    Error err{error};
+
+    if (!err) {
+        err = processing_notification(msg.get_response());
+    }
+
+    std::async(std::launch::async, msg.get_callback(), msg.get_client(), err);
+}
+
+void Executor::execute(MessagePtr& message, const Error& error) {
+    switch (message->get_type()) {
+    case MessageType::CALL_METHOD_SYNC:
+        call_method_sync(*message, error);
         break;
-    case EventType::SEND_NOTIFICATION_ASYNC:
-        send_notification_async(event);
+    case MessageType::CALL_METHOD_ASYNC:
+        call_method_async(*message, error);
         break;
-    case EventType::CALL_METHOD:
-    case EventType::SEND_NOTIFICATION:
-    case EventType::DESTROY_CONTEXT:
-    case EventType::CREATE_CONTEXT:
-    case EventType::UNDEFINED:
+    case MessageType::SEND_NOTIFICATION_SYNC:
+        send_notification_sync(*message, error);
+        break;
+    case MessageType::SEND_NOTIFICATION_ASYNC:
+        send_notification_async(*message, error);
+        break;
+    case MessageType::CONNECT:
+    case MessageType::DISCONNECT:
+    case MessageType::SET_ID_BUILDER:
+    case MessageType::SET_HTTP_SETTINGS:
+    case MessageType::SET_ERROR_TO_EXCEPTION:
+    case MessageType::CREATE_CONTEXT:
+    case MessageType::DESTROY_CONTEXT:
+    case MessageType::UNDEFINED:
     default:
         break;
     }
