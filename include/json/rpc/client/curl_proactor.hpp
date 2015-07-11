@@ -60,7 +60,7 @@ namespace client {
 
 class CurlProactor : public Proactor {
 public:
-    static const constexpr unsigned DEFAULT_MAX_PIPELINE_LENGTH = 8;
+    static const constexpr unsigned DEFAULT_MAX_PIPELINE_LENGTH = 16;
 
     static CurlProactor& get_instance() {
         static CurlProactor proactor{};

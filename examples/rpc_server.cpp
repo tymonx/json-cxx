@@ -20,16 +20,16 @@ int main(int argc, char* argv[]) {
 
     server.add_command(
         "command1",
-        [] (const Value& request, Value& response, const Value& id) {
-            cout << "Request: " << request << " id: " << id << endl;
-            response = "Response from command1!!!";
+        [] (const Value& params, Value& result, const Value& id) {
+            cout << params << ":" << id << endl;
+            result = "Response from command1!!!";
         }
     );
     server.add_command(
         "command2",
-        [] (const Value& request, Value& response, const Value& id) {
-            cout << "Request: " << request << " id: " << id << endl;
-            response = "Response from command2!!!";
+        [] (const Value& params, Value& result, const Value& id) {
+            cout << params << ":" << id << endl;
+            result = "Response from command2!!!";
         }
     );
 

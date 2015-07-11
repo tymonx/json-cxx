@@ -166,18 +166,18 @@ Number& Number::operator+=(const Number& number) {
     return *this;
 }
 
-bool operator==(const Number& num1, const Number& num2) {
+bool Number::operator==(const Number& other) const {
     bool result;
 
-    switch (num1.get_type()) {
+    switch (get_type()) {
     case Number::Type::INT:
-        result = (num1.m_int == Int(num2));
+        result = (m_int == Int(other));
         break;
     case Number::Type::UINT:
-        result = (num1.m_uint == Uint(num2));
+        result = (m_uint == Uint(other));
         break;
     case Number::Type::DOUBLE:
-        result = std::fabs(num1.m_double - Double(num2)) <
+        result = std::fabs(m_double - Double(other)) <
             std::numeric_limits<Double>::epsilon();
         break;
     default:
@@ -188,18 +188,18 @@ bool operator==(const Number& num1, const Number& num2) {
     return result;
 }
 
-bool operator<(const Number& num1, const Number& num2) {
+bool Number::operator<(const Number& other) const {
     bool result;
 
-    switch (num1.get_type()) {
+    switch (get_type()) {
     case Number::Type::INT:
-        result = (num1.m_int < Int(num2));
+        result = (m_int < Int(other));
         break;
     case Number::Type::UINT:
-        result = (num1.m_uint < Uint(num2));
+        result = (m_uint < Uint(other));
         break;
     case Number::Type::DOUBLE:
-        result = (num1.m_double < Double(num2));
+        result = (m_double < Double(other));
         break;
     default:
         result = false;

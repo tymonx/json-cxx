@@ -127,7 +127,7 @@ void CurlProactor::waiting_for_messages() {
     waitfd[0].fd = m_eventfd;
     waitfd[0].events = CURL_WAIT_POLLIN | CURL_WAIT_POLLPRI;
 
-    curl_multi_wait(m_curl_multi.get(), waitfd, 1, 100, nullptr);
+    curl_multi_wait(m_curl_multi.get(), waitfd, 1, 1000, nullptr);
     ssize_t err = read(m_eventfd, &message, sizeof(message));
     (void)err;
 }

@@ -826,22 +826,30 @@ public:
     bool operator!() const { return is_null(); }
 
     /*! JSON values comparison */
-    friend bool operator==(const Value&, const Value&);
+    bool operator==(const Value&) const;
 
     /*! JSON values comparison */
-    friend bool operator!=(const Value&, const Value&);
+    bool operator<(const Value&) const;
 
     /*! JSON values comparison */
-    friend bool operator<(const Value&, const Value&);
+    bool operator!=(const json::Value& val) const {
+        return !(*this == val);
+    }
 
     /*! JSON values comparison */
-    friend bool operator>(const Value&, const Value&);
+    bool operator> (const json::Value& val) const {
+        return (val < *this);
+    }
 
     /*! JSON values comparison */
-    friend bool operator<=(const Value&, const Value&);
+    bool operator<=(const json::Value& val) const {
+        return !(val < *this);
+    }
 
     /*! JSON values comparison */
-    friend bool operator>=(const Value&, const Value&);
+    bool operator>=(const json::Value& val) const {
+        return !(*this < val);
+    }
 
     /*! Begin iterator */
     iterator begin();
@@ -873,32 +881,6 @@ private:
 
     void create_container(Type type);
 };
-
-/*! JSON values comparison */
-bool operator==(const Value&, const Value&);
-
-/*! JSON values comparison */
-inline bool operator!=(const Value& val1, const Value& val2) {
-    return !(val1 == val2);
-}
-
-/*! JSON values comparison */
-bool operator< (const Value&, const Value&);
-
-/*! JSON values comparison */
-inline bool operator> (const Value& val1, const Value& val2) {
-    return val2 < val1;
-}
-
-/*! JSON values comparison */
-inline bool operator<=(const Value& val1, const Value& val2) {
-    return !(val2 < val1);
-}
-
-/*! JSON values comparison */
-inline bool operator>=(const Value& val1, const Value& val2) {
-    return !(val1 < val2);
-}
 
 } /* namespace json */
 

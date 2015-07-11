@@ -7,48 +7,47 @@
 using namespace json;
 using json::rpc::operator "" _ms;
 
+static const auto COMMANDS = 2;
+static const auto REQUESTS = 100;
+
 int main() {
     rpc::client::CurlClient client{{"localhost:6666"}};
-    client.set_id_builder([] (unsigned id) {
-        return "DUPA-" + std::to_string(id);
-    });
     client.connect();
 
     auto start = std::chrono::system_clock::now();
 
-    for (unsigned i = 0; i < 100; ++i) {
+    for (unsigned i = 0; i < REQUESTS; ++i) {
         client.method("command1", {
                 Pair{"b", "Hej!!!"},
                 Pair{"a", true}
             },
-            [] (rpc::Client*, const Value& v, const rpc::Error& error) {
+            [] (rpc::Client*, const Value& result, const rpc::Error& error) {
                 if (error) {
                     std::cout << "Error: " << error.what() << " " << error.get_code() << std::endl;
                 }
                 else {
-                    std::cout << "OK: " << v << std::endl;
+                    std::cout << result << std::endl;
                 }
-                (void)v;
             }
         );
         client.method("command2", {
                 13
             },
-            [] (rpc::Client*, const Value& v, const rpc::Error& error) {
+            [] (rpc::Client*, const Value& result, const rpc::Error& error) {
                 if (error) {
                     std::cout << "Error: " << error.what() << " " << error.get_code() << std::endl;
                 }
                 else {
-                    std::cout << "OK: " << v << std::endl;
+                    std::cout << result << std::endl;
                 }
-                (void)v;
             }
         );
     }
 
+    client.~CurlClient();
     auto stop = std::chrono::system_clock::now();
-    auto diff = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start).count();
-    std::cout << "Time: " << diff << "ns" << std::endl;
+    auto diff = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
+    std::cout << "Time: " << diff/REQUESTS/COMMANDS << "us" << std::endl;
 
     return 0;
 }

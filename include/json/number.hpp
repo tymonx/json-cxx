@@ -46,14 +46,6 @@
 
 #include <cstdint>
 
-namespace json { class Number; }
-
-/*! JSON numbers comparison */
-bool operator==(const json::Number&, const json::Number&);
-
-/*! JSON numbers comparison */
-bool operator<(const json::Number&, const json::Number&);
-
 namespace json {
 
 /*! Unsigned integer */
@@ -192,14 +184,34 @@ public:
      *
      * @return When equal return true, otherwise false
      * */
-    friend bool ::operator==(const Number&, const Number&);
+    bool operator==(const Number&) const;
 
     /*!
      * @brief Comparison between two JSON numbers
      *
      * @return When equal return false, otherwise true
      * */
-    friend bool ::operator<(const Number&, const Number&);
+    bool operator<(const Number&) const;
+
+    /*! JSON numbers comparison */
+    bool operator!=(const json::Number& other) const {
+        return !(*this == other);
+    }
+
+    /*! JSON numbers comparison */
+    bool operator>(const json::Number& other) const {
+        return other < *this;
+    }
+
+    /*! JSON numbers comparison */
+    bool operator<=(const json::Number& other) const {
+        return !(other < *this);
+    }
+
+    /*! JSON numbers comparison */
+    bool operator>=(const json::Number& other) const {
+        return !(*this < other);
+    }
 private:
     enum Type m_type;
 
@@ -211,29 +223,5 @@ private:
 };
 
 } /* namespace json */
-
-/*! JSON numbers comparison */
-static inline
-bool operator!=(const json::Number& num1, const json::Number& num2) {
-    return !(num1 == num2);
-}
-
-/*! JSON numbers comparison */
-static inline
-bool operator>(const json::Number& num1, const json::Number& num2) {
-    return num2 < num1;
-}
-
-/*! JSON numbers comparison */
-static inline
-bool operator<=(const json::Number& num1, const json::Number& num2) {
-    return !(num2 < num1);
-}
-
-/*! JSON numbers comparison */
-static inline
-bool operator>=(const json::Number& num1, const json::Number& num2) {
-    return !(num1 < num2);
-}
 
 #endif /* JSON_CXX_NUMBER_HPP */

@@ -715,26 +715,26 @@ void Value::swap(Value& value) {
     *this = std::move(temp);
 }
 
-bool json::operator==(const Value& val1, const Value& val2) {
-    if (val1.m_type != val2.m_type) { return false; }
+bool Value::operator==(const json::Value& other) const {
+    if (m_type != other.m_type) { return false; }
 
     bool result = false;
 
-    switch (val1.m_type) {
+    switch (m_type) {
     case Value::Type::OBJECT:
-        result = (val1.m_object == val2.m_object);
+        result = (m_object == other.m_object);
         break;
     case Value::Type::ARRAY:
-        result = (val1.m_array == val2.m_array);
+        result = (m_array == other.m_array);
         break;
     case Value::Type::STRING:
-        result = (val1.m_string == val2.m_string);
+        result = (m_string == other.m_string);
         break;
     case Value::Type::NUMBER:
-        result = (val1.m_number == val2.m_number);
+        result = (m_number == other.m_number);
         break;
     case Value::Type::BOOLEAN:
-        result = (val1.m_boolean == val2.m_boolean);
+        result = (m_boolean == other.m_boolean);
         break;
     case Value::Type::NIL:
         result = true;
@@ -746,26 +746,26 @@ bool json::operator==(const Value& val1, const Value& val2) {
     return result;
 }
 
-bool json::operator<(const Value& val1, const Value& val2) {
-    if (val1.m_type != val2.m_type) { return false; }
+bool Value::operator<(const json::Value& val) const {
+    if (m_type != val.m_type) { return false; }
 
     bool result = false;
 
-    switch (val1.m_type) {
+    switch (m_type) {
     case Value::Type::OBJECT:
-        result = (val1.m_object < val2.m_object);
+        result = (m_object < val.m_object);
         break;
     case Value::Type::ARRAY:
-        result = (val1.m_array < val2.m_array);
+        result = (m_array < val.m_array);
         break;
     case Value::Type::STRING:
-        result = (val1.m_string < val2.m_string);
+        result = (m_string < val.m_string);
         break;
     case Value::Type::NUMBER:
-        result = (val1.m_number < val2.m_number);
+        result = (m_number < val.m_number);
         break;
     case Value::Type::BOOLEAN:
-        result = (val1.m_boolean < val2.m_boolean);
+        result = (m_boolean < val.m_boolean);
         break;
     case Value::Type::NIL:
     default:

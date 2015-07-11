@@ -130,7 +130,7 @@ void Executor::call_method_sync(Message& message, const Error& error) {
     }
 
     if (!err) {
-        msg.set_result({});
+        msg.set_result(result);
     }
     else {
         if (m_error_to_exception) {
@@ -188,6 +188,7 @@ void Executor::send_notification_async(Message& message, const Error& error) {
 }
 
 void Executor::execute(MessagePtr& message, const Error& error) {
+
     switch (message->get_type()) {
     case MessageType::CALL_METHOD_SYNC:
         call_method_sync(*message, error);

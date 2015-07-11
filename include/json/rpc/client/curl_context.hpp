@@ -49,6 +49,7 @@
 #include <json/rpc/client/message.hpp>
 #include <json/rpc/client/executor.hpp>
 #include <json/rpc/client/http_settings.hpp>
+#include <json/rpc/client/http_client.hpp>
 
 #include <list>
 #include <string>
@@ -118,6 +119,13 @@ private:
         std::string* response{nullptr};
     };
 
+    struct Pipe : public InfoRead {
+        MessagePtr message{nullptr};
+        std::string::size_type request_pos{};
+        std::string request{};
+        std::string* response{nullptr};
+    };
+
     using Pipelines = std::vector<Pipeline>;
 
     static size_t write_function(char* buffer, size_t size, size_t nmemb,
@@ -152,6 +160,8 @@ private:
     MessageList m_messages{};
     Client::IdBuilder m_id_builder{nullptr};
     Miliseconds m_time_live_ms{0_ms};
+    Miliseconds m_timeout_ms{0_ms};
+    std::string m_url{HttpClient::DEFAULT_URL};
     Id m_id{0};
 };
 
