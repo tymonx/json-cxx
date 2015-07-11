@@ -48,6 +48,7 @@
 
 namespace json {
 namespace rpc {
+namespace time {
 
 using Seconds = std::chrono::seconds;
 using Miliseconds = std::chrono::milliseconds;
@@ -63,6 +64,7 @@ Seconds operator "" _s(unsigned long long seconds) {
     return Seconds(seconds);
 }
 
+} /* time */
 } /* rpc */
 } /* json */
 

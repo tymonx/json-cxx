@@ -88,6 +88,7 @@ public:
     void set_method_handler(const MethodHandler& method_handler) {
         m_method_handler = method_handler;
     }
+
 protected:
     void execute(const std::string& request, std::string& response);
 private:

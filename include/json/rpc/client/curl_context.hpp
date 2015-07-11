@@ -54,7 +54,6 @@
 #include <list>
 #include <string>
 #include <memory>
-#include <vector>
 #include <functional>
 
 /* Forward declaration */
@@ -82,51 +81,34 @@ public:
     using Id = std::uint16_t;
     using CurlEasyPtr = std::unique_ptr<void, CurlEasyDeleter>;
     using CurlSlistPtr = std::unique_ptr<struct ::curl_slist, CurlSlistDeleter>;
-    using InfoReadCallback = std::function<void(CurlContext*,
-            struct InfoRead*, unsigned)>;
+    using InfoReadPtr = std::unique_ptr<InfoRead>;
+    using InfoReadCallback = void(CurlContext*, InfoReadPtr, unsigned);
 
     struct InfoRead {
         CurlContext* context{nullptr};
-        InfoReadCallback callback{};
-        CurlEasyPtr curl_easy{nullptr};
+        InfoReadCallback* callback{nullptr};
+        MessagePtr message{nullptr};
+        std::string::size_type request_pos{};
+        std::string request{};
+        std::string* response{nullptr};
     };
 
     CurlContext(HttpClient* client, void* curl_multi);
 
     ~CurlContext();
 
-    HttpClient* get_client() { return m_client; }
-
     const HttpClient* get_client() const { return m_client; }
 
-    void splice_message(MessageList& other, MessageList::const_iterator it) {
-        m_messages.splice(m_messages.end(), other, it);
-    }
+    void splice_message(MessageList& other, MessageList::const_iterator it);
 
     void dispatch_messages();
 
-    bool active() const { return !m_messages.empty() || (m_pipes_active > 0); }
+    bool active() const { return !m_messages.empty() || (m_requests > 0); }
 private:
     CurlContext(const CurlContext&) = delete;
     CurlContext(CurlContext&&) = delete;
     CurlContext& operator=(const CurlContext&) = delete;
     CurlContext& operator=(CurlContext&&) = delete;
-
-    struct Pipeline : public InfoRead {
-        MessagePtr message{nullptr};
-        std::string::size_type request_pos{};
-        std::string request{};
-        std::string* response{nullptr};
-    };
-
-    struct Pipe : public InfoRead {
-        MessagePtr message{nullptr};
-        std::string::size_type request_pos{};
-        std::string request{};
-        std::string* response{nullptr};
-    };
-
-    using Pipelines = std::vector<Pipeline>;
 
     static size_t write_function(char* buffer, size_t size, size_t nmemb,
             void* userdata);
@@ -134,7 +116,7 @@ private:
     static size_t read_function(char* buffer, size_t size, size_t nmemb,
             void* userdata);
 
-    void handle_pipe(struct InfoRead*, unsigned curl_code);
+    static void info_read(CurlContext*, InfoReadPtr, unsigned curl_code);
 
     void call_method_sync(MessageList::iterator& it);
     void call_method_async(MessageList::iterator& it);
@@ -147,21 +129,20 @@ private:
     void set_id_builder(MessageList::iterator& it);
 
     bool message_expired(MessageList::iterator& it);
-    void add_request_to_pipe(MessagePtr&& message,
-            std::string&& request, std::string* response);
+    void add_request(MessagePtr&& message, std::string&& request,
+            std::string* response);
 
     HttpClient* m_client;
     void* m_curl_multi;
     CurlSlistPtr m_headers{nullptr};
     bool m_is_connected{false};
     Executor m_executor{};
-    Pipelines::size_type m_pipes_active{0};
-    Pipelines m_pipelines{};
     MessageList m_messages{};
     Client::IdBuilder m_id_builder{nullptr};
-    Miliseconds m_time_live_ms{0_ms};
-    Miliseconds m_timeout_ms{0_ms};
+    time::Miliseconds m_time_live_ms{0_ms};
+    time::Miliseconds m_timeout_ms{0_ms};
     std::string m_url{HttpClient::DEFAULT_URL};
+    size_t m_requests{0};
     Id m_id{0};
 };
 

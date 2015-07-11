@@ -36,50 +36,62 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/executor.hpp
+ * @file json/rpc/server/http_settings.hpp
  *
- * @brief JSON responses executor for client. Threads pool implementation
+ * @brief HTTP JSON server settings interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EXECUTOR_HPP
-#define JSON_CXX_RPC_CLIENT_EXECUTOR_HPP
+#ifndef JSON_CXX_RPC_SERVER_HTTP_SETTINGS_HPP
+#define JSON_CXX_RPC_SERVER_HTTP_SETTINGS_HPP
 
-#include <json/rpc/error.hpp>
-#include <json/rpc/client/message.hpp>
-#include <json/rpc/client.hpp>
-
-#include <atomic>
+#include <json/rpc/time.hpp>
 
 namespace json {
 namespace rpc {
-namespace client {
+namespace server {
 
-class Executor {
+class HttpSettings {
 public:
-    using ErrorToException = Client::ErrorToException;
+    using Port = std::uint16_t;
+    using Miliseconds = time::Miliseconds;
+    using Seconds = time::Seconds;
 
-    void execute(MessagePtr&& message, const Error& error = {Error::OK});
+    static const Port UNKNOWN_PORT = Port(-1);
 
-    void set_error_to_exception(const ErrorToException& error_to_exception) {
-        m_error_to_exception = error_to_exception;
+    static constexpr const auto UNKNOWN_TIMEOUT_MS = Miliseconds(-1);
+
+    HttpSettings();
+
+    HttpSettings(const Port& port);
+
+    HttpSettings(const HttpSettings&) = default;
+    HttpSettings(HttpSettings&&) = default;
+    HttpSettings& operator=(const HttpSettings&) = default;
+    HttpSettings& operator=(HttpSettings&&) = default;
+
+    ~HttpSettings();
+
+    void set_port(const Port& port) { m_port = port; }
+
+    const Port& get_port() const { return m_port; }
+
+    void set_timeout(const Seconds& timeout_sec) {
+        set_timeout(std::chrono::duration_cast<Miliseconds>(timeout_sec));
     }
 
-    ~Executor();
+    void set_timeout(const Miliseconds& timeout_ms) {
+        m_timeout_ms = timeout_ms;
+    }
+
+    const Miliseconds& get_timeout() const { return m_timeout_ms; }
+
 private:
-    void call_method_sync(MessagePtr& message, const Error& error);
-    void call_method_async(MessagePtr&& message, Error error);
-    void send_notification_sync(MessagePtr& message, const Error& error);
-    void send_notification_async(MessagePtr&& message, Error error);
-    void connect(MessagePtr& message, const Error& error);
-    void disconnect(MessagePtr& message, const Error& error);
-
-    ErrorToException m_error_to_exception{nullptr};
-
-    volatile std::atomic_uint m_tasks{0};
+    Port m_port{UNKNOWN_PORT};
+    Miliseconds m_timeout_ms{UNKNOWN_TIMEOUT_MS};
 };
 
-} /* client */
+} /* server */
 } /* rpc */
 } /* json */
 
-#endif /* JSON_CXX_RPC_CLIENT_EXECUTOR_HPP */
+#endif /* JSON_CXX_RPC_SERVER_HTTP_SETTINGS_HPP */

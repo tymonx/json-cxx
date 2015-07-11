@@ -68,6 +68,8 @@ add_library(json-cxx-rpc-client
 add_library(json-cxx-rpc-server
     rpc/error.cpp
     rpc/server.cpp
+    rpc/server/http_server.cpp
+    rpc/server/http_settings.cpp
     rpc/server/microhttpd_server.cpp
 )
 

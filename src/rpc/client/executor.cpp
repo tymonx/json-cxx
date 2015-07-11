@@ -44,7 +44,7 @@
 #include <json/rpc/client/executor.hpp>
 
 #include <json/json.hpp>
-#include <future>
+#include <thread>
 
 #include <json/rpc/client/message/call_method_sync.hpp>
 #include <json/rpc/client/message/call_method_async.hpp>
@@ -57,6 +57,10 @@ using json::Value;
 using json::Deserializer;
 using json::rpc::Error;
 using json::rpc::client::Executor;
+
+Executor::~Executor() {
+    while (m_tasks.load() > 0) { }
+}
 
 static bool
 valid_response(const Value& value, const Value& id) {
@@ -120,8 +124,8 @@ processing_notification(const std::string& response) {
     return {Error::OK};
 }
 
-void Executor::call_method_sync(Message& message, const Error& error) {
-    auto& msg = static_cast<CallMethodSync&>(message);
+void Executor::call_method_sync(MessagePtr& message, const Error& error) {
+    auto& msg = static_cast<CallMethodSync&>(*message);
     Error err{error};
     Value result(Value::Type::NIL);
 
@@ -142,21 +146,26 @@ void Executor::call_method_sync(Message& message, const Error& error) {
     }
 }
 
-void Executor::call_method_async(Message& message, const Error& error) {
-    auto& msg = static_cast<CallMethodAsync&>(message);
-    Error err{error};
+void Executor::call_method_async(MessagePtr&& message, Error error) {
+    auto& msg = static_cast<CallMethodAsync&>(*message);
     Value result(Value::Type::NIL);
 
-    if (!err) {
-        err = processing_method(msg.get_response(), msg.get_id(), result);
+    if (!error) {
+        error = processing_method(msg.get_response(), msg.get_id(), result);
     }
 
-    std::async(std::launch::async, msg.get_callback(),
-            msg.get_client(), result, err);
+    const auto& call = msg.get_callback();
+    try {
+        if (nullptr != call) {
+            call(msg.get_client(), result, error);
+        }
+    }
+    catch (...) { }
+    --m_tasks;
 }
 
-void Executor::send_notification_sync(Message& message, const Error& error) {
-    auto& msg = static_cast<SendNotificationSync&>(message);
+void Executor::send_notification_sync(MessagePtr& message, const Error& error) {
+    auto& msg = static_cast<SendNotificationSync&>(*message);
     Error err{error};
 
     if (!err) {
@@ -176,31 +185,51 @@ void Executor::send_notification_sync(Message& message, const Error& error) {
     }
 }
 
-void Executor::send_notification_async(Message& message, const Error& error) {
-    auto& msg = static_cast<SendNotificationAsync&>(message);
-    Error err{error};
-
-    if (!err) {
-        err = processing_notification(msg.get_response());
+void Executor::send_notification_async(MessagePtr&& message, Error error) {
+    auto& msg = static_cast<SendNotificationAsync&>(*message);
+    if (!error) {
+        error = processing_notification(msg.get_response());
     }
 
-    std::async(std::launch::async, msg.get_callback(), msg.get_client(), err);
+    const auto& call = msg.get_callback();
+    try {
+        if (nullptr != call) {
+            call(msg.get_client(), error);
+        }
+    }
+    catch (...) { }
+    --m_tasks;
 }
 
-void Executor::execute(MessagePtr& message, const Error& error) {
-
+void Executor::execute(MessagePtr&& message, const Error& error) {
     switch (message->get_type()) {
     case MessageType::CALL_METHOD_SYNC:
-        call_method_sync(*message, error);
+        call_method_sync(message, error);
         break;
     case MessageType::CALL_METHOD_ASYNC:
-        call_method_async(*message, error);
+        try {
+            ++m_tasks;
+            std::thread t{&Executor::call_method_async, this,
+                 std::move(message), error};
+            t.detach();
+        }
+        catch (...) {
+            --m_tasks;
+        }
         break;
     case MessageType::SEND_NOTIFICATION_SYNC:
-        send_notification_sync(*message, error);
+        send_notification_sync(message, error);
         break;
     case MessageType::SEND_NOTIFICATION_ASYNC:
-        send_notification_async(*message, error);
+        try {
+            ++m_tasks;
+            std::thread t{&Executor::send_notification_async, this,
+                std::move(message), error};
+            t.detach();
+        }
+        catch (...) {
+            --m_tasks;
+        }
         break;
     case MessageType::CONNECT:
     case MessageType::DISCONNECT:

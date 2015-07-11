@@ -57,6 +57,8 @@ namespace rpc {
 
 class Client;
 
+using time::operator "" _ms;
+
 namespace client {
 
 class Message {
@@ -71,10 +73,11 @@ public:
 
     MessageType get_type() const { return m_type; }
 
-    void set_time_live(const Miliseconds& time_live);
+    void set_time_live(const time::Miliseconds& time_live);
 
-    const TimePoint& get_time_live() const { return m_time_live; }
+    const time::TimePoint& get_time_live() const { return m_time_live; }
 private:
+
     Message(const Message&) = delete;
     Message(Message&&) = delete;
     Message& operator=(const Message&) = delete;
@@ -82,7 +85,7 @@ private:
 
     MessageType m_type{MessageType::UNDEFINED};
     Client* m_client{nullptr};
-    TimePoint m_time_live{0_ms};
+    time::TimePoint m_time_live{0_ms};
 };
 
 using MessagePtr = std::unique_ptr<Message>;

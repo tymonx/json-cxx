@@ -61,10 +61,12 @@ public:
     using Header = std::pair<std::string, std::string>;
     using Headers = std::unordered_map<std::string, std::string>;
     using PipelineLength = unsigned;
+    using Miliseconds = time::Miliseconds;
+    using Seconds = time::Seconds;
 
     static constexpr const auto UNKNOWN_TIME_LIVE_MS = Miliseconds(-1);
 
-    static constexpr const auto UNKNOWN_TIME_TIMEOUT_MS = Miliseconds(-1);
+    static constexpr const auto UNKNOWN_TIMEOUT_MS = Miliseconds(-1);
 
     HttpSettings();
 
@@ -86,7 +88,7 @@ public:
     }
 
     void set_timeout(const Miliseconds& timeout_ms) {
-        m_time_timeout_ms = timeout_ms;
+        m_timeout_ms = timeout_ms;
     }
 
     void set_time_live(const Seconds& live_sec) {
@@ -99,7 +101,7 @@ public:
 
     const Miliseconds& get_time_live() const { return m_time_live_ms; }
 
-    const Miliseconds& get_timeout() const { return m_time_timeout_ms; }
+    const Miliseconds& get_timeout() const { return m_timeout_ms; }
 
     void add_header(const Header& header);
 
@@ -107,7 +109,7 @@ public:
 private:
     std::string m_url{};
     Miliseconds m_time_live_ms{UNKNOWN_TIME_LIVE_MS};
-    Miliseconds m_time_timeout_ms{UNKNOWN_TIME_TIMEOUT_MS};
+    Miliseconds m_timeout_ms{UNKNOWN_TIMEOUT_MS};
     Headers m_headers{};
 };
 

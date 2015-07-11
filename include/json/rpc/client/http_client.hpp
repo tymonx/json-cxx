@@ -61,6 +61,9 @@ public:
     HttpClient(Proactor& proactor,
             const HttpSettings& http_settings = {DEFAULT_URL});
 
+    HttpClient(Proactor& proactor, const std::string& url) :
+        HttpClient(proactor, HttpSettings{url}) { }
+
     virtual ~HttpClient();
 
     void set_http_settings(const HttpSettings& http_settings);

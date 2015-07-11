@@ -36,50 +36,46 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/executor.hpp
+ * @file json/rpc/server.hpp
  *
- * @brief JSON responses executor for client. Threads pool implementation
+ * @brief JSON RPC server interface
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EXECUTOR_HPP
-#define JSON_CXX_RPC_CLIENT_EXECUTOR_HPP
+#ifndef JSON_CXX_RPC_SERVER_HTTP_SERVER_HPP
+#define JSON_CXX_RPC_SERVER_HTTP_SERVER_HPP
 
-#include <json/rpc/error.hpp>
-#include <json/rpc/client/message.hpp>
-#include <json/rpc/client.hpp>
-
-#include <atomic>
+#include <json/rpc/server.hpp>
+#include <json/rpc/time.hpp>
+#include <json/rpc/server/http_settings.hpp>
 
 namespace json {
 namespace rpc {
-namespace client {
+namespace server {
 
-class Executor {
+/*!
+ * JSON Client class
+ * */
+class HttpServer : public json::rpc::Server {
 public:
-    using ErrorToException = Client::ErrorToException;
+    using Port = std::uint16_t;
 
-    void execute(MessagePtr&& message, const Error& error = {Error::OK});
+    static const Port DEFAULT_PORT = 8080;
 
-    void set_error_to_exception(const ErrorToException& error_to_exception) {
-        m_error_to_exception = error_to_exception;
-    }
+    HttpServer(const HttpSettings& http_settings = {DEFAULT_PORT})
+        { set_http_settings(http_settings); }
 
-    ~Executor();
-private:
-    void call_method_sync(MessagePtr& message, const Error& error);
-    void call_method_async(MessagePtr&& message, Error error);
-    void send_notification_sync(MessagePtr& message, const Error& error);
-    void send_notification_async(MessagePtr&& message, Error error);
-    void connect(MessagePtr& message, const Error& error);
-    void disconnect(MessagePtr& message, const Error& error);
+    HttpServer(const Port& port) : HttpServer{HttpSettings{port}} { }
 
-    ErrorToException m_error_to_exception{nullptr};
+    void set_http_settings(const HttpSettings& settings);
 
-    volatile std::atomic_uint m_tasks{0};
+    virtual ~HttpServer();
+protected:
+    Port m_port{DEFAULT_PORT};
+    time::Miliseconds m_timeout_ms{time::operator "" _ms(0)};
 };
 
-} /* client */
-} /* rpc */
-} /* json */
+}
+}
+}
 
-#endif /* JSON_CXX_RPC_CLIENT_EXECUTOR_HPP */
+#endif /* JSON_CXX_RPC_SERVER_HTTP_SERVER_HPP */

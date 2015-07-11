@@ -67,109 +67,79 @@ using namespace json::rpc::client::message;
 
 using json::rpc::Error;
 using json::rpc::client::CurlContext;
+using json::rpc::time::operator "" _ms;
+using json::rpc::time::TimePoint;
 
-CurlContext::CurlContext(HttpClient* client, void* curl_multi) :
-    m_client{client}, m_curl_multi{curl_multi}
-{
-    CURL* curl_easy;
-    struct ::curl_slist* headers{nullptr};
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-    headers = curl_slist_append(headers, "charset: utf-8");
-    m_headers.reset(headers);
-
-    /* Pipelines */
-    m_pipelines.resize(CurlProactor::DEFAULT_MAX_PIPELINE_LENGTH);
-    for (auto& pipe : m_pipelines) {
-        pipe.curl_easy.reset(curl_easy_init());
-        if (nullptr == pipe.curl_easy) {
-            throw std::bad_alloc();
-        }
-        pipe.context = this;
-        pipe.callback = &CurlContext::handle_pipe;
-        curl_easy = pipe.curl_easy.get();
-        curl_easy_setopt(curl_easy, CURLOPT_URL, HttpClient::DEFAULT_URL);
-        curl_easy_setopt(curl_easy, CURLOPT_WRITEFUNCTION, write_function);
-        curl_easy_setopt(curl_easy, CURLOPT_WRITEDATA, &pipe);
-        curl_easy_setopt(curl_easy, CURLOPT_READFUNCTION, read_function);
-        curl_easy_setopt(curl_easy, CURLOPT_READDATA, &pipe);
-        curl_easy_setopt(curl_easy, CURLOPT_POSTFIELDS, nullptr);
-        curl_easy_setopt(curl_easy, CURLOPT_POSTFIELDSIZE, 0);
-        curl_easy_setopt(curl_easy, CURLOPT_HTTPHEADER, m_headers.get());
-        curl_easy_setopt(curl_easy, CURLOPT_PROTOCOLS,
-                CURLPROTO_HTTP | CURLPROTO_HTTPS);
-        curl_easy_setopt(curl_easy, CURLOPT_PRIVATE,
-                static_cast<InfoRead*>(&pipe));
-    }
-}
-
-CurlContext::~CurlContext() {
-    for (auto it = m_pipelines.begin(); it != m_pipelines.end(); ++it) {
-        if (nullptr != it->message) {
-            m_executor.execute(it->message, {Error::INTERNAL_ERROR});
-            curl_multi_remove_handle(m_curl_multi, it->curl_easy.get());
-        }
-    }
-}
-
-void CurlContext::handle_pipe(struct InfoRead* info_read,
-        unsigned curl_code) {
-    auto pipe = static_cast<Pipeline*>(info_read);
-
-    if (CURLE_OK == curl_code) {
-        m_executor.execute(pipe->message);
-    }
-    else {
-        m_messages.push_back(std::move(pipe->message));
-    }
-
-    pipe->message = nullptr;
-    curl_multi_remove_handle(m_curl_multi, pipe->curl_easy.get());
-    --m_pipes_active;
-}
-
-size_t CurlContext::write_function(char* buffer, size_t size, size_t nmemb,
-        void* userdata)
-{
-    Pipeline* pipe = static_cast<Pipeline*>(userdata);
-    size_t copy = size * nmemb;
-    pipe->response->append(buffer, copy);
-    return copy;
-}
-
-size_t CurlContext::read_function(char* buffer, size_t size, size_t nmemb,
-        void* userdata)
-{
-
-    Pipeline* pipe = static_cast<Pipeline*>(userdata);
-    std::string::size_type copied;
-
-    if (!size || !nmemb || (pipe->request_pos >= pipe->request.size())) {
-        return 0;
-    }
-
-    copied = pipe->request.copy(buffer, size * nmemb, pipe->request_pos);
-    pipe->request_pos += copied;
-
-    return copied;
+void CurlContext::CurlSlistDeleter::operator()(struct curl_slist* curl_slist) {
+    curl_slist_free_all(curl_slist);
 }
 
 void CurlContext::CurlEasyDeleter::operator()(void* curl_easy) {
     curl_easy_cleanup(curl_easy);
 }
 
-void CurlContext::CurlSlistDeleter::operator()(struct curl_slist* curl_slist) {
-    curl_slist_free_all(curl_slist);
+CurlContext::CurlContext(HttpClient* client, void* curl_multi) :
+    m_client{client}, m_curl_multi{curl_multi} {
+    m_headers.reset(curl_slist_append(m_headers.release(),
+            "Content-Type: application/json"));
+    m_headers.reset(curl_slist_append(m_headers.release(),
+            "charset: utf-8"));
 }
 
-bool CurlContext::message_expired(MessageList::iterator& it) {
+CurlContext::~CurlContext() { }
+
+void CurlContext::splice_message(MessageList& other,
+        MessageList::const_iterator it) {
     if ((0_ms != m_time_live_ms)
             && (TimePoint(0_ms) == (*it)->get_time_live())) {
         (*it)->set_time_live(m_time_live_ms);
     }
 
+    m_messages.splice(m_messages.end(), other, it);
+}
+
+void CurlContext::info_read(CurlContext* context, InfoReadPtr info_read,
+        unsigned curl_code) {
+    if (CURLE_OK == curl_code) {
+        context->m_executor.execute(std::move(info_read->message));
+    }
+    else if (CURLE_OPERATION_TIMEDOUT == curl_code) {
+        context->m_executor.execute(std::move(info_read->message),
+                    {Error::SERVER_ERROR});
+    }
+    else {
+        context->m_messages.push_back(std::move(info_read->message));
+    }
+    --context->m_requests;
+}
+
+size_t CurlContext::write_function(char* buffer, size_t size, size_t nmemb,
+        void* userdata) {
+    InfoRead* info = static_cast<InfoRead*>(userdata);
+    size_t copy = size * nmemb;
+    info->response->append(buffer, copy);
+    return copy;
+}
+
+size_t CurlContext::read_function(char* buffer, size_t size, size_t nmemb,
+        void* userdata) {
+    InfoRead* info = static_cast<InfoRead*>(userdata);
+    std::string::size_type copied;
+
+    if (!size || !nmemb || (info->request_pos >= info->request.size())) {
+        return 0;
+    }
+
+    copied = info->request.copy(buffer, size * nmemb, info->request_pos);
+    info->request_pos += copied;
+
+    return copied;
+}
+
+bool CurlContext::message_expired(MessageList::iterator& it) {
     if (TimePoint(0_ms) != (*it)->get_time_live()) {
         if (std::chrono::steady_clock::now() > (*it)->get_time_live()) {
-            m_executor.execute(*it, {Error::INTERNAL_ERROR});
+            m_executor.execute(std::move(*it), {Error::INTERNAL_ERROR});
             it = m_messages.erase(it);
             return true;
         }
@@ -198,22 +168,47 @@ static json::Value build_method(const std::string& method,
     return message;
 }
 
-void CurlContext::add_request_to_pipe(MessagePtr&& message,
-        std::string&& request, std::string* response) {
-    for (auto& pipe : m_pipelines) {
-        if (nullptr == pipe.message) {
-            pipe.message = std::move(message);
-            pipe.request = std::move(request);
-            pipe.request_pos = 0;
-            pipe.response = response;
-            pipe.response->clear();
-            curl_easy_setopt(pipe.curl_easy.get(), CURLOPT_POSTFIELDSIZE,
-                    pipe.request.size());
-            curl_multi_add_handle(m_curl_multi,
-                    pipe.curl_easy.get());
-            ++m_pipes_active;
-            return;
-        }
+void CurlContext::add_request(MessagePtr&& message, std::string&& request,
+        std::string* response) {
+    try {
+        InfoReadPtr info{new InfoRead{}};
+        CurlEasyPtr curl_easy{curl_easy_init()};
+        if (nullptr == curl_easy) { throw std::bad_alloc(); }
+
+        info->context = this;
+        info->callback = &CurlContext::info_read;
+        info->message = std::move(message);
+        info->request = std::move(request);
+        info->response = response;
+        response->clear();
+
+        curl_easy_setopt(curl_easy.get(),
+                CURLOPT_URL, m_url.c_str());
+        curl_easy_setopt(curl_easy.get(),
+                CURLOPT_WRITEFUNCTION, write_function);
+        curl_easy_setopt(curl_easy.get(),
+                CURLOPT_WRITEDATA, info.get());
+        curl_easy_setopt(curl_easy.get(),
+                CURLOPT_READFUNCTION, read_function);
+        curl_easy_setopt(curl_easy.get(),
+                CURLOPT_READDATA, info.get());
+        curl_easy_setopt(curl_easy.get(),
+                CURLOPT_POSTFIELDS, nullptr);
+        curl_easy_setopt(curl_easy.get(),
+                CURLOPT_POSTFIELDSIZE, info->request.size());
+        curl_easy_setopt(curl_easy.get(),
+                CURLOPT_HTTPHEADER, m_headers.get());
+        curl_easy_setopt(curl_easy.get(),
+                CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_easy_setopt(curl_easy.get(),
+                CURLOPT_TIMEOUT_MS, m_timeout_ms.count());
+        curl_easy_setopt(curl_easy.get(),
+                CURLOPT_PRIVATE, info.release());
+        curl_multi_add_handle(m_curl_multi, curl_easy.release());
+        ++m_requests;
+    }
+    catch (...) {
+        m_executor.execute(std::move(message), {Error::INTERNAL_ERROR});
     }
 }
 
@@ -260,83 +255,59 @@ void CurlContext::dispatch_messages() {
 }
 
 void CurlContext::call_method_sync(MessageList::iterator& it) {
+    if (!m_is_connected) { ++it; return; }
     auto& message = static_cast<CallMethodSync&>(**it);
 
-    if ((m_pipes_active < m_pipelines.size()) && m_is_connected) {
-        std::string request{};
-
-        if (nullptr != m_id_builder) {
-            message.set_id(m_id_builder(++m_id));
-        }
-        else {
-            message.set_id(++m_id);
-        }
-
-        request << build_method(message.get_name(), message.get_params(),
-                message.get_id());
-        add_request_to_pipe(std::move(*it), std::move(request),
-                &message.get_response());
-        it = m_messages.erase(it);
+    if (nullptr != m_id_builder) {
+        message.set_id(m_id_builder(++m_id));
     }
     else {
-        ++it;
+        message.set_id(++m_id);
     }
+
+    std::string request{};
+    request << build_method(message.get_name(), message.get_params(),
+            message.get_id());
+    add_request(std::move(*it), std::move(request), &message.get_response());
+    it = m_messages.erase(it);
 }
 
 void CurlContext::call_method_async(MessageList::iterator& it) {
+    if (!m_is_connected) { ++it; return; }
     auto& message = static_cast<CallMethodAsync&>(**it);
 
-    if ((m_pipes_active < m_pipelines.size()) && m_is_connected) {
-        std::string request{};
-
-        if (nullptr != m_id_builder) {
-            message.set_id(m_id_builder(++m_id));
-        }
-        else {
-            message.set_id(++m_id);
-        }
-
-        request << build_method(message.get_name(), message.get_params(),
-                message.get_id());
-        add_request_to_pipe(std::move(*it), std::move(request),
-                &message.get_response());
-        it = m_messages.erase(it);
+    if (nullptr != m_id_builder) {
+        message.set_id(m_id_builder(++m_id));
     }
     else {
-        ++it;
+        message.set_id(++m_id);
     }
+
+    std::string request{};
+    request << build_method(message.get_name(), message.get_params(),
+            message.get_id());
+    add_request(std::move(*it), std::move(request), &message.get_response());
+    it = m_messages.erase(it);
 }
 
 void CurlContext::send_notification_sync(MessageList::iterator& it) {
+    if (!m_is_connected) { ++it; return; }
     auto& message = static_cast<SendNotificationSync&>(**it);
 
-    if ((m_pipes_active < m_pipelines.size()) && m_is_connected) {
-        std::string request{};
-
-        request << build_notification(message.get_name(), message.get_params());
-        add_request_to_pipe(std::move(*it), std::move(request),
-                &message.get_response());
-        it = m_messages.erase(it);
-    }
-    else {
-        ++it;
-    }
+    std::string request{};
+    request << build_notification(message.get_name(), message.get_params());
+    add_request(std::move(*it), std::move(request), &message.get_response());
+    it = m_messages.erase(it);
 }
 
 void CurlContext::send_notification_async(MessageList::iterator& it) {
+    if (!m_is_connected) { ++it; return; }
     auto& message = static_cast<SendNotificationAsync&>(**it);
 
-    if ((m_pipes_active < m_pipelines.size()) && m_is_connected) {
-        std::string request{};
-
-        request << build_notification(message.get_name(), message.get_params());
-        add_request_to_pipe(std::move(*it), std::move(request),
-                &message.get_response());
-        it = m_messages.erase(it);
-    }
-    else {
-        ++it;
-    }
+    std::string request{};
+    request << build_notification(message.get_name(), message.get_params());
+    add_request(std::move(*it), std::move(request), &message.get_response());
+    it = m_messages.erase(it);
 }
 
 void CurlContext::connect(MessageList::iterator& it) {
@@ -368,22 +339,18 @@ void CurlContext::set_http_settings(MessageList::iterator& it) {
         }
     }
 
-    CURL* curl_easy;
-    for (auto pipe = m_pipelines.begin(); pipe != m_pipelines.end(); ++pipe) {
-        curl_easy = pipe->curl_easy.get();
-
-        if (!settings.get_url().empty()) {
-            curl_easy_setopt(curl_easy, CURLOPT_URL,
-                    settings.get_url().c_str());
-        }
-
-        if (HttpSettings::UNKNOWN_TIME_TIMEOUT_MS != settings.get_timeout()) {
-            curl_easy_setopt(curl_easy, CURLOPT_TIMEOUT_MS,
-                    settings.get_timeout().count());
-        }
-
-        curl_easy_setopt(curl_easy, CURLOPT_HTTPHEADER, m_headers.get());
+    if (!settings.get_url().empty()) {
+        m_url = settings.get_url();
     }
+
+    if (HttpSettings::UNKNOWN_TIMEOUT_MS != settings.get_timeout()) {
+        m_timeout_ms = settings.get_timeout();
+    }
+
+    if (HttpSettings::UNKNOWN_TIME_LIVE_MS != settings.get_time_live()) {
+        m_time_live_ms = settings.get_time_live();
+    }
+
     it = m_messages.erase(it);
 }
 

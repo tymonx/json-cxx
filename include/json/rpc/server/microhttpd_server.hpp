@@ -44,7 +44,7 @@
 #ifndef JSON_CXX_RPC_MICROHTTPD_SERVER_HPP
 #define JSON_CXX_RPC_MICROHTTPD_SERVER_HPP
 
-#include <json/rpc/server.hpp>
+#include <json/rpc/server/http_server.hpp>
 
 #include <memory>
 
@@ -58,13 +58,12 @@ namespace server {
 /*!
  * JSON server class
  * */
-class MicrohttpdServer : public json::rpc::Server {
+class MicrohttpdServer : public json::rpc::server::HttpServer {
 public:
-    using Port = std::uint16_t;
+    MicrohttpdServer(const HttpSettings& settings = {DEFAULT_PORT}) :
+        HttpServer{settings} { }
 
-    static constexpr const Port DEFAULT_PORT = 80;
-
-    MicrohttpdServer(Port port = DEFAULT_PORT);
+    MicrohttpdServer(const Port& port) : HttpServer{port} { }
 
     virtual ~MicrohttpdServer() final;
 
@@ -78,19 +77,14 @@ private:
 
     using MicrohttpdPtr = std::unique_ptr<::MHD_Daemon, MicrohttpdDeleter>;
 
-    Port m_port{};
-    MicrohttpdPtr m_mhd{nullptr};
-
-    static int send_response(struct ::MHD_Connection* connection,
-            unsigned status, const std::string& message);
-
-    static int method_handler(void* cls, struct ::MHD_Connection *connection,
-        const char* url, const char* method, const char* version,
+    static int method_post(void* cls, struct MHD_Connection* connection,
         const char* upload_data, size_t* upload_data_size, void** con_cls);
 
-    static int method_post(void* cls, struct ::MHD_Connection* connection,
-            const char* url, const char* method, const char* version,
-            const char* upload_data, size_t* upload_data_size, void** con_cls);
+    static int method_handler(void* cls, struct MHD_Connection *connection,
+        const char*, const char* method, const char*,
+        const char* upload_data, size_t* upload_data_size, void** con_cls);
+
+    MicrohttpdPtr m_mhd{nullptr};
 };
 
 }

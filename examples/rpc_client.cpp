@@ -1,17 +1,23 @@
 #include <json/json.hpp>
 #include <json/rpc/client/curl_client.hpp>
+#include <json/rpc/client/http_settings.hpp>
 
 #include <iostream>
 #include <chrono>
 
 using namespace json;
-using json::rpc::operator "" _ms;
+using json::rpc::time::operator "" _s;
+using json::rpc::client::HttpSettings;
 
 static const auto COMMANDS = 2;
-static const auto REQUESTS = 100;
+static const auto REQUESTS = 500;
 
 int main() {
-    rpc::client::CurlClient client{{"localhost:6666"}};
+    HttpSettings settings{};
+    settings.set_timeout(3_s);
+
+    rpc::client::CurlClient client{"localhost:6666"};
+    client.set_http_settings(settings);
     client.connect();
 
     auto start = std::chrono::system_clock::now();
@@ -30,9 +36,9 @@ int main() {
                 }
             }
         );
-        client.method("command2", {
+        client.method("command2",
                 13
-            },
+            ,
             [] (rpc::Client*, const Value& result, const rpc::Error& error) {
                 if (error) {
                     std::cout << "Error: " << error.what() << " " << error.get_code() << std::endl;

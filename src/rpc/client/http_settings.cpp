@@ -45,9 +45,9 @@
 
 using json::rpc::client::HttpSettings;
 
-constexpr const json::rpc::Miliseconds HttpSettings::UNKNOWN_TIME_LIVE_MS;
+constexpr const HttpSettings::Miliseconds HttpSettings::UNKNOWN_TIME_LIVE_MS;
 
-constexpr const json::rpc::Miliseconds HttpSettings::UNKNOWN_TIME_TIMEOUT_MS;
+constexpr const HttpSettings::Miliseconds HttpSettings::UNKNOWN_TIMEOUT_MS;
 
 HttpSettings::HttpSettings() { }
 

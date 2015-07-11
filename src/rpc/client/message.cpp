@@ -44,6 +44,7 @@
 #include <json/rpc/client/message.hpp>
 
 using json::rpc::client::Message;
+using json::rpc::time::Miliseconds;
 
 Message::Message(MessageType type, Client* client) :
     m_type{type}, m_client{client} { }

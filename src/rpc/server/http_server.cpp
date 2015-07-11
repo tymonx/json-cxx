@@ -36,50 +36,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/executor.hpp
+ * @file json/rpc/server/http_server.cpp
  *
- * @brief JSON responses executor for client. Threads pool implementation
+ * @brief HTTP JSON RPC server implementation based on Microhttpd library
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_EXECUTOR_HPP
-#define JSON_CXX_RPC_CLIENT_EXECUTOR_HPP
+#include <json/rpc/server/http_server.hpp>
 
-#include <json/rpc/error.hpp>
-#include <json/rpc/client/message.hpp>
-#include <json/rpc/client.hpp>
+using json::rpc::server::HttpServer;
 
-#include <atomic>
+HttpServer::~HttpServer() { }
 
-namespace json {
-namespace rpc {
-namespace client {
-
-class Executor {
-public:
-    using ErrorToException = Client::ErrorToException;
-
-    void execute(MessagePtr&& message, const Error& error = {Error::OK});
-
-    void set_error_to_exception(const ErrorToException& error_to_exception) {
-        m_error_to_exception = error_to_exception;
+void HttpServer::set_http_settings(const HttpSettings& settings) {
+    if (HttpSettings::UNKNOWN_PORT != settings.get_port()) {
+        m_port = settings.get_port();
     }
 
-    ~Executor();
-private:
-    void call_method_sync(MessagePtr& message, const Error& error);
-    void call_method_async(MessagePtr&& message, Error error);
-    void send_notification_sync(MessagePtr& message, const Error& error);
-    void send_notification_async(MessagePtr&& message, Error error);
-    void connect(MessagePtr& message, const Error& error);
-    void disconnect(MessagePtr& message, const Error& error);
-
-    ErrorToException m_error_to_exception{nullptr};
-
-    volatile std::atomic_uint m_tasks{0};
-};
-
-} /* client */
-} /* rpc */
-} /* json */
-
-#endif /* JSON_CXX_RPC_CLIENT_EXECUTOR_HPP */
+    if (HttpSettings::UNKNOWN_TIMEOUT_MS != settings.get_timeout()) {
+        m_timeout_ms = settings.get_timeout();
+    }
+}

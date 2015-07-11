@@ -81,18 +81,15 @@ CurlProactor::CurlProactor() {
         throw std::exception();
     }
 
-    curl_multi_setopt(m_curl_multi.get(), CURLMOPT_PIPELINING, 1UL);
-    curl_multi_setopt(m_curl_multi.get(), CURLMOPT_MAX_PIPELINE_LENGTH,
-            DEFAULT_MAX_PIPELINE_LENGTH);
-    curl_multi_setopt(m_curl_multi.get(), CURLMOPT_MAX_HOST_CONNECTIONS, 1UL);
-
     m_thread = std::thread{&CurlProactor::task, this};
 }
 
 CurlProactor::~CurlProactor() {
     m_task_done = true;
     notify();
-    m_thread.join();
+    if (m_thread.joinable()) {
+        m_thread.join();
+    }
     /* Finish job */
     task();
     close(m_eventfd);
@@ -116,20 +113,20 @@ void CurlProactor::push_message(MessagePtr&& message) {
     notify();
 }
 
-void CurlProactor::get_messages() {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_messages.splice(m_messages.end(), m_messages_background);
-}
-
 void CurlProactor::waiting_for_messages() {
-    std::uint64_t message{0};
     struct curl_waitfd waitfd[1]{};
     waitfd[0].fd = m_eventfd;
     waitfd[0].events = CURL_WAIT_POLLIN | CURL_WAIT_POLLPRI;
 
     curl_multi_wait(m_curl_multi.get(), waitfd, 1, 1000, nullptr);
-    ssize_t err = read(m_eventfd, &message, sizeof(message));
-    (void)err;
+    if ((CURL_WAIT_POLLIN | CURL_WAIT_POLLPRI) & waitfd[0].revents) {
+        std::uint64_t messages{0};
+        ssize_t err = read(m_eventfd, &messages, sizeof(messages));
+        if ((messages > 0) && (EAGAIN != err)) {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_messages.splice(m_messages.end(), m_messages_background);
+        }
+    }
 }
 
 void CurlProactor::create_context(MessageList::iterator& it) {
@@ -171,7 +168,7 @@ void CurlProactor::context_message(MessageList::iterator& it) {
     }
     else {
         Executor executor{};
-        executor.execute(*it, {Error::INTERNAL_ERROR});
+        executor.execute(std::move(*it), {Error::INTERNAL_ERROR});
         it = m_messages.erase(it);
     }
 }
@@ -208,8 +205,6 @@ void CurlProactor::task() {
     do {
         waiting_for_messages();
 
-        get_messages();
-
         dispatch_messages();
 
         context_processing();
@@ -218,7 +213,7 @@ void CurlProactor::task() {
         curl_multi_perform(m_curl_multi.get(), &m_running_handles);
 
         read_processing();
-    } while (!m_task_done || !m_messages.empty());
+    } while (!m_task_done || !m_messages.empty() || m_running_handles);
 }
 
 void CurlProactor::context_processing() {
@@ -231,21 +226,21 @@ void CurlProactor::read_processing() {
     CURLMsg* message;
     struct CurlContext::InfoRead* info_read;
     int msgs_in_queue;
+    CURL* curl_easy;
     do {
         msgs_in_queue = 0;
         message = curl_multi_info_read(m_curl_multi.get(), &msgs_in_queue);
         if (message && (CURLMSG_DONE == message->msg)) {
             info_read = nullptr;
-            curl_easy_getinfo(message->easy_handle,
-                    CURLINFO_PRIVATE, &info_read);
+            curl_easy = message->easy_handle;
+            curl_easy_getinfo(curl_easy, CURLINFO_PRIVATE, &info_read);
             if (nullptr != info_read) {
-                info_read->callback(info_read->context, info_read,
+                info_read->callback(info_read->context,
+                        CurlContext::InfoReadPtr{info_read},
                         message->data.result);
             }
-            else {
-                curl_multi_remove_handle(m_curl_multi.get(),
-                        message->easy_handle);
-            }
+            curl_multi_remove_handle(m_curl_multi.get(), curl_easy);
+            curl_easy_cleanup(curl_easy);
         }
     } while (nullptr != message);
 }
