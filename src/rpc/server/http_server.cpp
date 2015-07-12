@@ -47,7 +47,7 @@ using json::rpc::server::HttpServer;
 
 HttpServer::~HttpServer() { }
 
-void HttpServer::set_http_settings(const HttpSettings& settings) {
+void HttpServer::set_settings(const HttpSettings& settings) {
     if (HttpSettings::UNKNOWN_PORT != settings.get_port()) {
         m_port = settings.get_port();
     }

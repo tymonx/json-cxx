@@ -75,8 +75,10 @@ public:
     static constexpr const char MSG_SERVER_ERROR[] = "Server error";
 
     Error(Code code = OK);
-    Error(Code code, const Message& message, const Data& data = {});
-    Error(Code code, const char* message, const Data& data = {});
+    Error(Code code, const Message& message,
+            const Data& data = Value::Type::NIL);
+    Error(Code code, const char* message,
+            const Data& data = Value::Type::NIL);
 
     Error(const Error&) = default;
     Error(Error&&) = default;
@@ -99,7 +101,7 @@ public:
 private:
     Code m_code{OK};
     Message m_message{""};
-    Data m_data{};
+    Data m_data = Value::Type::NIL;
 };
 
 }

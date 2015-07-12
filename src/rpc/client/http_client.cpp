@@ -59,7 +59,7 @@ HttpClient::HttpClient(Proactor& proactor, const HttpSettings& http_settings) :
             http_settings}});
 }
 
-void HttpClient::set_http_settings(const HttpSettings& http_settings) {
+void HttpClient::set_settings(const HttpSettings& http_settings) {
     m_proactor.push_message(MessagePtr{new SetHttpSettings{m_id,
             http_settings}});
 }

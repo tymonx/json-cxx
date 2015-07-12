@@ -1,4 +1,5 @@
 #include <json/json.hpp>
+#include <json/rpc/error.hpp>
 #include <json/rpc/client/curl_client.hpp>
 #include <json/rpc/client/http_settings.hpp>
 
@@ -8,16 +9,35 @@
 using namespace json;
 using json::rpc::time::operator "" _s;
 using json::rpc::client::HttpSettings;
+using json::rpc::Error;
 
-static const auto COMMANDS = 2;
-static const auto REQUESTS = 500;
+static const auto COMMANDS = 3;
+static const auto REQUESTS = 300;
 
 int main() {
+    json::Value value;
+
     HttpSettings settings{};
     settings.set_timeout(3_s);
 
     rpc::client::CurlClient client{"localhost:6666"};
-    client.set_http_settings(settings);
+    client.set_settings(settings);
+    client.set_id_builder(
+        [] (unsigned id) -> std::string {
+            return "UUID:" + std::to_string(id);
+        }
+    );
+    client.set_error_to_exception(
+        [] (const Error& error) -> std::exception_ptr {
+            switch (error.get_code()) {
+            case -13:
+                return std::make_exception_ptr(
+                        std::runtime_error(error.get_message()));
+            default:
+                return std::make_exception_ptr(error);
+            }
+        }
+    );
     client.connect();
 
     auto start = std::chrono::system_clock::now();
@@ -36,9 +56,7 @@ int main() {
                 }
             }
         );
-        client.method("command2",
-                13
-            ,
+        client.method("command2", 13,
             [] (rpc::Client*, const Value& result, const rpc::Error& error) {
                 if (error) {
                     std::cout << "Error: " << error.what() << " " << error.get_code() << std::endl;
@@ -48,6 +66,12 @@ int main() {
                 }
             }
         );
+        try {
+            client.method("commandError", 0, value);
+        }
+        catch (const std::exception& e) {
+            std::cout << "Exception: " << e.what() << std::endl;
+        }
     }
 
     client.~CurlClient();

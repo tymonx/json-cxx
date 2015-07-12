@@ -66,7 +66,7 @@ public:
 
     virtual ~HttpClient();
 
-    void set_http_settings(const HttpSettings& http_settings);
+    void set_settings(const HttpSettings& http_settings);
 };
 
 }

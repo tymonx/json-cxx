@@ -62,11 +62,11 @@ public:
     static const Port DEFAULT_PORT = 8080;
 
     HttpServer(const HttpSettings& http_settings = {DEFAULT_PORT})
-        { set_http_settings(http_settings); }
+        { set_settings(http_settings); }
 
     HttpServer(const Port& port) : HttpServer{HttpSettings{port}} { }
 
-    void set_http_settings(const HttpSettings& settings);
+    void set_settings(const HttpSettings& settings);
 
     virtual ~HttpServer();
 protected:

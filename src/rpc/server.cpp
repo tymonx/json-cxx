@@ -103,7 +103,7 @@ json::Value Server::create_error(const Error& error, const Value& id) {
     result["error"]["code"] = error.get_code();
     result["error"]["message"] = error.get_message();
     if (error.get_data() != nullptr) {
-        result["data"] = error.get_data();
+        result["error"]["data"] = error.get_data();
     }
     result["id"] = id;
     return result;
