@@ -100,6 +100,11 @@ CurlProactor::~CurlProactor() {
     curl_global_cleanup();
 }
 
+void CurlProactor::set_max_total_connections(MaxTotalConnections amount) {
+     curl_multi_setopt(m_curl_multi.get(),
+            CURLMOPT_MAX_TOTAL_CONNECTIONS, amount);
+}
+
 void CurlProactor::notify() {
     std::uint64_t message{1};
     ssize_t err = write(m_eventfd, &message, sizeof(message));

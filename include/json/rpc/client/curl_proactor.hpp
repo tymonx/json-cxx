@@ -60,8 +60,6 @@ namespace client {
 
 class CurlProactor : public Proactor {
 public:
-    static const constexpr unsigned DEFAULT_MAX_PIPELINE_LENGTH = 16;
-
     static CurlProactor& get_instance() {
         static CurlProactor proactor{};
         return proactor;
@@ -73,13 +71,7 @@ public:
 
     virtual void push_message(MessagePtr&& message) final;
 
-    unsigned get_max_pipeline_length() const {
-        return DEFAULT_MAX_PIPELINE_LENGTH;
-    }
-
-    bool task_done() const { return m_task_done; }
-
-    void* get_curl_multi() { return m_curl_multi.get(); }
+    virtual void set_max_total_connections(MaxTotalConnections amount);
 private:
     struct CurlMultiDeleter {
         void operator ()(void*);
