@@ -321,14 +321,18 @@ void CurlContext::disconnect(MessageList::iterator& it) {
 }
 
 void CurlContext::set_error_to_exception(MessageList::iterator& it) {
-    const auto& message = static_cast<const SetErrorToException&>(**it);
-    m_executor.set_error_to_exception(message.get_callback());
+    m_executor.execute(std::move(*it));
     it = m_messages.erase(it);
 }
 
 void CurlContext::set_http_settings(MessageList::iterator& it) {
     const auto& message = static_cast<const SetHttpSettings&>(**it);
     const auto& settings = message.get_http_settings();
+
+    if (HttpSettings::UNKNOWN_THREAD_POOL_SIZE
+            != settings.get_thread_pool_size()) {
+        m_executor.resize(settings.get_thread_pool_size());
+    }
 
     if (!settings.get_headers().empty()) {
         std::string header;

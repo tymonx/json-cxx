@@ -63,6 +63,9 @@ public:
     using PipelineLength = unsigned;
     using Miliseconds = time::Miliseconds;
     using Seconds = time::Seconds;
+    using ThreadPoolSize = size_t;
+
+    static const auto UNKNOWN_THREAD_POOL_SIZE = ThreadPoolSize(-1);
 
     static constexpr const auto UNKNOWN_TIME_LIVE_MS = Miliseconds(-1);
 
@@ -82,6 +85,14 @@ public:
     void set_url(const std::string& url) { m_url = url; }
 
     const std::string& get_url() const { return m_url; }
+
+    void set_thread_pool_size(const ThreadPoolSize& size) {
+        m_thread_pool_size = size;
+    }
+
+    const ThreadPoolSize& get_thread_pool_size() const {
+        return m_thread_pool_size;
+    }
 
     void set_timeout(const Seconds& timeout_sec) {
         set_timeout(std::chrono::duration_cast<Miliseconds>(timeout_sec));
@@ -110,6 +121,7 @@ private:
     std::string m_url{};
     Miliseconds m_time_live_ms{UNKNOWN_TIME_LIVE_MS};
     Miliseconds m_timeout_ms{UNKNOWN_TIMEOUT_MS};
+    ThreadPoolSize m_thread_pool_size{UNKNOWN_THREAD_POOL_SIZE};
     Headers m_headers{};
 };
 

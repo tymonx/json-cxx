@@ -48,7 +48,11 @@
 #include <json/rpc/client/message.hpp>
 #include <json/rpc/client.hpp>
 
+#include <queue>
+#include <mutex>
 #include <atomic>
+#include <thread>
+#include <condition_variable>
 
 namespace json {
 namespace rpc {
@@ -58,24 +62,35 @@ class Executor {
 public:
     using ErrorToException = Client::ErrorToException;
 
+    static const size_t DEFAULT_THREAD_POOL_SIZE = 8;
+
+    Executor(size_t thread_pool_size = DEFAULT_THREAD_POOL_SIZE);
+
     void execute(MessagePtr&& message, const Error& error = {Error::OK});
 
-    void set_error_to_exception(const ErrorToException& error_to_exception) {
-        m_error_to_exception = error_to_exception;
-    }
+    void resize(size_t size);
 
     ~Executor();
 private:
-    void call_method_sync(MessagePtr& message, const Error& error);
-    void call_method_async(MessagePtr&& message, Error error);
-    void send_notification_sync(MessagePtr& message, const Error& error);
-    void send_notification_async(MessagePtr&& message, Error error);
-    void connect(MessagePtr& message, const Error& error);
-    void disconnect(MessagePtr& message, const Error& error);
+    using ThreadPool = std::vector<std::thread>;
+    using Message = std::pair<MessagePtr, Error>;
+    using Messages = std::queue<Message>;
+
+    void task();
+    void message_processing(MessagePtr& message, Error& error);
+
+    void call_method_sync(MessagePtr& message, Error& error);
+    void call_method_async(MessagePtr& message, Error& error);
+    void send_notification_sync(MessagePtr& message, Error& error);
+    void send_notification_async(MessagePtr& message, Error& error);
+    void set_error_to_exception(MessagePtr& message, Error& error);
 
     ErrorToException m_error_to_exception{nullptr};
-
-    volatile std::atomic_uint m_tasks{0};
+    std::mutex m_mutex{};
+    std::condition_variable m_cond_variable{};
+    ThreadPool m_thread_pool{};
+    Messages m_messages{};
+    volatile std::atomic_bool m_stop{false};
 };
 
 } /* client */

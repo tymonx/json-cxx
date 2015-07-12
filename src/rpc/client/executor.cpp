@@ -44,12 +44,12 @@
 #include <json/rpc/client/executor.hpp>
 
 #include <json/json.hpp>
-#include <thread>
 
 #include <json/rpc/client/message/call_method_sync.hpp>
 #include <json/rpc/client/message/call_method_async.hpp>
 #include <json/rpc/client/message/send_notification_sync.hpp>
 #include <json/rpc/client/message/send_notification_async.hpp>
+#include <json/rpc/client/message/set_error_to_exception.hpp>
 
 using namespace json::rpc::client::message;
 
@@ -58,8 +58,48 @@ using json::Deserializer;
 using json::rpc::Error;
 using json::rpc::client::Executor;
 
+Executor::Executor(size_t thread_pool_size) {
+    m_thread_pool.resize(thread_pool_size);
+    for (auto& t : m_thread_pool) {
+        t = std::thread{&Executor::task, this};
+    }
+}
+
 Executor::~Executor() {
-    while (m_tasks.load() > 0) { }
+    m_stop = true;
+    m_cond_variable.notify_all();
+    for (auto& t : m_thread_pool) {
+        if (t.joinable()) { t.join(); }
+    }
+
+    while (!m_messages.empty()) {
+        auto& message = m_messages.front();
+        message_processing(message.first, message.second);
+        m_messages.pop();
+    }
+}
+
+void Executor::execute(MessagePtr&& message, const Error& error) {
+    std::unique_lock<std::mutex> lock(m_mutex);
+    m_messages.emplace(std::move(message), error);
+    lock.unlock();
+    m_cond_variable.notify_all();
+}
+
+void Executor::resize(size_t size) {
+    if (0 == size) { size = 1; }
+
+    m_stop = true;
+    m_cond_variable.notify_all();
+    for (auto& t : m_thread_pool) {
+        if (t.joinable()) { t.join(); }
+    }
+
+    m_stop = false;
+    m_thread_pool.resize(size);
+    for (auto& t : m_thread_pool) {
+        t = std::thread{&Executor::task, this};
+    }
 }
 
 static bool
@@ -124,118 +164,131 @@ processing_notification(const std::string& response) {
     return {Error::OK};
 }
 
-void Executor::call_method_sync(MessagePtr& message, const Error& error) {
+void Executor::call_method_sync(MessagePtr& message, Error& error) {
     auto& msg = static_cast<CallMethodSync&>(*message);
-    Error err{error};
-    Value result(Value::Type::NIL);
-
-    if (!err) {
-        err = processing_method(msg.get_response(), msg.get_id(), result);
-    }
-
-    if (!err) {
-        msg.set_result(result);
-    }
-    else {
-        if (m_error_to_exception) {
-            msg.set_exception(m_error_to_exception(err));
-        }
-        else {
-            msg.set_exception(std::make_exception_ptr(err));
-        }
-    }
-}
-
-void Executor::call_method_async(MessagePtr&& message, Error error) {
-    auto& msg = static_cast<CallMethodAsync&>(*message);
     Value result(Value::Type::NIL);
 
     if (!error) {
         error = processing_method(msg.get_response(), msg.get_id(), result);
     }
 
-    const auto& call = msg.get_callback();
-    try {
-        if (nullptr != call) {
-            call(msg.get_client(), result, error);
-        }
-    }
-    catch (...) { }
-    --m_tasks;
-}
-
-void Executor::send_notification_sync(MessagePtr& message, const Error& error) {
-    auto& msg = static_cast<SendNotificationSync&>(*message);
-    Error err{error};
-
-    if (!err) {
-        err = processing_notification(msg.get_response());
-    }
-
-    if (!err) {
-        msg.set_result();
+    if (!error) {
+        msg.set_result(result);
     }
     else {
-        if (m_error_to_exception) {
-            msg.set_exception(m_error_to_exception(err));
+        std::unique_lock<std::mutex> lock(m_mutex);
+        ErrorToException callback = m_error_to_exception;
+        lock.unlock();
+
+        if (callback) {
+            msg.set_exception(callback(error));
         }
         else {
-            msg.set_exception(std::make_exception_ptr(err));
+            msg.set_exception(std::make_exception_ptr(error));
         }
     }
 }
 
-void Executor::send_notification_async(MessagePtr&& message, Error error) {
-    auto& msg = static_cast<SendNotificationAsync&>(*message);
+void Executor::call_method_async(MessagePtr& message, Error& error) {
+    auto& msg = static_cast<CallMethodAsync&>(*message);
+    if (nullptr == msg.get_callback()) { return; }
+    Value result(Value::Type::NIL);
+
+    if (!error) {
+        error = processing_method(msg.get_response(), msg.get_id(), result);
+    }
+
+    try {
+        msg.get_callback()(msg.get_client(), result, error);
+    }
+    catch (...) { }
+}
+
+void Executor::send_notification_sync(MessagePtr& message, Error& error) {
+    auto& msg = static_cast<SendNotificationSync&>(*message);
     if (!error) {
         error = processing_notification(msg.get_response());
     }
 
-    const auto& call = msg.get_callback();
-    try {
-        if (nullptr != call) {
-            call(msg.get_client(), error);
+    if (!error) {
+        msg.set_result();
+    }
+    else {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        ErrorToException callback = m_error_to_exception;
+        lock.unlock();
+
+        if (callback) {
+            msg.set_exception(callback(error));
+        }
+        else {
+            msg.set_exception(std::make_exception_ptr(error));
         }
     }
-    catch (...) { }
-    --m_tasks;
 }
 
-void Executor::execute(MessagePtr&& message, const Error& error) {
+void Executor::send_notification_async(MessagePtr& message, Error& error) {
+    auto& msg = static_cast<SendNotificationAsync&>(*message);
+    if (nullptr == msg.get_callback()) { return; }
+    if (!error) {
+        error = processing_notification(msg.get_response());
+    }
+
+    try {
+        msg.get_callback()(msg.get_client(), error);
+    }
+    catch (...) { }
+}
+
+void Executor::task() {
+    std::unique_lock<std::mutex> lock(m_mutex, std::defer_lock);
+    Message message{};
+
+    do {
+        message.first = nullptr;
+        lock.lock();
+        m_cond_variable.wait(lock, [this] {
+            return !m_messages.empty() || m_stop;
+        });
+        if (!m_messages.empty()) {
+            message = std::move(m_messages.front());
+            m_messages.pop();
+        }
+        lock.unlock();
+
+        if (nullptr != message.first) {
+            message_processing(message.first, message.second);
+        }
+    } while (!m_stop);
+}
+
+void Executor::set_error_to_exception(MessagePtr& message, Error&) {
+    auto& msg = static_cast<SetErrorToException&>(*message);
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_error_to_exception = msg.get_callback();
+}
+
+void Executor::message_processing(MessagePtr& message, Error& error) {
     switch (message->get_type()) {
     case MessageType::CALL_METHOD_SYNC:
         call_method_sync(message, error);
         break;
     case MessageType::CALL_METHOD_ASYNC:
-        try {
-            ++m_tasks;
-            std::thread t{&Executor::call_method_async, this,
-                 std::move(message), error};
-            t.detach();
-        }
-        catch (...) {
-            --m_tasks;
-        }
+        call_method_async(message, error);
         break;
     case MessageType::SEND_NOTIFICATION_SYNC:
         send_notification_sync(message, error);
         break;
     case MessageType::SEND_NOTIFICATION_ASYNC:
-        try {
-            ++m_tasks;
-            std::thread t{&Executor::send_notification_async, this,
-                std::move(message), error};
-            t.detach();
-        }
-        catch (...) {
-            --m_tasks;
-        }
+        send_notification_async(message, error);
+        break;
+    case MessageType::SET_ERROR_TO_EXCEPTION:
+        set_error_to_exception(message, error);
         break;
     case MessageType::CONNECT:
     case MessageType::DISCONNECT:
     case MessageType::SET_ID_BUILDER:
     case MessageType::SET_HTTP_SETTINGS:
-    case MessageType::SET_ERROR_TO_EXCEPTION:
     case MessageType::CREATE_CONTEXT:
     case MessageType::DESTROY_CONTEXT:
     case MessageType::UNDEFINED:

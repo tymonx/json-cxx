@@ -55,9 +55,10 @@ public:
     using MaxTotalConnections = std::uint32_t;
 
     virtual void push_message(MessagePtr&& message) = 0;
-    virtual ~Proactor();
 
     virtual void set_max_total_connections(MaxTotalConnections amount) = 0;
+
+    virtual ~Proactor();
 };
 
 }

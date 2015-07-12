@@ -66,12 +66,14 @@ int main() {
                 }
             }
         );
+        /*
         try {
             client.method("commandError", 0, value);
         }
         catch (const std::exception& e) {
             std::cout << "Exception: " << e.what() << std::endl;
         }
+        */
     }
 
     client.~CurlClient();
