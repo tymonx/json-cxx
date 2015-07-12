@@ -51,8 +51,6 @@ constexpr const HttpSettings::Miliseconds HttpSettings::UNKNOWN_TIMEOUT_MS;
 
 HttpSettings::HttpSettings() { }
 
-HttpSettings::HttpSettings(const std::string& url) : m_url{url} { }
-
 HttpSettings::~HttpSettings() { }
 
 void HttpSettings::add_header(const Header& header) {

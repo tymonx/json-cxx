@@ -61,17 +61,13 @@ public:
 
     static const Port DEFAULT_PORT = 8080;
 
-    HttpServer(const HttpSettings& http_settings = {DEFAULT_PORT})
-        { set_settings(http_settings); }
+    HttpServer(const Port& port) : m_port{port} { }
 
-    HttpServer(const Port& port) : HttpServer{HttpSettings{port}} { }
-
-    void set_settings(const HttpSettings& settings);
+    virtual void set_settings(const HttpSettings& settings) = 0;
 
     virtual ~HttpServer();
 protected:
     Port m_port{DEFAULT_PORT};
-    time::Miliseconds m_timeout_ms{time::operator "" _ms(0)};
 };
 
 }

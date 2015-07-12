@@ -58,11 +58,10 @@ class HttpClient : public json::rpc::Client {
 public:
     static constexpr const char* const DEFAULT_URL = "localhost:8080";
 
-    HttpClient(Proactor& proactor,
-            const HttpSettings& http_settings = {DEFAULT_URL});
+    HttpClient(Proactor& proactor, const std::string& url = DEFAULT_URL);
 
-    HttpClient(Proactor& proactor, const std::string& url) :
-        HttpClient(proactor, HttpSettings{url}) { }
+    HttpClient(Proactor& proactor, const std::string& url,
+            const HttpSettings& settings);
 
     virtual ~HttpClient();
 

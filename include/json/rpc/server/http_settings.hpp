@@ -52,17 +52,15 @@ namespace server {
 
 class HttpSettings {
 public:
-    using Port = std::uint16_t;
     using Miliseconds = time::Miliseconds;
     using Seconds = time::Seconds;
+    using ThreadPoolSize = size_t;
 
-    static const Port UNKNOWN_PORT = Port(-1);
+    static const auto UNKNOWN_THREAD_POOL_SIZE = ThreadPoolSize(-1);
 
     static constexpr const auto UNKNOWN_TIMEOUT_MS = Miliseconds(-1);
 
     HttpSettings();
-
-    HttpSettings(const Port& port);
 
     HttpSettings(const HttpSettings&) = default;
     HttpSettings(HttpSettings&&) = default;
@@ -71,9 +69,13 @@ public:
 
     ~HttpSettings();
 
-    void set_port(const Port& port) { m_port = port; }
+    void set_thread_pool_size(const ThreadPoolSize& size) {
+        m_thread_pool_size = size;
+    }
 
-    const Port& get_port() const { return m_port; }
+    const ThreadPoolSize& get_thread_pool_size() const {
+        return m_thread_pool_size;
+    }
 
     void set_timeout(const Seconds& timeout_sec) {
         set_timeout(std::chrono::duration_cast<Miliseconds>(timeout_sec));
@@ -84,10 +86,9 @@ public:
     }
 
     const Miliseconds& get_timeout() const { return m_timeout_ms; }
-
 private:
-    Port m_port{UNKNOWN_PORT};
     Miliseconds m_timeout_ms{UNKNOWN_TIMEOUT_MS};
+    ThreadPoolSize m_thread_pool_size{UNKNOWN_THREAD_POOL_SIZE};
 };
 
 } /* server */

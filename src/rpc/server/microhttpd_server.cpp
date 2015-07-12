@@ -58,6 +58,17 @@ void MicrohttpdServer::MicrohttpdDeleter::operator()(::MHD_Daemon* mhd) {
     if (nullptr != mhd) { MHD_stop_daemon(mhd); }
 }
 
+void MicrohttpdServer::set_settings(const HttpSettings& settings) {
+    if (HttpSettings::UNKNOWN_THREAD_POOL_SIZE
+            != settings.get_thread_pool_size()) {
+        m_thread_pool_size = settings.get_thread_pool_size();
+    }
+
+    if (HttpSettings::UNKNOWN_TIMEOUT_MS != settings.get_timeout()) {
+        m_timeout_ms = settings.get_timeout();
+    }
+}
+
 int MicrohttpdServer::method_post(void* cls, struct MHD_Connection* connection,
         const char* upload_data, size_t* upload_data_size, void** con_cls)
 {
@@ -128,11 +139,23 @@ void MicrohttpdServer::start() {
         timeout_sec = 1;
     }
 
-    m_mhd = MicrohttpdPtr{MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION
-            | MHD_USE_POLL, m_port,
-            nullptr, nullptr, method_handler, this,
+    if (0 == m_thread_pool_size) {
+        m_mhd = MicrohttpdPtr{MHD_start_daemon(
+            MHD_USE_THREAD_PER_CONNECTION | MHD_USE_POLL,
+            m_port, nullptr, nullptr, method_handler, this,
             MHD_OPTION_CONNECTION_TIMEOUT, timeout_sec,
-            MHD_OPTION_END)};
+            MHD_OPTION_END
+        )};
+    }
+    else {
+        m_mhd = MicrohttpdPtr{MHD_start_daemon(
+            MHD_USE_SELECT_INTERNALLY,
+            m_port, nullptr, nullptr, method_handler, this,
+            MHD_OPTION_CONNECTION_TIMEOUT, timeout_sec,
+            MHD_OPTION_THREAD_POOL_SIZE, m_thread_pool_size,
+            MHD_OPTION_END
+        )};
+    }
     if (nullptr == m_mhd) {
         throw std::runtime_error("Cannot start server");
     }

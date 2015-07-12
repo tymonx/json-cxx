@@ -49,6 +49,4 @@ constexpr const HttpSettings::Miliseconds HttpSettings::UNKNOWN_TIMEOUT_MS;
 
 HttpSettings::HttpSettings() { }
 
-HttpSettings::HttpSettings(const Port& port) : m_port{port} { }
-
 HttpSettings::~HttpSettings() { }

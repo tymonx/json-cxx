@@ -56,9 +56,9 @@ namespace client {
  * */
 class CurlClient : public HttpClient {
 public:
-    CurlClient(const HttpSettings& settings = {DEFAULT_URL});
+    CurlClient(const std::string& url = DEFAULT_URL);
 
-    CurlClient(const std::string& url) : CurlClient(HttpSettings{url}) { }
+    CurlClient(const std::string& url, const HttpSettings& settings);
 
     virtual ~CurlClient() final;
 };

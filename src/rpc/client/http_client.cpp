@@ -53,10 +53,20 @@ using namespace json::rpc::client::message;
 
 constexpr const char* const HttpClient::DEFAULT_URL;
 
-HttpClient::HttpClient(Proactor& proactor, const HttpSettings& http_settings) :
-    Client{proactor} {
-    m_proactor.push_message(MessagePtr{new SetHttpSettings{m_id,
-            http_settings}});
+HttpClient::HttpClient(Proactor& proactor, const std::string& url):
+    Client{proactor}
+{
+    HttpSettings settings{};
+    settings.set_url(url);
+    set_settings(settings);
+}
+
+HttpClient::HttpClient(Proactor& proactor, const std::string& url,
+        const HttpSettings& http_settings) : Client{proactor}
+{
+    HttpSettings settings{http_settings};
+    settings.set_url(url);
+    set_settings(settings);
 }
 
 void HttpClient::set_settings(const HttpSettings& http_settings) {

@@ -73,8 +73,6 @@ public:
 
     HttpSettings();
 
-    HttpSettings(const std::string& url);
-
     HttpSettings(const HttpSettings&) = default;
     HttpSettings(HttpSettings&&) = default;
     HttpSettings& operator=(const HttpSettings&) = default;

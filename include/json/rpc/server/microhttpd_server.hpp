@@ -60,12 +60,14 @@ namespace server {
  * */
 class MicrohttpdServer : public json::rpc::server::HttpServer {
 public:
-    MicrohttpdServer(const HttpSettings& settings = {DEFAULT_PORT}) :
-        HttpServer{settings} { }
+    MicrohttpdServer(const Port& port = DEFAULT_PORT) : HttpServer{port} {}
 
-    MicrohttpdServer(const Port& port) : HttpServer{port} { }
+    MicrohttpdServer(const Port& port, const HttpSettings& settings) :
+        HttpServer{port} { set_settings(settings); }
 
     virtual ~MicrohttpdServer() final;
+
+    virtual void set_settings(const HttpSettings& settings) final;
 
     virtual void start() final;
 
@@ -85,6 +87,8 @@ private:
         const char* upload_data, size_t* upload_data_size, void** con_cls);
 
     MicrohttpdPtr m_mhd{nullptr};
+    HttpSettings::ThreadPoolSize m_thread_pool_size{0};
+    HttpSettings::Miliseconds m_timeout_ms{time::operator "" _ms(0)};
 };
 
 }
