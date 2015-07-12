@@ -12,7 +12,7 @@ using json::rpc::client::HttpSettings;
 using json::rpc::client::CurlProactor;
 using json::rpc::Error;
 
-static const auto COMMANDS = 2;
+static const auto COMMANDS = 3;
 static const auto REQUESTS = 1000;
 
 int main() {
@@ -66,14 +66,16 @@ int main() {
                 }
             }
         );
-        /*
-        try {
-            client.method("commandError", 0, value);
-        }
-        catch (const std::exception& e) {
-            std::cout << "Exception: " << e.what() << std::endl;
-        }
-        */
+        client.method("commandError", 0,
+            [] (rpc::Client*, const Value& result, const rpc::Error& error) {
+                if (error) {
+                    std::cout << "Error: " << error.what() << " " << error.get_code() << std::endl;
+                }
+                else {
+                    std::cout << result << std::endl;
+                }
+            }
+        );
     }
 
     client.~CurlClient();
