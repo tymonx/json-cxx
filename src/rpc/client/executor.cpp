@@ -60,16 +60,16 @@ using json::rpc::client::Executor;
 
 Executor::Executor(size_t thread_pool_size) {
     m_thread_pool.resize(thread_pool_size);
-    for (auto& t : m_thread_pool) {
-        t = std::thread{&Executor::task, this};
+    for (auto it = m_thread_pool.begin(); it != m_thread_pool.end(); ++it) {
+        *it = std::thread{&Executor::task, this};
     }
 }
 
 Executor::~Executor() {
     m_stop = true;
     m_cond_variable.notify_all();
-    for (auto& t : m_thread_pool) {
-        if (t.joinable()) { t.join(); }
+    for (auto it = m_thread_pool.begin(); it != m_thread_pool.end(); ++it) {
+        if (it->joinable()) { it->join(); }
     }
 
     while (!m_messages.empty()) {
@@ -91,14 +91,14 @@ void Executor::resize(size_t size) {
 
     m_stop = true;
     m_cond_variable.notify_all();
-    for (auto& t : m_thread_pool) {
-        if (t.joinable()) { t.join(); }
+    for (auto it = m_thread_pool.begin(); it != m_thread_pool.end(); ++it) {
+        if (it->joinable()) { it->join(); }
     }
 
     m_stop = false;
     m_thread_pool.resize(size);
-    for (auto& t : m_thread_pool) {
-        t = std::thread{&Executor::task, this};
+    for (auto it = m_thread_pool.begin(); it != m_thread_pool.end(); ++it) {
+        *it = std::thread{&Executor::task, this};
     }
 }
 
