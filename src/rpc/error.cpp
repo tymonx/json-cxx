@@ -45,13 +45,13 @@
 
 using json::rpc::Error;
 
-constexpr const char Error::MSG_UNKNOWN_ERROR[];
-constexpr const char Error::MSG_PARSE_ERROR[];
-constexpr const char Error::MSG_INVALID_REQUEST[];
-constexpr const char Error::MSG_METHOD_NOT_FOUND[];
-constexpr const char Error::MSG_INVALID_PARAMS[];
-constexpr const char Error::MSG_INTERNAL_ERROR[];
-constexpr const char Error::MSG_SERVER_ERROR[];
+constexpr Error::Chars Error::MSG_UNKNOWN_ERROR;
+constexpr Error::Chars Error::MSG_PARSE_ERROR;
+constexpr Error::Chars Error::MSG_INVALID_REQUEST;
+constexpr Error::Chars Error::MSG_METHOD_NOT_FOUND;
+constexpr Error::Chars Error::MSG_INVALID_PARAMS;
+constexpr Error::Chars Error::MSG_INTERNAL_ERROR;
+constexpr Error::Chars Error::MSG_SERVER_ERROR;
 
 Error::Error(Code code) : m_code{code} {
     switch (m_code) {

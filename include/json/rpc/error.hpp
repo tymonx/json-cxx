@@ -55,28 +55,33 @@ class Error : public std::exception {
 public:
     using Message = std::string;
     using Data = json::Value;
+    using Chars = const char* const;
     using Code = std::int32_t;
 
-    static const Code OK = 0;
-    static const Code PARSE_ERROR       = -32700;
-    static const Code INVALID_REQUEST   = -32600;
-    static const Code METHOD_NOT_FOUND  = -32601;
-    static const Code INVALID_PARAMS    = -32602;
-    static const Code INTERNAL_ERROR    = -32603;
-    static const Code SERVER_ERROR      = -32000;
-    static const Code SERVER_ERROR_MAX  = -32099;
+    enum CodeT : Code {
+        OK = 0,
+        PARSE_ERROR      = -32700,
+        INVALID_REQUEST  = -32600,
+        METHOD_NOT_FOUND = -32601,
+        INVALID_PARAMS   = -32602,
+        INTERNAL_ERROR   = -32603,
+        SERVER_ERROR     = -32000,
+        SERVER_ERROR_MAX = -32099
+    };
 
-    static constexpr const char MSG_UNKNOWN_ERROR[] = "Unknown error";
-    static constexpr const char MSG_PARSE_ERROR[] = "Parse error";
-    static constexpr const char MSG_INVALID_REQUEST[] = "Invalid Request";
-    static constexpr const char MSG_METHOD_NOT_FOUND[] = "Method not found";
-    static constexpr const char MSG_INVALID_PARAMS[] = "Invalid params";
-    static constexpr const char MSG_INTERNAL_ERROR[] = "Internal error";
-    static constexpr const char MSG_SERVER_ERROR[] = "Server error";
+    static constexpr Chars MSG_UNKNOWN_ERROR    = "Unknown error";
+    static constexpr Chars MSG_PARSE_ERROR      = "Parse error";
+    static constexpr Chars MSG_INVALID_REQUEST  = "Invalid Request";
+    static constexpr Chars MSG_METHOD_NOT_FOUND = "Method not found";
+    static constexpr Chars MSG_INVALID_PARAMS   = "Invalid params";
+    static constexpr Chars MSG_INTERNAL_ERROR   = "Internal error";
+    static constexpr Chars MSG_SERVER_ERROR     = "Server error";
 
     Error(Code code = OK);
+
     Error(Code code, const Message& message,
             const Data& data = Value::Type::NIL);
+
     Error(Code code, const char* message,
             const Data& data = Value::Type::NIL);
 
@@ -100,7 +105,7 @@ public:
     bool operator!=(Code code) const { return m_code != code; }
 private:
     Code m_code{OK};
-    Message m_message{""};
+    Message m_message{};
     Data m_data = Value::Type::NIL;
 };
 
