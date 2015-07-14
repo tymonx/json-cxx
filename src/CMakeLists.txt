@@ -80,7 +80,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
     )
 endif()
 
-install (TARGETS json-cxx
+install (TARGETS json-cxx json-cxx-rpc-client json-cxx-rpc-server
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
