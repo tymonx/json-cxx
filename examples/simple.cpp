@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2015, Tymoteusz Blazejczyk
+ * Copyright (c) 2016, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -19,7 +19,7 @@
  *   and/or other materials provided with the distribution.
  *
  * @copyright
- * * Neither the name of json-cxx nor the names of its
+ * * Neither the name of OpenRedfish nor the names of its
  *   contributors may be used to endorse or promote products derived from
  *   this software without specific prior written permission.
  *
@@ -36,42 +36,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/message/set_error_to_exception.hpp
+ * @file simple.cpp
  *
- * @brief Create context event
+ * @brief simple implementation
  * */
 
-#ifndef JSON_CXX_RPC_CLIENT_SET_ERROR_TO_EXCEPTION_HPP
-#define JSON_CXX_RPC_CLIENT_SET_ERROR_TO_EXCEPTION_HPP
+#include "json/json.hpp"
 
-#include <json/rpc/client/message.hpp>
-
-#include <json/rpc/error.hpp>
-
-#include <exception>
-#include <functional>
-
-namespace json {
-namespace rpc {
-namespace client {
-namespace message {
-
-class SetErrorToException : public Message {
-public:
-    using Callback = std::function<std::exception_ptr(const Error&)>;
-
-    SetErrorToException(Client* client, const Callback& callback);
-
-    virtual ~SetErrorToException() final;
-
-    const Callback& get_callback() const { return m_callback; }
-private:
-    Callback m_callback{nullptr};
-};
-
-} /* message */
-} /* client */
-} /* rpc */
-} /* json */
-
-#endif /* JSON_CXX_RPC_CLIENT_SET_ERROR_TO_EXCEPTION_HPP */
+int main() {
+    json::Value value{3, 4, 5};
+    json::Value tmp(std::move(value));
+}

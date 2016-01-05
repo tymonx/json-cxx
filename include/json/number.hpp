@@ -72,7 +72,7 @@ public:
     friend class Deserializer;
 
     /*! JSON number type */
-    enum class Type {
+    enum Type {
         INT,        /*!< Signed integer number */
         UINT,       /*!< Unsigned integer number */
         DOUBLE      /*!< Double number */

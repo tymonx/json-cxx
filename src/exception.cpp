@@ -36,18 +36,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/client/call_method_sync.cpp
+ * @file exception.cpp
  *
- * @brief JSON call method sync implementation
+ * @brief JSON exception
  * */
 
-#include <json/rpc/client/message/call_method_async.hpp>
+#include <json/exception.hpp>
 
-using json::rpc::client::message::CallMethodAsync;
+using json::Exception;
 
-CallMethodAsync::CallMethodAsync(Client* client, const std::string& name,
-        const Value& params, const Callback& callback) :
-    Message{MessageType::CALL_METHOD_ASYNC, client}, m_name{name},
-    m_params{params}, m_callback{callback} { }
+Exception::Exception(const char* str) : runtime_error(str) { }
 
-CallMethodAsync::~CallMethodAsync() { }
+Exception::Exception(const std::string& str) : runtime_error(str) { }
+
+Exception::~Exception() { }

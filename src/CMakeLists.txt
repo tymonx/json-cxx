@@ -33,6 +33,7 @@ add_library(json-cxx
     iterator.cpp
     serializer.cpp
     deserializer.cpp
+    exception.cpp
     formatter.cpp
     formatter/compact.cpp
     formatter/pretty.cpp
@@ -41,46 +42,13 @@ add_library(json-cxx
     writter/string.cpp
 )
 
-add_library(json-cxx-rpc-client
-    rpc/error.cpp
-    rpc/client.cpp
-    rpc/client/curl_client.cpp
-    rpc/client/curl_context.cpp
-    rpc/client/curl_proactor.cpp
-    rpc/client/executor.cpp
-    rpc/client/http_client.cpp
-    rpc/client/http_settings.cpp
-    rpc/client/message.cpp
-    rpc/client/proactor.cpp
-    rpc/client/message/call_method_async.cpp
-    rpc/client/message/call_method_sync.cpp
-    rpc/client/message/connect.cpp
-    rpc/client/message/create_context.cpp
-    rpc/client/message/destroy_context.cpp
-    rpc/client/message/disconnect.cpp
-    rpc/client/message/send_notification_sync.cpp
-    rpc/client/message/send_notification_async.cpp
-    rpc/client/message/set_error_to_exception.cpp
-    rpc/client/message/set_http_settings.cpp
-    rpc/client/message/set_id_builder.cpp
-)
-
-add_library(json-cxx-rpc-server
-    rpc/error.cpp
-    rpc/server.cpp
-    rpc/server/http_server.cpp
-    rpc/server/http_settings.cpp
-    rpc/server/microhttpd_server.cpp
-)
-
-
 if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
     set_source_files_properties(value.cpp PROPERTIES
         COMPILE_FLAGS "-Wno-global-constructors"
     )
 endif()
 
-install (TARGETS json-cxx json-cxx-rpc-client json-cxx-rpc-server
+install (TARGETS json-cxx
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib

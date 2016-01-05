@@ -36,63 +36,44 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/rpc/server/microhttpd_server.hpp
+ * @file exception.hpp
  *
- * @brief HTTP JSON RPC server based on Microhttpd library
+ * @brief JSON exception
  * */
 
-#ifndef JSON_CXX_RPC_MICROHTTPD_SERVER_HPP
-#define JSON_CXX_RPC_MICROHTTPD_SERVER_HPP
+#ifndef JSON_CXX_EXCEPTION_HPP
+#define JSON_CXX_EXCEPTION_HPP
 
-#include <json/rpc/server/http_server.hpp>
-
-#include <memory>
-
-struct MHD_Daemon;
-struct MHD_Connection;
+#include <stdexcept>
 
 namespace json {
-namespace rpc {
-namespace server {
 
 /*!
- * JSON server class
+ * @brief JSON value exception
  * */
-class MicrohttpdServer : public json::rpc::server::HttpServer {
+class Exception : public std::runtime_error {
 public:
-    MicrohttpdServer(const Port& port = DEFAULT_PORT) : HttpServer{port} {}
+    /*!
+     * @brief JSON value exception constructor
+     *
+     * @param[in]   str JSON value exception message
+     * */
+    Exception(const char* str);
 
-    MicrohttpdServer(const Port& port, const HttpSettings& settings) :
-        HttpServer{port} { set_settings(settings); }
+    /*!
+     * @brief JSON value exception constructor
+     *
+     * @param[in]   str JSON value exception message
+     * */
+    Exception(const std::string& str);
 
-    virtual ~MicrohttpdServer() final;
+    /*! Exception copy constructor */
+    Exception(const Exception&) = default;
 
-    virtual void set_settings(const HttpSettings& settings) final;
-
-    virtual void start() final;
-
-    virtual void stop() final;
-private:
-    struct MicrohttpdDeleter {
-        void operator()(struct ::MHD_Daemon*);
-    };
-
-    using MicrohttpdPtr = std::unique_ptr<::MHD_Daemon, MicrohttpdDeleter>;
-
-    static int method_post(void* cls, struct MHD_Connection* connection,
-        const char* upload_data, size_t* upload_data_size, void** con_cls);
-
-    static int method_handler(void* cls, struct MHD_Connection *connection,
-        const char*, const char* method, const char*,
-        const char* upload_data, size_t* upload_data_size, void** con_cls);
-
-    MicrohttpdPtr m_mhd{nullptr};
-    HttpSettings::ThreadPoolSize m_thread_pool_size{0};
-    HttpSettings::Miliseconds m_timeout_ms{time::operator "" _ms(0)};
+    /*! Exception destructor */
+    ~Exception();
 };
 
 }
-}
-}
 
-#endif /* JSON_CXX_RPC_MICROHTTPD_SERVER_HPP */
+#endif /* JSON_CXX_EXCEPTION_HPP */

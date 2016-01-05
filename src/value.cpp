@@ -41,8 +41,9 @@
  * @brief JSON value implementation
  * */
 
-#include "json/value.hpp"
-#include "json/iterator.hpp"
+#include <json/value.hpp>
+#include <json/iterator.hpp>
+#include <json/exception.hpp>
 
 #include <limits>
 #include <type_traits>
@@ -50,27 +51,7 @@
 
 using namespace json;
 
-/*!
- * @brief Raw aligned template memory
- * */
-template<typename T>
-using raw_memory = typename std::aligned_storage<sizeof(T),
-      std::alignment_of<T>::value>::type;
-
-/*! Create raw aligned memory for Value object and initialize with zeros */
-static const raw_memory<Value> g_null_value_raw {};
-
-/*! Omit dereferencing type-punned pointer */
-static const void* g_null_value_ref = &g_null_value_raw;
-
-/*! Now we can cast raw memory to JSON value object */
-static const Value& g_null_value = *static_cast<const Value*>(g_null_value_ref);
-
-Value::Exception::Exception(const char* str) : runtime_error(str) { }
-
-Value::Exception::Exception(const std::string& str) : runtime_error(str) { }
-
-Value::Exception::~Exception() { }
+static const Value g_null_value{};
 
 Value::Value(Type type) : m_type(type) {
     create_container(type);
@@ -430,13 +411,13 @@ Value::iterator Value::erase(const_iterator pos) {
     iterator tmp;
 
     if (is_array() && pos.is_array()) {
-        tmp = std::move(m_array.erase(pos.m_array_iterator));
+        tmp = m_array.erase(pos.m_array_iterator);
     }
     else if (is_object() && pos.is_object()) {
-        tmp = std::move(m_object.erase(pos.m_object_iterator));
+        tmp = m_object.erase(pos.m_object_iterator);
     }
     else {
-        tmp = std::move(end());
+        tmp = end();
     }
 
     return tmp;
@@ -446,7 +427,7 @@ Value::iterator Value::erase(const_iterator first, const_iterator last) {
     iterator tmp;
 
     for (auto it = first; it < last; ++it) {
-        tmp = std::move(erase(it));
+        tmp = erase(it);
     }
 
     return tmp;
@@ -456,18 +437,18 @@ Value::iterator Value::insert(const_iterator pos, const Value& value) {
     iterator tmp;
 
     if (is_array() && pos.is_array()) {
-        tmp = std::move(m_array.insert(pos.m_array_iterator, value));
+        tmp = m_array.insert(pos.m_array_iterator, value);
     }
     else if (is_object() && pos.is_object() && value.is_object()) {
         for (auto it = value.cbegin(); value.cend() != it; ++it, ++pos) {
             if (!is_member(it.key())) {
-                tmp = std::move(m_object.insert(pos.m_object_iterator,
-                            Pair(it.key(), *it)));
+                tmp = m_object.insert(pos.m_object_iterator,
+                            Pair(it.key(), *it));
             }
         }
     }
     else {
-        tmp = std::move(end());
+        tmp = end();
     }
 
     return tmp;
@@ -477,18 +458,18 @@ Value::iterator Value::insert(const_iterator pos, Value&& value) {
     iterator tmp;
 
     if (is_array() && pos.is_array()) {
-        tmp = std::move(m_array.insert(pos.m_array_iterator, std::move(value)));
+        tmp = m_array.insert(pos.m_array_iterator, std::move(value));
     }
     else if (is_object() && pos.is_object() && value.is_object()) {
         for (auto it = value.cbegin(); value.cend() != it; ++it, ++pos) {
             if (!is_member(it.key())) {
-                tmp = std::move(m_object.insert(pos.m_object_iterator,
-                            Pair(it.key(), std::move(*it))));
+                tmp = m_object.insert(pos.m_object_iterator,
+                            Pair(it.key(), std::move(*it)));
             }
         }
     }
     else {
-        tmp = std::move(end());
+        tmp = end();
     }
 
     return tmp;
@@ -499,7 +480,7 @@ Value::iterator Value::insert(const_iterator pos,
     iterator tmp;
 
     while (0 < count--) {
-        tmp = std::move(insert(pos++, value));
+        tmp = insert(pos++, value);
     }
 
     return tmp;
@@ -510,7 +491,7 @@ Value::iterator Value::insert(const_iterator pos,
     iterator tmp;
 
     for (auto it = first; it < last; ++it) {
-        tmp = std::move(insert(pos++, *it));
+        tmp = insert(pos++, *it);
     }
 
     return tmp;
@@ -523,91 +504,91 @@ Value::iterator Value::insert(const_iterator pos,
 
 String& Value::as_string() {
     if (Type::STRING != m_type) {
-        throw Value::Exception("JSON isn't a string");
+        throw Exception("JSON isn't a string");
     }
     return m_string;
 }
 
 const String& Value::as_string() const {
     if (Type::STRING != m_type) {
-        throw Value::Exception("JSON isn't a string");
+        throw Exception("JSON isn't a string");
     }
     return m_string;
 }
 
 const char* Value::as_char() const {
     if (Type::STRING != m_type) {
-        throw Value::Exception("JSON isn't a string");
+        throw Exception("JSON isn't a string");
     }
     return m_string.c_str();
 }
 
 Bool Value::as_bool() const {
     if (Type::BOOLEAN != m_type) {
-        throw Value::Exception("JSON isn't a boolean");
+        throw Exception("JSON isn't a boolean");
     }
     return m_boolean;
 }
 
 Null Value::as_null() const {
     if (Type::NIL != m_type) {
-        throw Value::Exception("JSON isn't a null");
+        throw Exception("JSON isn't a null");
     }
     return nullptr;
 }
 
 Int Value::as_int() const {
     if (Type::NUMBER != m_type) {
-        throw Value::Exception("JSON isn't a number");
+        throw Exception("JSON isn't a number");
     }
     return Int(m_number);
 }
 
 Uint Value::as_uint() const {
     if (Type::NUMBER != m_type) {
-        throw Value::Exception("JSON isn't a number");
+        throw Exception("JSON isn't a number");
     }
     return Uint(m_number);
 }
 
 Double Value::as_double() const {
     if (Type::NUMBER != m_type) {
-        throw Value::Exception("JSON isn't a number");
+        throw Exception("JSON isn't a number");
     }
     return Double(m_number);
 }
 
 Array& Value::as_array() {
     if (Type::ARRAY != m_type) {
-        throw Value::Exception("JSON isn't an array");
+        throw Exception("JSON isn't an array");
     }
     return m_array;
 }
 
 Number& Value::as_number() {
     if (Type::NUMBER != m_type) {
-        throw Value::Exception("JSON isn't a number");
+        throw Exception("JSON isn't a number");
     }
     return m_number;
 }
 
 const Array& Value::as_array() const {
     if (Type::ARRAY != m_type) {
-        throw Value::Exception("JSON isn't an array");
+        throw Exception("JSON isn't an array");
     }
     return m_array;
 }
 
 const Object& Value::as_object() const {
     if (Type::OBJECT != m_type) {
-        throw Value::Exception("JSON isn't an object");
+        throw Exception("JSON isn't an object");
     }
     return m_object;
 }
 
 const Number& Value::as_number() const {
     if (Type::NUMBER != m_type) {
-        throw Value::Exception("JSON isn't a number");
+        throw Exception("JSON isn't a number");
     }
     return m_number;
 }
@@ -648,7 +629,7 @@ Value& Value::operator[](const size_t index) {
 
     if (is_array()) {
         if (size() == index) {
-            m_array.emplace_back(std::move(Value()));
+            m_array.emplace_back(Value());
         }
         ptr = &m_array[index];
     }
@@ -710,9 +691,9 @@ void Value::pop_back() {
 }
 
 void Value::swap(Value& value) {
-    Value temp(std::move(value));
-    value = std::move(*this);
-    *this = std::move(temp);
+    Value temp(value);
+    value = *this;
+    *this = temp;
 }
 
 bool Value::operator==(const json::Value& other) const {
@@ -779,10 +760,10 @@ Value::iterator Value::begin() {
     iterator tmp;
 
     if (is_array()) {
-        tmp = std::move(m_array.begin());
+        tmp = m_array.begin();
     }
     else if (is_object()) {
-        tmp = std::move(m_object.begin());
+        tmp = m_object.begin();
     }
     else {
         tmp = this;
@@ -795,10 +776,10 @@ Value::iterator Value::end() {
     iterator tmp;
 
     if (is_array()) {
-        tmp = std::move(m_array.end());
+        tmp = m_array.end();
     }
     else if (is_object()) {
-        tmp = std::move(m_object.end());
+        tmp = m_object.end();
     }
     else {
         tmp = this;
@@ -811,10 +792,10 @@ Value::const_iterator Value::cbegin() const {
     const_iterator tmp;
 
     if (is_array()) {
-        tmp = std::move(m_array.cbegin());
+        tmp = m_array.cbegin();
     }
     else if (is_object()) {
-        tmp = std::move(m_object.cbegin());
+        tmp = m_object.cbegin();
     }
     else {
         tmp = this;
@@ -827,10 +808,10 @@ Value::const_iterator Value::cend() const {
     const_iterator tmp;
 
     if (is_array()) {
-        tmp = std::move(m_array.cend());
+        tmp = m_array.cend();
     }
     else if (is_object()) {
-        tmp = std::move(m_object.cend());
+        tmp = m_object.cend();
     }
     else {
         tmp = this;
@@ -840,9 +821,9 @@ Value::const_iterator Value::cend() const {
 }
 
 Value::const_iterator Value::begin() const {
-    return std::move(cbegin());
+    return cbegin();
 }
 
 Value::const_iterator Value::end() const {
-    return std::move(cend());
+    return cend();
 }
