@@ -64,11 +64,6 @@ public:
     static constexpr std::size_t DEFAULT_INDENT = 4;
 
     /*!
-     * @brief Default constructor
-     * */
-    Pretty(Formatter::Writter writter = nullptr) : Compact(writter) { }
-
-    /*!
      * @brief Set number of spaces for indentation
      *
      * Spaces are added after new value in JSON array or new member in

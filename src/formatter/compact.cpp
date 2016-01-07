@@ -61,7 +61,9 @@ static constexpr const char JSON_FALSE[] = "false";
 
 Compact::~Compact() { }
 
-void Compact::execute(const json::Value& value) {
+void Compact::formatting(const json::Value& value,
+        Formatter::Writter writter) {
+    m_writter = writter;
     if (m_writter) { write_value(value); }
 }
 

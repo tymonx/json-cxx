@@ -59,18 +59,13 @@ class Formatter {
 public:
     using Writter = std::function<void(char)>;
 
-    Formatter(Writter writter = nullptr) : m_writter{writter} { }
-
-    void set_writter(Writter writter) {
-        m_writter = writter;
-    }
-
     /*!
      * @brief Format given JSON value
      *
      * @param[in]   value   JSON value
      * */
-    virtual void execute(const Value& value) = 0;
+    virtual void formatting(const Value& value,
+            Writter writter = nullptr) = 0;
 
     /*!
      * @brief Create string with escaped characters
@@ -84,24 +79,6 @@ public:
 
     /*! Destructor */
     virtual ~Formatter();
-protected:
-    std::function<void(char)> m_writter{nullptr};
-
-    void write(char ch) {
-        m_writter(ch);
-    }
-
-    void write(const char* str) {
-        while (*str) { m_writter(*(str++)); }
-    }
-
-    void write(const std::string& str) {
-        for (const auto& ch : str) { m_writter(ch); }
-    }
-
-    void write(std::size_t size, char ch) {
-        while (size--) { m_writter(ch); }
-    }
 };
 
 template<typename T>

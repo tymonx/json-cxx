@@ -95,8 +95,6 @@ public:
      * @brief Clear serialization content
      * */
     void clear() { m_serialized.clear(); }
-
-    operator const std::string&() const { return m_serialized; }
 private:
     FormatterPtr m_formatter{nullptr};
     String m_serialized{};
@@ -105,16 +103,16 @@ private:
 }
 
 /*!
- * @brief Flush serialized JSON C++ values to string
+ * @brief Flush serialized JSON C++ values to output stream
  *
  * After invoking operator<<(), serialization content will be also clear
  *
- * @return  String appended with serialized JSON C++ values
+ * @return  Output stream appended with serialized JSON C++ values
  * */
 static inline
-json::String& operator+=(json::String& str,
-        const json::Serializer& serializer) {
-    return str += serializer.read();
+std::ostream& operator<<(std::ostream& os, const json::Value& value) {
+    json::Serializer serializer(value);
+    return os << serializer.read();
 }
 
 /*!

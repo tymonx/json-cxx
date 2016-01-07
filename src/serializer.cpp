@@ -58,14 +58,14 @@ void Serializer::write(const Value& value) {
     }
 
     std::size_t count = 0;
-    fmt->set_writter([&count] (char) { ++count; });
-    fmt->execute(value);
+    fmt->formatting(value, [&count](char) {
+        ++count;
+    });
 
     m_serialized.clear();
     m_serialized.reserve(count);
 
-    fmt->set_writter([this] (char ch) {
+    fmt->formatting(value, [this](char ch) {
         m_serialized.push_back(ch);
     });
-    fmt->execute(value);
 }
