@@ -41,53 +41,31 @@
  * @brief JSON serializer implementation
  * */
 
-#include "json/serializer.hpp"
+#include <json/serializer.hpp>
 
-#include "json/formatter/compact.hpp"
-#include "json/writter/counter.hpp"
-#include "json/writter/string.hpp"
+#include <json/formatter/compact.hpp>
 
-using namespace json;
+#include <cstdint>
 
-Serializer& Serializer::operator<<(const Value& value) {
-    formatter::Compact compact {};
-    Formatter* fmt = m_formatter;
+using json::Serializer;
 
-    if (nullptr == fmt) { fmt = &compact; }
+void Serializer::write(const Value& value) {
+    Formatter* fmt = m_formatter.get();
 
-    writter::Counter counter {};
-    fmt->set_writter(&counter);
+    if (nullptr == fmt) {
+        static formatter::Compact default_formatter{};
+        fmt = &default_formatter;
+    }
+
+    std::size_t count = 0;
+    fmt->set_writter([&count] (char) { ++count; });
     fmt->execute(value);
 
-    writter::String str {counter.get_count()};
-    fmt->set_writter(&str);
+    m_serialized.clear();
+    m_serialized.reserve(count);
+
+    fmt->set_writter([this] (char ch) {
+        m_serialized.push_back(ch);
+    });
     fmt->execute(value);
-
-    m_serialized = str.move_string();
-
-    return *this;
-}
-
-String& json::operator<<(String& str, Serializer& serializer) {
-    str += serializer.m_serialized;
-    serializer.clear();
-    return str;
-}
-
-std::ostream& json::operator<<(std::ostream& os, Serializer& serializer) {
-    os << serializer.m_serialized;
-    serializer.clear();
-    return os;
-}
-
-String& json::operator<<(String& str, Serializer&& serializer) {
-    str += std::move(serializer.m_serialized);
-    serializer.clear();
-    return str;
-}
-
-std::ostream& json::operator<<(std::ostream& os, Serializer&& serializer) {
-    os << std::move(serializer.m_serialized);
-    serializer.clear();
-    return os;
 }

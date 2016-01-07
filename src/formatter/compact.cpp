@@ -41,19 +41,28 @@
  * @brief JSON formatter implementation
  * */
 
-#include "json/formatter/compact.hpp"
+#include <json/formatter/compact.hpp>
 
-#include "json/iterator.hpp"
+#include <json/iterator.hpp>
 
 #include <iomanip>
 #include <sstream>
 
-using namespace json::formatter;
+using json::formatter::Compact;
+
+/*! JSON null  */
+static constexpr const char JSON_NULL[] = "null";
+
+/*! JSON boolean true */
+static constexpr const char JSON_TRUE[] = "true";
+
+/*! JSON boolean false */
+static constexpr const char JSON_FALSE[] = "false";
 
 Compact::~Compact() { }
 
 void Compact::execute(const json::Value& value) {
-    write_value(value);
+    if (m_writter) { write_value(value); }
 }
 
 void Compact::write_value(const Value& value) {
@@ -82,55 +91,47 @@ void Compact::write_value(const Value& value) {
 }
 
 void Compact::write_object(const Value& value) {
-    m_writter->push_back('{');
+    std::size_t num = value.size();
 
+    write('{');
     for (const auto& member : Object(value)) {
         write_string(member.first);
-        m_writter->push_back(':');
+        write(':');
         write_value(member.second);
-        m_writter->push_back(',');
+        if (--num) { write(','); }
     };
-
-    if (value.size() > 0) {
-        m_writter->pop_back();
-    }
-
-    m_writter->push_back('}');
+    write('}');
 }
 
 void Compact::write_array(const Value& value) {
-    m_writter->push_back('[');
+    std::size_t num = value.size();
 
-    for (const auto& val : value) {
+    write('[');
+    for (const auto& val : Array(value)) {
         write_value(val);
-        m_writter->push_back(',');
+        if (--num) { write(','); }
     }
-
-    if (value.size() > 0) {
-        m_writter->pop_back();
-    }
-
-    m_writter->push_back(']');
+    write(']');
 }
 
 void Compact::write_string(const Value& value) {
-    m_writter->push_back('"');
-    m_writter->append(escape_characters(String(value)));
-    m_writter->push_back('"');
+    write('"');
+    write(escape_characters(String(value)));
+    write('"');
 }
 
 void Compact::write_number(const Value& value) {
     switch (Number(value).get_type()) {
     case Number::Type::INT:
-        m_writter->append(std::to_string(Int(value)));
+        write(std::to_string(Int(value)));
         break;
     case Number::Type::UINT:
-        m_writter->append(std::to_string(Uint(value)));
+        write(std::to_string(Uint(value)));
         break;
     case Number::Type::DOUBLE: {
         std::stringstream stream;
         stream << std::setprecision(16) << Double(value);
-        m_writter->append(stream.str());
+        write(stream.str());
         break;
     }
     default:
@@ -139,9 +140,14 @@ void Compact::write_number(const Value& value) {
 }
 
 void Compact::write_boolean(const Value& value) {
-    m_writter->append((true == Bool(value)) ? JSON_TRUE : JSON_FALSE);
+    if (Bool(value)) {
+        write(JSON_TRUE);
+    }
+    else {
+        write(JSON_FALSE);
+    }
 }
 
 void Compact::write_empty(const Value&) {
-    m_writter->append(JSON_NULL);
+    write(JSON_NULL);
 }

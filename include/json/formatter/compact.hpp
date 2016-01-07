@@ -44,7 +44,7 @@
 #ifndef JSON_CXX_FORMATTER_COMPACT_HPP
 #define JSON_CXX_FORMATTER_COMPACT_HPP
 
-#include "json/formatter.hpp"
+#include <json/formatter.hpp>
 
 namespace json {
 namespace formatter {
@@ -56,23 +56,25 @@ namespace formatter {
  * */
 class Compact : public Formatter {
 public:
+    Compact(Formatter::Writter writter = nullptr) : Formatter(writter) { }
+
     /*!
      * @brief Serialize JSON value
      *
      * @param[in]   value   JSON value
      * */
-    void execute(const Value& value) final override;
+    virtual void execute(const Value& value) final override;
 
     /*! Destructor */
-    ~Compact();
+    virtual ~Compact();
 protected:
-    void write_value(const Value& value);
-    void write_object(const Value& value);
-    void write_array(const Value& value);
-    void write_number(const Value& value);
-    void write_string(const Value& value);
-    void write_boolean(const Value& value);
-    void write_empty(const Value& value);
+    virtual void write_value(const Value& value);
+    virtual void write_object(const Value& value);
+    virtual void write_array(const Value& value);
+    virtual void write_number(const Value& value);
+    virtual void write_string(const Value& value);
+    virtual void write_boolean(const Value& value);
+    virtual void write_empty(const Value& value);
 };
 
 }

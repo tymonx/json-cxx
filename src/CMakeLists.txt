@@ -37,9 +37,6 @@ add_library(json-cxx
     formatter.cpp
     formatter/compact.cpp
     formatter/pretty.cpp
-    writter.cpp
-    writter/counter.cpp
-    writter/string.cpp
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES Clang)

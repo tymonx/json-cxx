@@ -41,15 +41,11 @@
  * @brief JSON formatter implementation
  * */
 
-#include "json/formatter.hpp"
+#include <json/formatter.hpp>
 
 #include <algorithm>
 
-using namespace json;
-
-constexpr const char Formatter::JSON_NULL[];
-constexpr const char Formatter::JSON_TRUE[];
-constexpr const char Formatter::JSON_FALSE[];
+using json::Formatter;
 
 std::string Formatter::escape_characters(const std::string& str) {
     std::string::difference_type count =
@@ -59,7 +55,7 @@ std::string Formatter::escape_characters(const std::string& str) {
 
     if (0 == count) { return str; }
 
-    std::string escaped {};
+    std::string escaped{};
     escaped.reserve(str.size() + std::string::size_type(count));
 
     std::for_each(str.cbegin(), str.cend(),

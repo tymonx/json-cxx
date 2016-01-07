@@ -48,11 +48,13 @@ using json::Value;
 using json::Pair;
 using json::Serializer;
 using json::Deserializer;
+using json::make_formatter;
+using json::formatter::Pretty;
 
 using std::cout;
 using std::endl;
 
-static const std::array<std::function<void()>, 6> g_examples{{
+static const std::array<std::function<void()>, 7> g_examples{{
     [] {
         Value value("Test");
         cout << "String value: " << std::string(value) << endl;
@@ -82,6 +84,16 @@ static const std::array<std::function<void()>, 6> g_examples{{
         value.push_back(value);
 
         cout << "Array value: " << value << endl;
+    },
+    [] {
+        Value value;
+
+        value.push_back(nullptr);
+        value.push_back(6);
+        value.push_back("Hello");
+        value.push_back(value);
+
+        cout << "Array value: " << Serializer{value, make_formatter<Pretty>()} << endl;
     },
     [] {
         Value value;

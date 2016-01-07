@@ -44,8 +44,10 @@
 #ifndef JSON_CXX_FORMATTER_PRETTY_HPP
 #define JSON_CXX_FORMATTER_PRETTY_HPP
 
-#include "json/formatter.hpp"
-#include "json/formatter/compact.hpp"
+#include <json/formatter.hpp>
+#include <json/formatter/compact.hpp>
+
+#include <cstdint>
 
 namespace json {
 namespace formatter {
@@ -59,15 +61,12 @@ namespace formatter {
 class Pretty : public Compact {
 public:
     /*! Default whitespace indent */
-    static constexpr const size_t DEFAULT_INDENT = 4;
+    static constexpr std::size_t DEFAULT_INDENT = 4;
 
     /*!
      * @brief Default constructor
      * */
-    Pretty() : m_indent(DEFAULT_INDENT), m_level(0) { }
-
-    /*! Destructor */
-    ~Pretty();
+    Pretty(Formatter::Writter writter = nullptr) : Compact(writter) { }
 
     /*!
      * @brief Set number of spaces for indentation
@@ -77,13 +76,16 @@ public:
      *
      * @param[in]   indent  Number of spaces used for indentation
      * */
-    void set_indent(size_t indent) { m_indent = indent; }
-private:
-    void write_object(const Value& value);
-    void write_array(const Value& value);
+    void set_indent(std::size_t indent) { m_indent = indent; }
 
-    size_t m_indent;
-    size_t m_level;
+    /*! Destructor */
+    virtual ~Pretty();
+private:
+    virtual void write_object(const Value& value) override;
+    virtual void write_array(const Value& value) override;
+
+    std::size_t m_indent{DEFAULT_INDENT};
+    std::size_t m_level{0};
 };
 
 }

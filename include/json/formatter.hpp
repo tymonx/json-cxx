@@ -44,8 +44,11 @@
 #ifndef JSON_CXX_FORMATTER_HPP
 #define JSON_CXX_FORMATTER_HPP
 
-#include "json/value.hpp"
-#include "json/writter.hpp"
+#include <json/value.hpp>
+
+#include <functional>
+#include <cstdint>
+#include <memory>
 
 namespace json {
 
@@ -54,14 +57,13 @@ namespace json {
  * */
 class Formatter {
 public:
-    /*! JSON null  */
-    static constexpr const char JSON_NULL[] = "null";
+    using Writter = std::function<void(char)>;
 
-    /*! JSON boolean true */
-    static constexpr const char JSON_TRUE[] = "true";
+    Formatter(Writter writter = nullptr) : m_writter{writter} { }
 
-    /*! JSON boolean false */
-    static constexpr const char JSON_FALSE[] = "false";
+    void set_writter(Writter writter) {
+        m_writter = writter;
+    }
 
     /*!
      * @brief Format given JSON value
@@ -83,12 +85,30 @@ public:
     /*! Destructor */
     virtual ~Formatter();
 protected:
-    Writter* m_writter = nullptr;
-private:
-    friend class Serializer;
+    std::function<void(char)> m_writter{nullptr};
 
-    void set_writter(Writter* writter) { m_writter = writter; }
+    void write(char ch) {
+        m_writter(ch);
+    }
+
+    void write(const char* str) {
+        while (*str) { m_writter(*(str++)); }
+    }
+
+    void write(const std::string& str) {
+        for (const auto& ch : str) { m_writter(ch); }
+    }
+
+    void write(std::size_t size, char ch) {
+        while (size--) { m_writter(ch); }
+    }
 };
+
+template<typename T>
+std::unique_ptr<Formatter> make_formatter() {
+    return std::unique_ptr<Formatter>{
+        static_cast<Formatter*>(new T())};
+}
 
 }
 

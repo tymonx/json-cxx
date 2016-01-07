@@ -44,8 +44,10 @@
 #ifndef JSON_CXX_SERIALIZER_HPP
 #define JSON_CXX_SERIALIZER_HPP
 
-#include "json/value.hpp"
-#include "json/formatter.hpp"
+#include <json/value.hpp>
+#include <json/formatter.hpp>
+
+#include <memory>
 
 namespace json {
 
@@ -55,12 +57,15 @@ namespace json {
  * */
 class Serializer {
 public:
+    using FormatterPtr = std::unique_ptr<Formatter>;
+
     /*!
      * @brief Default constructor
      *
      * Create JSON serializer object with default settings
      * */
-    Serializer(Formatter* formatter = nullptr) : m_formatter{formatter} { }
+    Serializer(FormatterPtr formatter = nullptr) :
+        m_formatter{std::move(formatter)} { }
 
     /*!
      * @brief Serializer JSON C++ object or JSON C++ array
@@ -69,81 +74,60 @@ public:
      *
      * @param[in]   value   JSON C++ to serialize
      * */
-    Serializer(const Value& value, Formatter* formatter = nullptr) :
-        m_formatter{formatter} {
-        (*this)<<(value);
-    }
+    Serializer(const Value& value, FormatterPtr formatter = nullptr) :
+            m_formatter{std::move(formatter)} { write(value); }
+
+    void write(const Value& value);
+
+    const std::string& read() const { return m_serialized; }
 
     /*!
      * @brief Serialize JSON C++ object or array
      *
      * @param[in]   value   JSON C++ to serialize
      * */
-    Serializer& operator<<(const Value& value);
+    Serializer& operator<<(const Value& value) {
+        write(value);
+        return *this;
+    }
 
     /*!
      * @brief Clear serialization content
      * */
     void clear() { m_serialized.clear(); }
 
-    /*!
-     * @brief Flush serialized JSON C++ values to string
-     *
-     * After invoking operator<<(), serialization content will be also clear
-     *
-     * @return  String appended with serialized JSON C++ values
-     * */
-    friend String& operator<<(String&, Serializer&);
-
-    /*!
-     * @brief Flush serialized JSON C++ values to string
-     *
-     * After invoking operator<<(), serialization content will be also clear.
-     * Using move semantics
-     *
-     * @return  String appended with serialized JSON C++ values
-     * */
-    friend String& operator<<(String&, Serializer&&);
-
-    /*!
-     * @brief Flush serialized JSON C++ values to output stream
-     *
-     * After invoking operator<<(), serialization content will be also clear
-     *
-     * @return  Output stream appended with serialized JSON C++ values
-     * */
-    friend std::ostream& operator<<(std::ostream&, Serializer&);
-
-    /*!
-     * @brief Flush serialized JSON C++ values to output stream
-     *
-     * After invoking operator<<(), serialization content will be also clear
-     * Using move semantics
-     *
-     * @return  Output stream appended with serialized JSON C++ values
-     * */
-    friend std::ostream& operator<<(std::ostream&, Serializer&&);
-
-    /*!
-     * @brief Get serialized JSON to string
-     * */
-    operator const std::string& () const { return m_serialized; }
+    operator const std::string&() const { return m_serialized; }
 private:
-    Serializer(const Serializer&) = delete;
-    Serializer(Serializer&&) = delete;
-
-    Serializer& operator=(const Serializer&) = delete;
-    Serializer& operator=(Serializer&&) = delete;
-
-    Formatter* m_formatter = nullptr;
-    String m_serialized {};
+    FormatterPtr m_formatter{nullptr};
+    String m_serialized{};
 };
 
-String& operator<<(String& str, Serializer& serializer);
-std::ostream& operator<<(std::ostream& os, Serializer& serializer);
-String& operator<<(String& str, Serializer&& serializer);
-std::ostream& operator<<(std::ostream& os, Serializer&& serializer);
+}
 
+/*!
+ * @brief Flush serialized JSON C++ values to string
+ *
+ * After invoking operator<<(), serialization content will be also clear
+ *
+ * @return  String appended with serialized JSON C++ values
+ * */
+static inline
+json::String& operator+=(json::String& str,
+        const json::Serializer& serializer) {
+    return str += serializer.read();
+}
+
+/*!
+ * @brief Flush serialized JSON C++ values to output stream
+ *
+ * After invoking operator<<(), serialization content will be also clear
+ *
+ * @return  Output stream appended with serialized JSON C++ values
+ * */
+static inline
+std::ostream& operator<<(std::ostream& os,
+        const json::Serializer& serializer) {
+    return os << serializer.read();
 }
 
 #endif /* JSON_CXX_SERIALIZER_HPP */

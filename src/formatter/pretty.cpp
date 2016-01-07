@@ -41,71 +41,69 @@
  * @brief JSON formatter implementation
  * */
 
-#include "json/formatter/pretty.hpp"
+#include <json/formatter/pretty.hpp>
 
-#include "json/iterator.hpp"
+#include <json/iterator.hpp>
 
 #include <iomanip>
 #include <sstream>
 
-using namespace json::formatter;
+using json::formatter::Pretty;
 
 Pretty::~Pretty() { }
 
 void Pretty::write_object(const Value& value) {
-    if (value.size() > 0) {
-        m_writter->push_back('{');
+    std::size_t num = value.size();
+    if (num > 0) {
+        write('{');
 
         ++m_level;
-        size_t indent_length = m_indent * m_level;
+        std::size_t indent_length = m_indent * m_level;
 
-        const Object& obj = Object(value);
-        for (auto it = obj.cbegin(); it < obj.cend(); ++it) {
-            m_writter->push_back('\n');
-            m_writter->append(indent_length, ' ');
-            write_string(it->first);
-            m_writter->append(" : ");
-            write_value(it->second);
-            m_writter->push_back(',');
+        for (const auto& member : Object(value)) {
+            write('\n');
+            write(indent_length, ' ');
+            write_string(member.first);
+            write(" : ");
+            write_value(member.second);
+            if (num--) { write(','); }
         };
 
-        m_writter->pop_back();
-        m_writter->push_back('\n');
+        write('\n');
 
         --m_level;
 
-        m_writter->append(m_indent * m_level, ' ');
-        m_writter->push_back('}');
+        write(m_indent * m_level, ' ');
+        write('}');
     }
     else {
-        m_writter->append("{}");
+        write("{}");
     }
 }
 
 void Pretty::write_array(const Value& value) {
-    if (value.size() > 0) {
-        m_writter->push_back('[');
+    std::size_t num = value.size();
+    if (num > 0) {
+        write('[');
 
         ++m_level;
+        std::size_t indent_length = m_indent * m_level;
 
-        size_t indent_length = m_indent * m_level;
-
-        for (const auto& val : value) {
-            m_writter->push_back('\n');
-            m_writter->append(indent_length, ' ');
+        for (const auto& val : Array(value)) {
+            write('\n');
+            write(indent_length, ' ');
             write_value(val);
-            m_writter->push_back(',');
+            if (num--) { write(','); }
         }
 
-        m_writter->pop_back();
-        m_writter->push_back('\n');
+        write('\n');
 
         --m_level;
 
-        m_writter->append(m_indent * m_level, ' ');
-        m_writter->push_back(']');
+        write(m_indent * m_level, ' ');
+        write(']');
     }
     else {
-        m_writter->append("[]");
+        write("[]");
     }
 }
