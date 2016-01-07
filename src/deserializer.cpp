@@ -41,245 +41,79 @@
  * @brief JSON deserializer implementation
  * */
 
-#include "json/deserializer.hpp"
+#include <json/deserializer.hpp>
 
 #include <cmath>
-#include <cstring>
 
 using namespace json;
 
-/*! Error parsing code */
-using Code = Deserializer::Error::Code;
+using Error = Deserializer::Error;
 
 /*! UTF-16 surrogate pair */
 using Surrogate = std::pair<unsigned, unsigned>;
 
 /*! Maximu characters to parse per single JSON value. Stack protection */
-const size_t Deserializer::MAX_LIMIT_PER_OBJECT = 0xFFFFFFFF;
+const std::size_t Deserializer::MAX_LIMIT_PER_OBJECT = 0xFFFFFFFF;
 
 static constexpr char JSON_NULL[] = "null";
 static constexpr char JSON_TRUE[] = "true";
 static constexpr char JSON_FALSE[] = "false";
-static constexpr size_t UNICODE_LENGTH = 4;
+static constexpr std::size_t UNICODE_LENGTH = 4;
 
 /*!
  * @brief   Get string length without null termination '\0'
  * @return  String length
  * */
-template<size_t N>
-constexpr size_t length(const char (&)[N]) { return (N - 1); }
+template<std::size_t N>
+constexpr std::size_t string_length(const char (&)[N]) { return (N - 1); }
 
-/*!
- * @brief   Get array size based on the type of given object
- * @return  Number of elements in the array
- * */
-template<class T, size_t N>
-constexpr size_t array_size(T (&)[N]) { return N; }
-
-Deserializer::Deserializer() :
-    m_array{},
-    m_begin(nullptr),
-    m_current(nullptr),
-    m_end(nullptr),
-    m_limit(MAX_LIMIT_PER_OBJECT),
-    m_error_code(Code::NONE) { }
-
-Deserializer::Deserializer(const Deserializer& deserializer) : Deserializer() {
-    m_array = deserializer.m_array;
-}
-
-Deserializer::Deserializer(Deserializer&& deserializer) : Deserializer() {
-    m_array = std::move(deserializer.m_array);
-    deserializer.m_array.clear();
-
-    deserializer.m_begin = nullptr;
-    deserializer.m_current = nullptr;
-    deserializer.m_end = nullptr;
-    deserializer.m_error_code = Code::NONE;
-}
-
-Deserializer::Deserializer(const char* str) : Deserializer() {
-    (*this) << str;
-}
-
-Deserializer::Deserializer(const String& str) : Deserializer() {
-    (*this) << str;
-}
-
-Deserializer& Deserializer::operator=(const Deserializer& deserializer) {
-    if (this == &deserializer) { return *this; }
-
-    m_array = deserializer.m_array;
-
-    m_begin = nullptr;
-    m_current = nullptr;
-    m_end = nullptr;
-    m_error_code = Code::NONE;
-
-    return *this;
-}
-
-Deserializer& Deserializer::operator=(Deserializer&& deserializer) {
-    if (this == &deserializer) { return *this; }
-
-    m_array = std::move(deserializer.m_array);
-    deserializer.m_array.clear();
-
-    m_begin = nullptr;
-    m_current = nullptr;
-    m_end = nullptr;
-    m_error_code = Code::NONE;
-
-    deserializer.m_begin = nullptr;
-    deserializer.m_current = nullptr;
-    deserializer.m_end = nullptr;
-    deserializer.m_error_code = Code::NONE;
-
-    return *this;
-}
-
-Deserializer& Deserializer::operator<<(const char* str) {
-    clear_error();
-
-    size_t str_size = 0;
-
-    if (nullptr != str) {
-        str_size = std::strlen(str);
-    }
-
+void Deserializer::parsing(const char* str, std::size_t length) {
     m_begin = str;
-    m_current = m_begin;
-    m_end = str + str_size;
+    m_end = str + length;
+    m_current = str;
 
-    Value value;
-    if (read_value(value)) {
-        if (!read_whitespaces()) {
-            clear_error();
-            m_array.push_back(std::move(value));
-        } else {
-            set_error(Code::INVALID_WHITESPACE);
+    m_value = nullptr;
+    read_whitespaces(false);
+    if (m_current < m_end) {
+        read_value(m_value);
+        read_whitespaces(false);
+
+        if (m_current < m_end) {
+            throw_error(Error::INVALID_WHITESPACE);
         }
     }
-
-    return *this;
 }
 
-Deserializer& Deserializer::operator<<(const String& str) {
-    clear_error();
-
-    m_begin = str.cbegin().base();
-    m_current = m_begin;
-    m_end = str.cend().base();
-
-    Value value;
-    if (read_value(value)) {
-        if (!read_whitespaces()) {
-            clear_error();
-            m_array.push_back(std::move(value));
-        } else {
-            set_error(Code::INVALID_WHITESPACE);
-        }
-    }
-
-    return *this;
-}
-
-Deserializer& Deserializer::operator>>(Value& value) {
-    if (m_array.empty()) {
-        value = Value::Type::NIL;
-    }
-    else {
-        value = std::move(m_array.back());
-        m_array.pop_back();
-    }
-
-    return *this;
-}
-
-Deserializer json::operator>>(const char* str, Value& val) {
-    return Deserializer(str) >> val;
-}
-
-Deserializer json::operator>>(const String& str, Value& val) {
-    return Deserializer(str.c_str()) >> val;
-}
-
-bool Deserializer::empty() const {
-    return m_array.empty();
-}
-
-size_t Deserializer::size() const {
-    return m_array.size();
-}
-
-void Deserializer::set_limit(size_t limit) {
-    m_limit = limit;
-}
-
-inline void Deserializer::clear_error() {
-    m_error_code = Code::NONE;
-}
-
-Deserializer::Error Deserializer::get_error() const {
-    Error error;
-
-    error.code = m_error_code;
-    error.line = 1;
-    error.column = 1;
-    error.offset = size_t(m_current - m_begin);
-    error.size = size_t(m_end - m_begin);
-
-    const char* search = m_begin;
-
-    while (search < m_current) {
-        if ('\n' == *search) {
-            ++error.line;
-            error.column = 1;
-        }
-        else {
-            ++error.column;
-        }
-        ++search;
-    }
-
-    return error;
-}
-
-bool Deserializer::is_invalid() const {
-    return Code::NONE != m_error_code;
-}
-
-bool Deserializer::read_object(Value& value) {
-    if (!read_whitespaces()) { return false; }
+void Deserializer::read_object(Value& value) {
+    read_whitespaces();
 
     value.m_type = Value::Type::OBJECT;
     new (&value.m_object) Object();
 
     if ('}' == *m_current) {
         ++m_current;
-        return true;
+        return;
     }
 
-    size_t count = 0;
-
-    return read_object_member(value, count);
+    std::size_t count = 0;
+    read_object_member(value, count);
 }
 
-bool Deserializer::read_object_member(Value& value, size_t& count) {
+void Deserializer::read_object_member(Value& value, std::size_t& count) {
     String key;
     Value tmp;
 
-    if (!read_quote()) { return false; }
-    if (!read_string(key)) { return false; }
-    if (!read_colon()) { return false; }
-    if (!read_value(tmp)) { return false; }
-    if (!read_whitespaces()) { return false; }
+    read_quote();
+    read_string(key);
+    read_colon();
+    read_value(tmp);
+    read_whitespaces();
 
     ++count;
 
     if (',' == *m_current) {
         ++m_current;
-        if (!read_object_member(value, count)) { return false; }
+        read_object_member(value, count);
         value.m_object[--count].first = std::move(key);
         value.m_object[count].second = std::move(tmp);
     }
@@ -291,29 +125,24 @@ bool Deserializer::read_object_member(Value& value, size_t& count) {
 
     }
     else {
-        return set_error(Code::MISS_CURLY_CLOSE);
+        throw_error(Error::MISS_CURLY_CLOSE);
     }
-
-    return true;
 }
 
-inline bool Deserializer::read_string(String& str) {
-    size_t capacity = 1;
+void Deserializer::read_string(String& str) {
+    std::size_t capacity = 1;
     char ch;
 
-    if (!count_string_chars(capacity)) {
-        return set_error(Code::END_OF_FILE);
-    }
-
+    count_string_chars(capacity);
     str.reserve(capacity);
 
     while (m_current < m_end) {
         ch = *(m_current++);
         switch (ch) {
         case '"':
-            return true;
+            return;
         case '\\':
-            if (!read_string_escape(str)) { return false; };
+            read_string_escape(str);
             break;
         default:
             str.push_back(ch);
@@ -321,10 +150,10 @@ inline bool Deserializer::read_string(String& str) {
         }
     }
 
-    return set_error(Code::END_OF_FILE);
+    throw_error(Error::END_OF_FILE);
 }
 
-bool Deserializer::read_string_escape(String& str) {
+void Deserializer::read_string_escape(String& str) {
     char ch = *m_current;
 
     switch (ch) {
@@ -351,13 +180,11 @@ bool Deserializer::read_string_escape(String& str) {
         ++m_current;
         return read_string_unicode(str);
     default:
-        return set_error(Code::INVALID_ESCAPE);
+        throw_error(Error::INVALID_ESCAPE);
     }
 
     ++m_current;
     str.push_back(ch);
-
-    return true;
 }
 
 static inline
@@ -367,26 +194,24 @@ uint32_t decode_utf16_surrogate_pair(const Surrogate& surrogate) {
         |  (0x3FF & surrogate.second);
 }
 
-bool Deserializer::read_string_unicode(String& str) {
+void Deserializer::read_string_unicode(String& str) {
     static const Surrogate SURROGATE_MIN(0xD800, 0xDC00);
     static const Surrogate SURROGATE_MAX(0xDBFF, 0xDFFF);
 
     Surrogate surrogate;
     uint32_t code;
 
-    if (!read_unicode(&m_current, code)) { return false; }
-
+    read_unicode(&m_current, code);
     if (m_current + 2 + UNICODE_LENGTH < m_end) {
         if (('\\' == m_current[0]) && ('u' == m_current[1])) {
             m_current += 2;
-            if (read_unicode(&m_current, surrogate.second)) {
-                surrogate.first = code;
-                if ((SURROGATE_MIN <= surrogate)
-                 && (SURROGATE_MAX >= surrogate)) {
-                    code = decode_utf16_surrogate_pair(surrogate);
-                }
-                else { m_current -= (2 + UNICODE_LENGTH); }
-            } else { return false; }
+            read_unicode(&m_current, surrogate.second);
+            surrogate.first = code;
+            if ((SURROGATE_MIN <= surrogate)
+             && (SURROGATE_MAX >= surrogate)) {
+                code = decode_utf16_surrogate_pair(surrogate);
+            }
+            else { m_current -= (2 + UNICODE_LENGTH); }
         }
     }
 
@@ -408,19 +233,19 @@ bool Deserializer::read_string_unicode(String& str) {
         str.push_back(char(0x80 | (0x3F & (code >>  6))));
         str.push_back(char(0x80 | (0x3F & (code >>  0))));
     }
-
-    return true;
 }
 
-inline bool Deserializer::read_unicode(const char** pos, uint32_t& code) {
-    if (*pos + UNICODE_LENGTH >= m_end) { return set_error(Code::END_OF_FILE); }
+void Deserializer::read_unicode(const char** pos, uint32_t& code) {
+    if (*pos + UNICODE_LENGTH >= m_end) {
+        throw_error(Error::END_OF_FILE);
+    }
 
     static constexpr uint32_t HEX_0_9 = '0' - 0x0;
     static constexpr uint32_t HEX_A_F = 'A' - 0xA;
     static constexpr uint32_t HEX_a_f = 'a' - 0xA;
 
     uint32_t ch;
-    size_t count = UNICODE_LENGTH;
+    std::size_t count = UNICODE_LENGTH;
     code = 0;
 
     while (count--) {
@@ -436,15 +261,13 @@ inline bool Deserializer::read_unicode(const char** pos, uint32_t& code) {
             code |= (ch - HEX_a_f);
         }
         else {
-            return set_error(Code::INVALID_UNICODE);
+            throw_error(Error::INVALID_UNICODE);
         }
         ++(*pos);
     }
-
-    return true;
 }
 
-inline bool Deserializer::count_string_chars(size_t& count) {
+void Deserializer::count_string_chars(std::size_t& count) {
     static const Surrogate SURROGATE_MIN(0xD800, 0xDC00);
     static const Surrogate SURROGATE_MAX(0xDBFF, 0xDFFF);
 
@@ -453,11 +276,11 @@ inline bool Deserializer::count_string_chars(size_t& count) {
     while (pos < m_end) {
         switch (*pos) {
         case '"':
-            return true;
+            return;
         case '\\':
             if ('u' == *(++pos)) {
                 uint32_t code;
-                if (!read_unicode(&(++pos), code)) { return false; }
+                read_unicode(&(++pos), code);
                 if (code < 0x80) { ++count; }
                 else if (code < 0x800) { count += 2; }
                 else {
@@ -477,78 +300,76 @@ inline bool Deserializer::count_string_chars(size_t& count) {
         }
     }
 
-    return set_error(Code::END_OF_FILE);
+    throw_error(Error::END_OF_FILE);
 }
 
-bool Deserializer::read_value(Value& value) {
-    bool ok = false;
+void Deserializer::read_value(Value& value) {
     String str;
 
-    if (!read_whitespaces()) { return false; }
+    read_whitespaces();
 
     switch (*m_current) {
     case '"':
         ++m_current;
-        ok = read_string(str);
+        read_string(str);
         value.m_type = Value::Type::STRING;
         new (&value.m_string) String(std::move(str));
         break;
     case '{':
         ++m_current;
-        ok = read_object(value);
+        read_object(value);
         break;
     case '[':
         ++m_current;
-        ok = read_array(value);
+        read_array(value);
         break;
     case 't':
-        ok = read_true(value);
+        read_true(value);
         break;
     case 'f':
-        ok = read_false(value);
+        read_false(value);
         break;
     case 'n':
-        ok = read_null(value);
+        read_null(value);
         break;
     case '-':
-        ok = read_number(value);
+        read_number(value);
         break;
     default:
         if (std::isdigit(*m_current)) {
-            ok = read_number(value);
-        } else { set_error(Code::MISS_VALUE); }
+            read_number(value);
+        } else {
+            throw_error(Error::MISS_VALUE);
+        }
         break;
     }
-
-    return ok;
 }
 
-bool Deserializer::read_array(Value& value) {
-    if (!read_whitespaces()) { return false; }
+void Deserializer::read_array(Value& value) {
+    read_whitespaces();
 
     value.m_type = Value::Type::ARRAY;
     new (&value.m_array) Array();
 
     if (']' == *m_current) {
         ++m_current;
-        return true;
+        return;
     }
 
-    size_t count = 0;
-
-    return read_array_element(value, count);
+    std::size_t count = 0;
+    read_array_element(value, count);
 }
 
-bool Deserializer::read_array_element(Value& value, size_t& count)  {
+void Deserializer::read_array_element(Value& value, std::size_t& count)  {
     Value tmp;
 
-    if (!read_value(tmp)) { return false; }
-    if (!read_whitespaces()) { return false; }
+    read_value(tmp);
+    read_whitespaces();
     ++count;
 
     if (',' == *m_current) {
         ++m_current;
-        if (!read_array_element(value, count)) { return false; }
+        read_array_element(value, count);
         value.m_array[--count] = std::move(tmp);
     }
     else if (']' == *m_current) {
@@ -557,85 +378,81 @@ bool Deserializer::read_array_element(Value& value, size_t& count)  {
         value.m_array[--count] = std::move(tmp);
     }
     else {
-        return set_error(Code::MISS_SQUARE_CLOSE);
+        throw_error(Error::MISS_SQUARE_CLOSE);
     }
-
-    return true;
 }
 
-inline bool Deserializer::read_colon() {
-    if (!read_whitespaces()) { return false; }
+void Deserializer::read_colon() {
+    read_whitespaces();
     if (':' != *m_current) {
-        return set_error(Code::MISS_COLON);
+        throw_error(Error::MISS_COLON);
     }
     ++m_current;
-    return true;
 }
 
-inline bool Deserializer::read_quote() {
-    if (!read_whitespaces()) { return false; }
+void Deserializer::read_quote() {
+    read_whitespaces();
     if ('"' != *m_current) {
-        return set_error(Code::MISS_QUOTE);
+        throw_error(Error::MISS_QUOTE);
     }
     ++m_current;
-    return true;
 }
 
-bool Deserializer::read_whitespaces() {
-    unsigned ch;
+void Deserializer::read_whitespaces(bool enable_error) {
+    char ch;
 
     while (m_current < m_end) {
-        ch = unsigned(*m_current);
+        ch = *m_current;
         if ((' '  == ch) || ('\n' == ch) || ('\r' == ch) || ('\t' == ch)) {
             ++m_current;
-        } else { return true; }
+        } else { return; }
     }
 
-    return set_error(Code::END_OF_FILE);
+    if (enable_error) {
+        throw_error(Error::END_OF_FILE);
+    }
 }
 
-bool Deserializer::read_number_digit(Uint64& value) {
-    using std::isdigit;
+void Deserializer::read_number_digit(Uint64& value) {
+    if (m_current >= m_end) {
+        throw_error(Error::END_OF_FILE);
+    }
 
-    if ((m_current < m_end) && isdigit(*m_current)) {
+    if (std::isdigit(*m_current)) {
         value = Uint64(*m_current - '0');
         ++m_current;
-    } else { return false; }
-
-    while (m_current < m_end) {
-        if (isdigit(*m_current)) {
-            value = (10 * value) + Uint64(*m_current - '0');
-            ++m_current;
-        } else { return true; }
+    }
+    else {
+        throw_error(Error::INVALID_NUMBER_INTEGER);
     }
 
-    return true;
+    while (m_current < m_end) {
+        if (std::isdigit(*m_current)) {
+            value = (10 * value) + Uint64(*m_current - '0');
+            ++m_current;
+        } else { return; }
+    }
 }
 
-inline bool Deserializer::read_number_integer(Number& number) {
+void Deserializer::read_number_integer(Number& number) {
     using std::isdigit;
 
     Uint64 value;
-
-    if (!read_number_digit(value)) { return false; }
+    read_number_digit(value);
 
     if (Number::Type::UINT == number.m_type) {
         number.m_uint = value;
     } else {
         number.m_int = Int64(-value);
     }
-
-    return true;
 }
 
-inline bool Deserializer::read_number_fractional(Number& number) {
-    using std::isdigit;
-
+void Deserializer::read_number_fractional(Number& number) {
     Double step = 0.1;
     Double fractional = 0;
 
     while (m_current < m_end) {
-        if (isdigit(*m_current)) {
+        if (std::isdigit(*m_current)) {
             fractional += (step * (*m_current - '0'));
             step = 0.1 * step;
             ++m_current;
@@ -648,16 +465,14 @@ inline bool Deserializer::read_number_fractional(Number& number) {
                 number.m_double = tmp - fractional;
             }
             number.m_type = Number::Type::DOUBLE;
-            return true;
+            return;
         }
     }
 
-    return set_error(Code::END_OF_FILE);
+    throw_error(Error::END_OF_FILE);
 }
 
-inline bool Deserializer::read_number_exponent(Number& number) {
-    using std::pow;
-
+void Deserializer::read_number_exponent(Number& number) {
     bool is_negative = false;
     Uint64 value;
 
@@ -668,7 +483,7 @@ inline bool Deserializer::read_number_exponent(Number& number) {
         ++m_current;
     }
 
-    if (!read_number_digit(value)) { return false; }
+    read_number_digit(value);
 
     switch (number.m_type) {
     case Number::Type::INT:
@@ -698,13 +513,9 @@ inline bool Deserializer::read_number_exponent(Number& number) {
     default:
         break;
     }
-
-    return true;
 }
 
-bool Deserializer::read_number(Value& value) {
-    using std::isdigit;
-
+void Deserializer::read_number(Value& value) {
     /* Prepare JSON number */
     value.m_type = Value::Type::NUMBER;
     new (&value.m_number) Number();
@@ -713,86 +524,76 @@ bool Deserializer::read_number(Value& value) {
         value.m_number.m_type = Number::Type::INT;
         value.m_number.m_int = 0;
         ++m_current;
-    } else {
+    }
+    else {
         value.m_number.m_type = Number::Type::UINT;
         value.m_number.m_uint = 0;
     }
 
     if ('0' == *m_current) {
         ++m_current;
-    } else if (!read_number_integer(value.m_number)) {
-        return set_error(Code::INVALID_NUMBER_INTEGER);
+    }
+    else {
+        read_number_integer(value.m_number);
     }
 
     if ('.' == *m_current) {
         ++m_current;
-        if (!read_number_fractional(value.m_number)) {
-            return set_error(Code::INVALID_NUMBER_FRACTION);
-        }
+        read_number_fractional(value.m_number);
     }
 
     if (('E' == *m_current) || ('e' == *m_current)) {
         ++m_current;
-        if (!read_number_exponent(value.m_number)) {
-            return set_error(Code::INVALID_NUMBER_EXPONENT);
-        }
+        read_number_exponent(value.m_number);
     }
-
-    return true;
 }
 
-inline bool Deserializer::read_true(Value& value) {
-    if (m_current + length(JSON_TRUE) > m_end) {
-        return set_error(Code::END_OF_FILE);
+void Deserializer::read_true(Value& value) {
+    if (m_current + string_length(JSON_TRUE) > m_end) {
+        throw_error(Error::END_OF_FILE);
     }
 
-    if (0 != std::strncmp(m_current, JSON_TRUE, length(JSON_TRUE))) {
-        return set_error(Code::NOT_MATCH_TRUE);
+    if (0 != std::strncmp(m_current, JSON_TRUE, string_length(JSON_TRUE))) {
+        throw_error(Error::NOT_MATCH_TRUE);
     }
 
     value.m_type = Value::Type::BOOLEAN;
     value.m_boolean = true;
 
-    m_current += length(JSON_TRUE);
-    return true;
+    m_current += string_length(JSON_TRUE);
 }
 
-inline bool Deserializer::read_false(Value& value) {
-    if (m_current + length(JSON_FALSE) > m_end) {
-        return set_error(Code::END_OF_FILE);
+void Deserializer::read_false(Value& value) {
+    if (m_current + string_length(JSON_FALSE) > m_end) {
+        throw_error(Error::END_OF_FILE);
     }
 
-    if (0 != std::strncmp(m_current, JSON_FALSE, length(JSON_FALSE))) {
-        return set_error(Code::NOT_MATCH_FALSE);
+    if (0 != std::strncmp(m_current, JSON_FALSE, string_length(JSON_FALSE))) {
+        throw_error(Error::NOT_MATCH_FALSE);
     }
 
     value.m_type = Value::Type::BOOLEAN;
     value.m_boolean = false;
 
-    m_current += length(JSON_FALSE);
-    return true;
+    m_current += string_length(JSON_FALSE);
 }
 
-inline bool Deserializer::read_null(Value& value) {
-    if (m_current + length(JSON_NULL) > m_end) {
-        return set_error(Code::END_OF_FILE);
+void Deserializer::read_null(Value& value) {
+    if (m_current + string_length(JSON_NULL) > m_end) {
+        throw_error(Error::END_OF_FILE);
     }
 
-    if (0 != std::strncmp(m_current, JSON_NULL, length(JSON_NULL))) {
-        return set_error(Code::NOT_MATCH_NULL);
+    if (0 != std::strncmp(m_current, JSON_NULL, string_length(JSON_NULL))) {
+        throw_error(Error::NOT_MATCH_NULL);
     }
 
     value.m_type = Value::Type::NIL;
 
-    m_current += length(JSON_NULL);
-    return true;
+    m_current += string_length(JSON_NULL);
 }
 
-inline bool Deserializer::set_error(Error::Code error_code) {
-    if (Code::NONE == m_error_code) {
-        m_error_code = error_code;
-    }
-    return false;
+[[noreturn]] void Deserializer::throw_error(Error::Code code) {
+    throw Error(code, m_begin, m_end, m_current);
 }
 
 /*! Internal error codes message */
@@ -802,31 +603,60 @@ struct ErrorCodes {
 };
 
 static const struct ErrorCodes g_error_codes[] = {
-    { Code::NONE,               "No error"},
-    { Code::END_OF_FILE,        "End of file reached"},
-    { Code::MISS_QUOTE,         "Missing quote '\"' for string"},
-    { Code::MISS_COLON,         "Missing colon ':' in member pair"},
-    { Code::MISS_CURLY_CLOSE,   "Missing comma ','"
+    { Error::NONE,               "No error"},
+    { Error::END_OF_FILE,        "End of file reached"},
+    { Error::MISS_QUOTE,         "Missing quote '\"' for string"},
+    { Error::MISS_COLON,         "Missing colon ':' in member pair"},
+    { Error::MISS_CURLY_CLOSE,   "Missing comma ','"
         " or closing curly '}' for object"},
-    { Code::MISS_SQUARE_CLOSE,  "Missing comma ','"
+    { Error::MISS_SQUARE_CLOSE,  "Missing comma ','"
         " or closing square ']' for array"},
-    { Code::NOT_MATCH_NULL,     "Did you mean 'null'?"},
-    { Code::NOT_MATCH_TRUE,     "Did you mean 'true'?"},
-    { Code::NOT_MATCH_FALSE,    "Did you mean 'false'?"},
-    { Code::MISS_VALUE,         "Missing value in array/member"},
-    { Code::INVALID_WHITESPACE, "Invalid whitespace character"},
-    { Code::INVALID_ESCAPE,     "Invalid escape character"},
-    { Code::INVALID_UNICODE,    "Invalid unicode"},
-    { Code::INVALID_NUMBER_INTEGER, "Invalid number integer part"},
-    { Code::INVALID_NUMBER_FRACTION,"Invalid number fractional part"},
-    { Code::INVALID_NUMBER_EXPONENT,"Invalid number exponent part"}
+    { Error::NOT_MATCH_NULL,     "Did you mean 'null'?"},
+    { Error::NOT_MATCH_TRUE,     "Did you mean 'true'?"},
+    { Error::NOT_MATCH_FALSE,    "Did you mean 'false'?"},
+    { Error::MISS_VALUE,         "Missing value in array/member"},
+    { Error::INVALID_WHITESPACE, "Invalid whitespace character"},
+    { Error::INVALID_ESCAPE,     "Invalid escape character"},
+    { Error::INVALID_UNICODE,    "Invalid unicode"},
+    { Error::INVALID_NUMBER_INTEGER, "Invalid number integer part"},
+    { Error::INVALID_NUMBER_FRACTION,"Invalid number fractional part"},
+    { Error::INVALID_NUMBER_EXPONENT,"Invalid number exponent part"}
 };
 
-const char* Deserializer::Error::decode() {
+Error::Error(Error::Code code,
+        const char* begin, const char* end,
+        const char* position) :
+    m_code{code},
+    m_line{1},
+    m_column{1},
+    m_offset{size_t(position - begin)},
+    m_message{"Unknown error"}
+{
+    const char* search = begin;
+
     for (const auto& error : g_error_codes) {
-        if (error.code == code) {
-            return error.message;
+        if (error.code == m_code) {
+            m_message = error.message;
+            break;
         }
     }
-    return "Unknown error";
+
+    if (search < end) {
+        while (search < position) {
+            if ('\n' == *search) {
+                ++m_line;
+                m_column = 1;
+            }
+            else {
+                ++m_column;
+            }
+            ++search;
+        }
+    }
 }
+
+const char* Error::what() const noexcept {
+    return m_message;
+}
+
+Error::~Error() { }
