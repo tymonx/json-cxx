@@ -126,6 +126,11 @@ public:
         parsing(str);
     }
 
+    Deserializer(const Deserializer&) = default;
+    Deserializer(Deserializer&&) = default;
+    Deserializer& operator=(const Deserializer&) = default;
+    Deserializer& operator=(Deserializer&&) = default;
+
     /*!
      * @brief Start parsing null-terminated character array that contains JSON
      * objects {} or arrays []
@@ -272,11 +277,11 @@ private:
     static const std::size_t MAX_LIMIT_PER_OBJECT;
 
     Value m_value = nullptr;
-    std::size_t m_limit = MAX_LIMIT_PER_OBJECT;
+    std::size_t m_limit{MAX_LIMIT_PER_OBJECT};
 
-    const char* m_begin;
-    const char* m_current;
-    const char* m_end;
+    const char* m_begin{nullptr};
+    const char* m_current{nullptr};
+    const char* m_end{nullptr};
 
     void read_object(Value& value);
     void read_object_member(Value& value, std::size_t& count);

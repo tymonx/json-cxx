@@ -95,6 +95,8 @@ public:
      * @brief Clear serialization content
      * */
     void clear() { m_serialized.clear(); }
+
+    ~Serializer();
 private:
     FormatterPtr m_formatter{nullptr};
     String m_serialized{};

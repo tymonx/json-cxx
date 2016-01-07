@@ -488,26 +488,26 @@ void Deserializer::read_number_exponent(Number& number) {
     switch (number.m_type) {
     case Number::Type::INT:
         if (is_negative) {
-            number.m_double *= pow(0.1, value);
+            number.m_double *= pow(0.1, Double(value));
             number.m_type = Number::Type::DOUBLE;
         } else {
-            number.m_int *= Int64(pow(10, value));
+            number.m_int *= Int64(pow(10, Double(value)));
         }
         break;
     case Number::Type::UINT:
         if (is_negative) {
-            number.m_double *= pow(0.1, value);
+            number.m_double *= pow(0.1, Double(value));
             number.m_type = Number::Type::DOUBLE;
         } else {
-            number.m_uint *= Uint64(pow(10, value));
+            number.m_uint *= Uint64(pow(10, Double(value)));
         }
         break;
     case Number::Type::DOUBLE:
         if (is_negative) {
-            number.m_double *= pow(0.1, value);
+            number.m_double *= pow(0.1, Double(value));
         }
         else {
-            number.m_double *= pow(10, value);
+            number.m_double *= pow(10, Double(value));
         }
         break;
     default:

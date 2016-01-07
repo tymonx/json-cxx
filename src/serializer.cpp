@@ -69,3 +69,5 @@ void Serializer::write(const Value& value) {
         m_serialized.push_back(ch);
     });
 }
+
+Serializer::~Serializer() { }

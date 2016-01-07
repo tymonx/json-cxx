@@ -45,6 +45,12 @@ if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
     )
 endif()
 
+if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
+    set_source_files_properties(value.cpp PROPERTIES
+        COMPILE_FLAGS "-Wno-strict-overflow"
+    )
+endif()
+
 install (TARGETS json-cxx
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
