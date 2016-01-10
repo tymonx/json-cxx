@@ -27,48 +27,20 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-include_directories(SYSTEM gtest/include)
-
-add_subdirectory(gtest)
-
-add_executable(tests_runner
-    tests_runner.cpp
-    test_deserializer.cpp
-)
-
-target_link_libraries(tests_runner
-    json-cxx
-    gtest
-    pthread
-)
-
-if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
-    set_target_properties(tests_runner PROPERTIES
-        COMPILE_FLAGS "-Wno-global-constructors"
-    )
-endif()
-
 if (MEMORY_CHECK)
-    add_custom_target(memory_check
-        COMMAND ${MEMORY_CHECK_COMMAND} ${MEMORY_CHECK_ARGS} bin/tests_runner
-        DEPENDS tests_runner
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    )
-else()
-    add_custom_target(memory_check
-        COMMAND ${CMAKE_COMMAND} -E echo "Memory check option is disabled!"
-    )
-endif()
+    find_program(VALGRIND_COMMAND valgrind)
+    if (NOT VALGRIND_COMMAND)
+        message(FATAL_ERROR "Cannot find valgrind command. "
+        "Please disable MEMORY_CHECK option or install valgrind")
+    endif()
 
-if (CODE_COVERAGE)
-    add_custom_target(code_coverage
-        COMMAND bin/tests_runner
-        ${CODE_COVERAGE_COMMANDS}
-        DEPENDS tests_runner
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    )
-else()
-    add_custom_target(code_coverage
-        COMMAND ${CMAKE_COMMAND} -E echo "Code coverage option is disabled!"
+    set(MEMORY_CHECK_COMMAND ${VALGRIND_COMMAND})
+    set(MEMORY_CHECK_ARGS
+        --tool=memcheck
+        --leak-check=full
+        --show-leak-kinds=all
+        --errors-for-leak-kinds=all
+        --error-exitcode=1
+        --suppressions=${CMAKE_SOURCE_DIR}/valgrind/valgrind.supp
     )
 endif()
