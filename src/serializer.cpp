@@ -49,6 +49,8 @@
 
 using json::Serializer;
 
+Serializer::~Serializer() { }
+
 void Serializer::write(const Value& value) {
     Formatter* fmt = m_formatter.get();
 
@@ -58,16 +60,12 @@ void Serializer::write(const Value& value) {
     }
 
     std::size_t count = 0;
-    fmt->formatting(value, [&count](char) {
-        ++count;
-    });
+    fmt->set_writter([&count](char) { ++count; });
+    fmt->formatting(value);
 
     m_serialized.clear();
     m_serialized.reserve(count);
 
-    fmt->formatting(value, [this](char ch) {
-        m_serialized.push_back(ch);
-    });
+    fmt->set_writter([this](char ch) { m_serialized.push_back(ch); });
+    fmt->formatting(value);
 }
-
-Serializer::~Serializer() { }

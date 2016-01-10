@@ -43,31 +43,23 @@
 
 #include <json/formatter.hpp>
 
-#include <algorithm>
-
+using json::Value;
 using json::Formatter;
 
-std::string Formatter::escape_characters(const std::string& str) {
-    std::string::difference_type count =
-        std::count_if(str.cbegin(), str.cend(),
-            [](const char& ch) { return (('\\' == ch) || ('\"' == ch)); }
-        );
-
-    if (0 == count) { return str; }
-
-    std::string escaped{};
-    escaped.reserve(str.size() + std::string::size_type(count));
-
-    std::for_each(str.cbegin(), str.cend(),
-        [&escaped](const char& ch) {
-            if (('\\' == ch) || ('\"' == ch)) {
-                escaped.push_back('\\');
-            }
-            escaped.push_back(ch);
-        }
-    );
-
-    return escaped;
-}
+Formatter::Formatter(Writter writter) :
+    m_writter{writter} { }
 
 Formatter::~Formatter() { }
+
+void Formatter::write_string(const Value& value) {
+    write('"');
+
+    for (const auto& ch : String(value)) {
+        if (('\\' == ch) || ('\"' == ch)) {
+            write('\\');
+        }
+        write(ch);
+    }
+
+    write('"');
+}

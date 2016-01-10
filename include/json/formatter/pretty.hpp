@@ -63,6 +63,8 @@ public:
     /*! Default whitespace indent */
     static constexpr std::size_t DEFAULT_INDENT = 4;
 
+    Pretty(Writter writter = nullptr);
+
     /*!
      * @brief Set number of spaces for indentation
      *

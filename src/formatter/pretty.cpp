@@ -50,6 +50,9 @@
 
 using json::formatter::Pretty;
 
+Pretty::Pretty(Writter writter) :
+    Compact(writter) { }
+
 Pretty::~Pretty() { }
 
 void Pretty::write_object(const Value& value) {
@@ -66,7 +69,7 @@ void Pretty::write_object(const Value& value) {
             write_string(member.first);
             write(" : ");
             write_value(member.second);
-            if (num--) { write(','); }
+            if (--num) { write(','); }
         };
 
         write('\n');
@@ -93,7 +96,7 @@ void Pretty::write_array(const Value& value) {
             write('\n');
             write(indent_length, ' ');
             write_value(val);
-            if (num--) { write(','); }
+            if (--num) { write(','); }
         }
 
         write('\n');

@@ -59,11 +59,12 @@ static constexpr const char JSON_TRUE[] = "true";
 /*! JSON boolean false */
 static constexpr const char JSON_FALSE[] = "false";
 
+Compact::Compact(Writter writter) :
+    Formatter(writter) { }
+
 Compact::~Compact() { }
 
-void Compact::formatting(const json::Value& value,
-        Formatter::Writter writter) {
-    m_writter = writter;
+void Compact::formatting(const json::Value& value) {
     if (m_writter) { write_value(value); }
 }
 
@@ -114,12 +115,6 @@ void Compact::write_array(const Value& value) {
         if (--num) { write(','); }
     }
     write(']');
-}
-
-void Compact::write_string(const Value& value) {
-    write('"');
-    write(escape_characters(String(value)));
-    write('"');
 }
 
 void Compact::write_number(const Value& value) {

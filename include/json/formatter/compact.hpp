@@ -56,42 +56,24 @@ namespace formatter {
  * */
 class Compact : public Formatter {
 public:
+    Compact(Writter writter = nullptr);
+
     /*!
      * @brief Serialize JSON value
      *
      * @param[in]   value   JSON value
      * */
-    virtual void formatting(const Value& value,
-            Formatter::Writter writter = nullptr) final override;
+    virtual void formatting(const Value& value) override;
 
     /*! Destructor */
     virtual ~Compact();
 protected:
-    Formatter::Writter m_writter{nullptr};
-
     virtual void write_value(const Value& value);
     virtual void write_object(const Value& value);
     virtual void write_array(const Value& value);
     virtual void write_number(const Value& value);
-    virtual void write_string(const Value& value);
     virtual void write_boolean(const Value& value);
     virtual void write_empty(const Value& value);
-
-    void write(char ch) {
-        m_writter(ch);
-    }
-
-    void write(const char* str) {
-        while (*str) { m_writter(*(str++)); }
-    }
-
-    void write(const std::string& str) {
-        for (const auto& ch : str) { m_writter(ch); }
-    }
-
-    void write(std::size_t size, char ch) {
-        while (size--) { m_writter(ch); }
-    }
 };
 
 }
