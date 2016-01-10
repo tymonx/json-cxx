@@ -38,8 +38,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 option(TESTS "Enable/disable tests" ON)
 option(EXAMPLES  "Enable/disable examples" ON)
-option(MEMORY_CHECK "Enable/disable memory checking" OFF)
-option(CODE_COVERAGE "Enable/disable code coverage" OFF)
+option(MEMORY_CHECK "Enable/disable memory check support" OFF)
+option(CODE_COVERAGE "Enable/disable code coverage support" OFF)
 
 include(AddGnuCompiler)
 include(AddClangCompiler)
