@@ -8,7 +8,7 @@ JSON library written in C++11
     cmake ..
     make
 
-## Build with code coverage
+## Build with code coverage support
 
     mkdir build
     cd build
@@ -16,7 +16,7 @@ JSON library written in C++11
     make code_coverage
     <HTML_BROWSER> coverage-html/index.html
 
-## Build with memory check
+## Build with memory check support
 
     mkdir build
     cd build
