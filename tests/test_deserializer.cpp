@@ -44,24 +44,14 @@
 #include "json/deserializer.hpp"
 #include "json/deserializer_error.hpp"
 
-#include <iostream>
-
 using json::Value;
 using json::Deserializer;
 using json::DeserializerError;
 
 class DeserializerTest : public ::testing::Test {
 protected:
-    virtual void SetUp() override;
-
-    virtual void TearDown() override;
-
     virtual ~DeserializerTest();
 };
-
-void DeserializerTest::SetUp() { }
-
-void DeserializerTest::TearDown() { }
 
 DeserializerTest::~DeserializerTest() { }
 
@@ -141,19 +131,40 @@ TEST_F(DeserializerTest, PositiveSimpleNumberUnsignedDouble) {
 }
 
 TEST_F(DeserializerTest, NegativeSimpleNumberUnsignedDouble) {
-    Value value;
-
-    ASSERT_THROW("24." >> value, DeserializerError);
+    for (const char* test : {
+        "0.",
+        "24.",
+        "56.3}",
+        "74.1]"
+    }) {
+        Value value;
+        EXPECT_THROW(test >> value, DeserializerError);
+    }
 }
 
 TEST_F(DeserializerTest, PositiveSimpleNumberSignedDouble) {
-    Value value;
-
-    ASSERT_NO_THROW("-9.36" >> value);
-    EXPECT_TRUE(value.is_number());
-    EXPECT_TRUE(value.is_double());
-    EXPECT_EQ(value.size(), 0);
-    EXPECT_DOUBLE_EQ(value.as_double(), -9.36);
+    for (const char* test : {
+        "-9.36",
+        "-9.36\n",
+        "-9.36\n ",
+        "-9.36\n\t",
+        "-9.36\t\n",
+        "-9.36\n\t ",
+        "-9.36 \n \t ",
+        "-9.36  ",
+        "   -9.36",
+        "\n\n\n-9.36",
+        "\t\t-9.36",
+        " \n  \t -9.36",
+        " \n  \t -9.36 \n\t "
+    }) {
+        Value value;
+        ASSERT_NO_THROW(test >> value);
+        EXPECT_TRUE(value.is_number());
+        EXPECT_TRUE(value.is_double());
+        EXPECT_EQ(value.size(), 0);
+        EXPECT_DOUBLE_EQ(value.as_double(), -9.36);
+    }
 }
 
 TEST_F(DeserializerTest, NegativeSimpleNumberSignedDouble) {
