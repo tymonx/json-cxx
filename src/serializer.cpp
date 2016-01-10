@@ -45,9 +45,10 @@
 
 #include <json/formatter/compact.hpp>
 
-#include <cstdint>
-
 using json::Serializer;
+
+Serializer::Serializer(FormatterPtr formatter) :
+    m_formatter{std::move(formatter)} { }
 
 Serializer::~Serializer() { }
 
@@ -68,4 +69,8 @@ void Serializer::write(const Value& value) {
 
     fmt->set_writter([this](char ch) { m_serialized.push_back(ch); });
     fmt->formatting(value);
+}
+
+void Serializer::clear() {
+    m_serialized.clear();
 }

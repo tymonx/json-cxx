@@ -71,9 +71,14 @@ protected:
     virtual void write_value(const Value& value);
     virtual void write_object(const Value& value);
     virtual void write_array(const Value& value);
+    virtual void write_string(const Value& value);
     virtual void write_number(const Value& value);
     virtual void write_boolean(const Value& value);
     virtual void write_empty(const Value& value);
+
+    virtual void write_number_int(Int64 value);
+    virtual void write_number_uint(Uint64 value);
+    virtual void write_number_double(Double value);
 };
 
 }

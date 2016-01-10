@@ -44,7 +44,6 @@
 #ifndef JSON_CXX_FORMATTER_PRETTY_HPP
 #define JSON_CXX_FORMATTER_PRETTY_HPP
 
-#include <json/formatter.hpp>
 #include <json/formatter/compact.hpp>
 
 #include <cstdint>
@@ -61,7 +60,7 @@ namespace formatter {
 class Pretty : public Compact {
 public:
     /*! Default whitespace indent */
-    static constexpr std::size_t DEFAULT_INDENT = 4;
+    static constexpr std::size_t DEFAULT_INDENT{4};
 
     Pretty(Writter writter = nullptr);
 

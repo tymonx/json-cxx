@@ -48,6 +48,7 @@
 #include <json/formatter.hpp>
 
 #include <memory>
+#include <string>
 
 namespace json {
 
@@ -64,8 +65,7 @@ public:
      *
      * Create JSON serializer object with default settings
      * */
-    Serializer(FormatterPtr formatter = nullptr) :
-        m_formatter{std::move(formatter)} { }
+    Serializer(FormatterPtr formatter = nullptr);
 
     /*!
      * @brief Serializer JSON C++ object or JSON C++ array
@@ -75,11 +75,16 @@ public:
      * @param[in]   value   JSON C++ to serialize
      * */
     Serializer(const Value& value, FormatterPtr formatter = nullptr) :
-            m_formatter{std::move(formatter)} { write(value); }
+            Serializer(std::move(formatter)) { write(value); }
 
     void write(const Value& value);
 
     const std::string& read() const { return m_serialized; }
+
+    /*!
+     * @brief Clear serialization content
+     * */
+    void clear();
 
     /*!
      * @brief Serialize JSON C++ object or array
@@ -91,15 +96,10 @@ public:
         return *this;
     }
 
-    /*!
-     * @brief Clear serialization content
-     * */
-    void clear() { m_serialized.clear(); }
-
     ~Serializer();
 private:
     FormatterPtr m_formatter{nullptr};
-    String m_serialized{};
+    std::string m_serialized{};
 };
 
 }

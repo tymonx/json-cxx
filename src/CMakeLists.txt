@@ -27,6 +27,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+add_subdirectory(formatter)
+
 add_library(json-cxx
     value.cpp
     number.cpp
@@ -37,13 +39,12 @@ add_library(json-cxx
     exception.cpp
     parser.cpp
     formatter.cpp
-    formatter/compact.cpp
-    formatter/pretty.cpp
+    $<TARGET_OBJECTS:json-cxx-formatter>
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
-    set_source_files_properties(value.cpp PROPERTIES
-        COMPILE_FLAGS "-Wno-global-constructors"
+    set_source_files_properties(value.cpp serializer.cpp PROPERTIES
+        COMPILE_FLAGS "-Wno-exit-time-destructors"
     )
 endif()
 

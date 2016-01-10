@@ -45,7 +45,6 @@
 
 #include "parser.hpp"
 
-using json::Value;
 using json::Parser;
 using json::Deserializer;
 

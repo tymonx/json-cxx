@@ -43,12 +43,13 @@
 
 #include <json/formatter/compact.hpp>
 
-#include <json/iterator.hpp>
-
-#include <iomanip>
-#include <sstream>
+#include <array>
+#include <cmath>
+#include <limits>
 
 using json::formatter::Compact;
+
+static constexpr std::size_t MAX_CHAR_BUFFER = 22;
 
 /*! JSON null  */
 static constexpr const char JSON_NULL[] = "null";
@@ -117,23 +118,69 @@ void Compact::write_array(const Value& value) {
     write(']');
 }
 
+void Compact::write_string(const Value& value) {
+    write('"');
+    for (const auto& ch : String(value)) {
+        if (('\\' == ch) || ('\"' == ch)) {
+            write('\\');
+        }
+        write(ch);
+    }
+    write('"');
+}
+
 void Compact::write_number(const Value& value) {
     switch (Number(value).get_type()) {
     case Number::Type::INT:
-        write(std::to_string(Int(value)));
+        write_number_int(Int64(value));
         break;
     case Number::Type::UINT:
-        write(std::to_string(Uint(value)));
+        write_number_uint(Uint64(value));
         break;
-    case Number::Type::DOUBLE: {
-        std::stringstream stream;
-        stream << std::setprecision(16) << Double(value);
-        write(stream.str());
+    case Number::Type::DOUBLE:
+        write_number_double(Double(value));
         break;
-    }
     default:
         break;
     }
+}
+
+void Compact::write_number_int(Int64 value) {
+    if (value < 0) {
+        write('-');
+        value = -value;
+    }
+    write_number_uint(Uint64(value));
+}
+
+void Compact::write_number_uint(Uint64 value) {
+    std::array<char, MAX_CHAR_BUFFER> buffer;
+    char* pos = buffer.data();
+
+    do {
+        *(pos++) = char('0' + (value % 10));
+        value /= 10;
+    } while (0 != value);
+    do {
+        write(*(--pos));
+    } while (pos > buffer.data());
+}
+
+void Compact::write_number_double(Double value) {
+    double integral_part;
+    if (std::signbit(value)) {
+        write_number_int(Int64(value));
+        value = std::abs(value);
+    }
+    else {
+        write_number_uint(Uint64(value));
+    }
+    write('.');
+    value = 10 * std::modf(value, &integral_part);
+    do {
+        write(char('0' + Uint64(value) % 10));
+        value = 10 * std::modf(value, &integral_part);
+    } while (value >= std::numeric_limits<Double>::epsilon());
 }
 
 void Compact::write_boolean(const Value& value) {

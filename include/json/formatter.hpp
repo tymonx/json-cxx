@@ -61,13 +61,9 @@ public:
 
     Formatter(Writter writter = nullptr);
 
-    void set_writter(Writter writter) {
-        m_writter = writter;
-    }
+    void set_writter(Writter writter);
 
-    const Writter& get_writter() const {
-        return m_writter;
-    }
+    const Writter& get_writter() const;
 
     /*!
      * @brief Format given JSON value
@@ -81,29 +77,18 @@ public:
 protected:
     Writter m_writter{nullptr};
 
-    void write(char ch) {
-        m_writter(ch);
-    }
+    void write(char ch);
 
-    void write(const char* str) {
-        while (*str) { m_writter(*(str++)); }
-    }
+    void write(const char* str);
 
-    void write(const std::string& str) {
-        for (const auto& ch : str) { m_writter(ch); }
-    }
+    void write(const std::string& str);
 
-    void write(std::size_t size, char ch) {
-        while (size--) { m_writter(ch); }
-    }
-
-    virtual void write_string(const Value& value);
+    void write(std::size_t size, char ch);
 };
 
 template<typename T>
 std::unique_ptr<Formatter> make_formatter() {
-    return std::unique_ptr<Formatter>{
-        static_cast<Formatter*>(new T())};
+    return std::unique_ptr<Formatter>{static_cast<Formatter*>(new T())};
 }
 
 }

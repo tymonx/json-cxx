@@ -757,6 +757,12 @@ public:
     /*! Convert JSON value to unsigned integer */
     explicit operator Uint() const { return Uint(m_number); }
 
+    /*! Convert JSON value to signed integer */
+    explicit operator Int64() const { return Int64(m_number); }
+
+    /*! Convert JSON value to unsigned integer */
+    explicit operator Uint64() const { return Uint64(m_number); }
+
     /*! Convert JSON value to double */
     explicit operator Double() const { return Double(m_number); }
 

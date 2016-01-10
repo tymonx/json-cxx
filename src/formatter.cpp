@@ -43,7 +43,6 @@
 
 #include <json/formatter.hpp>
 
-using json::Value;
 using json::Formatter;
 
 Formatter::Formatter(Writter writter) :
@@ -51,15 +50,26 @@ Formatter::Formatter(Writter writter) :
 
 Formatter::~Formatter() { }
 
-void Formatter::write_string(const Value& value) {
-    write('"');
+void Formatter::set_writter(Writter writter) {
+    m_writter = writter;
+}
 
-    for (const auto& ch : String(value)) {
-        if (('\\' == ch) || ('\"' == ch)) {
-            write('\\');
-        }
-        write(ch);
-    }
+const Formatter::Writter& Formatter::get_writter() const {
+    return m_writter;
+}
 
-    write('"');
+void Formatter::write(char ch) {
+    m_writter(ch);
+}
+
+void Formatter::write(const char* str) {
+    while (*str) { m_writter(*(str++)); }
+}
+
+void Formatter::write(const std::string& str) {
+    for (const auto& ch : str) { m_writter(ch); }
+}
+
+void Formatter::write(std::size_t size, char ch) {
+    while (size--) { m_writter(ch); }
 }

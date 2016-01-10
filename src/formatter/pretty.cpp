@@ -43,11 +43,6 @@
 
 #include <json/formatter/pretty.hpp>
 
-#include <json/iterator.hpp>
-
-#include <iomanip>
-#include <sstream>
-
 using json::formatter::Pretty;
 
 Pretty::Pretty(Writter writter) :

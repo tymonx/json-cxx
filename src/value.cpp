@@ -51,8 +51,6 @@
 
 using namespace json;
 
-static const Value g_null_value{};
-
 Value::Value(Type type) : m_type(type) {
     create_container(type);
 }
@@ -611,6 +609,8 @@ Value& Value::operator[](const char* key) {
 }
 
 const Value& Value::operator[](const char* key) const {
+    static const Value null_value{};
+
     if (!is_object()) { return *this; }
 
     for (const auto& pair : m_object) {
@@ -619,7 +619,7 @@ const Value& Value::operator[](const char* key) const {
         }
     }
 
-    return g_null_value;
+    return null_value;
 }
 
 Value& Value::operator[](const size_t index) {

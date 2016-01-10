@@ -28,16 +28,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 add_executable(example example.cpp)
-target_link_libraries(example
-    json-cxx
-)
+target_link_libraries(example json-cxx)
 
 add_executable(performance performance.cpp)
-target_link_libraries(performance
-    json-cxx
-)
+target_link_libraries(performance json-cxx)
 
-add_executable(simple simple.cpp)
-target_link_libraries(simple
-    json-cxx
-)
+if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
+    set_source_files_properties(example.cpp PROPERTIES
+        COMPILE_FLAGS "-Wno-global-constructors -Wno-exit-time-destructors"
+    )
+endif()
