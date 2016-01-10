@@ -12,7 +12,7 @@ JSON library written in C++11
 
     mkdir build
     cd build
-    cmake -DCMAKE_CXX_COMPILER g++ -DCMAKE_BUILD_TYPE=Coverage -DCODE_COVERAGE=ON ..
+    cmake -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Coverage -DCODE_COVERAGE=ON ..
     make code_coverage
     <HTML_BROWSER> coverage-html/index.html
 
@@ -27,7 +27,7 @@ JSON library written in C++11
 
     mkdir build
     cd build
-    cmake -DCMAKE_CXX_COMPILER g++ -DCMAKE_BUILD_TYPE=Coverage -DCODE_COVERAGE=ON -DMEMORY_CHECK=ON ..
+    cmake -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Coverage -DCODE_COVERAGE=ON -DMEMORY_CHECK=ON ..
     make code_coverage memory_check
     <HTML_BROWSER> coverage-html/index.html
 
