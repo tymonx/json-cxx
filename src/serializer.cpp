@@ -41,7 +41,7 @@
  * @brief JSON serializer implementation
  * */
 
-#include <json/serializer.hpp>
+#include "json/serializer.hpp"
 
 #include <json/formatter/compact.hpp>
 

@@ -41,18 +41,37 @@
  * @brief JSON value implementation
  * */
 
-#include <json/value.hpp>
-#include <json/iterator.hpp>
-#include <json/value_error.hpp>
+#include "json/value.hpp"
+#include "json/iterator.hpp"
+#include "json/value_error.hpp"
 
 #include <limits>
 #include <type_traits>
 #include <functional>
 
-using namespace json;
+using json::Value;
 
 Value::Value(Type type) : m_type(type) {
-    create_container(type);
+    switch (m_type) {
+    case Type::OBJECT:
+        new (&m_object) Object();
+        break;
+    case Type::ARRAY:
+        new (&m_array) Array();
+        break;
+    case Type::STRING:
+        new (&m_string) String();
+        break;
+    case Type::NUMBER:
+        new (&m_number) Number();
+        break;
+    case Type::BOOLEAN:
+        m_boolean = false;
+        break;
+    case Type::NIL:
+    default:
+        break;
+    }
 }
 
 Value::Value(Null) : m_type(Type::NIL) { }
@@ -110,8 +129,53 @@ Value::Value(std::initializer_list<Pair> init_list) : m_type(Type::OBJECT) {
 }
 
 Value::Value(std::initializer_list<Value> init_list) : m_type(Type::ARRAY) {
-    new (&m_array) Array();
-    m_array = init_list;
+    new (&m_array) Array(init_list);
+}
+
+Value::Value(const Value& value) : m_type(value.m_type) {
+    switch (m_type) {
+    case Type::OBJECT:
+        new (&m_object) Object(value.m_object);
+        break;
+    case Type::ARRAY:
+        new (&m_array) Array(value.m_array);
+        break;
+    case Type::STRING:
+        new (&m_string) String(value.m_string);
+        break;
+    case Type::NUMBER:
+        new (&m_number) Number(value.m_number);
+        break;
+    case Type::BOOLEAN:
+        m_boolean = value.m_boolean;
+        break;
+    case Type::NIL:
+    default:
+        break;
+    }
+}
+
+Value::Value(Value&& value) : m_type(value.m_type) {
+    switch (m_type) {
+    case Type::OBJECT:
+        new (&m_object) Object(std::move(value.m_object));
+        break;
+    case Type::ARRAY:
+        new (&m_array) Array(std::move(value.m_array));
+        break;
+    case Type::STRING:
+        new (&m_string) String(std::move(value.m_string));
+        break;
+    case Type::NUMBER:
+        new (&m_number) Number(std::move(value.m_number));
+        break;
+    case Type::BOOLEAN:
+        m_boolean = value.m_boolean;
+        break;
+    case Type::NIL:
+    default:
+        break;
+    }
 }
 
 Value::~Value() {
@@ -135,123 +199,107 @@ Value::~Value() {
     }
 }
 
-void Value::create_container(Type type) {
-    m_type = type;
-    switch (type) {
-    case Type::OBJECT:
-        new (&m_object) Object();
-        break;
-    case Type::ARRAY:
-        new (&m_array) Array();
-        break;
-    case Type::STRING:
-        new (&m_string) String();
-        break;
-    case Type::NUMBER:
-        new (&m_number) Number();
-        break;
-    case Type::BOOLEAN:
-        m_boolean = false;
-        break;
-    case Type::NIL:
-    default:
-        break;
-    }
-}
-
-Value::Value(const Value& value) : m_type(value.m_type) {
-    create_container(m_type);
-    operator=(value);
-}
-
-Value::Value(Value&& value) : m_type(value.m_type) {
-    create_container(m_type);
-    operator=(std::move(value));
-}
-
 Value& Value::operator=(const Value& value) {
-    if (&value == this) { return *this; }
-
-    if (value.m_type != m_type) {
-        this->~Value();
-        create_container(value.m_type);
+    if (this != &value) {
+        if (value.m_type == m_type) {
+            switch (m_type) {
+            case Type::OBJECT:
+                m_object = value.m_object;
+                break;
+            case Type::ARRAY:
+                m_array = value.m_array;
+                break;
+            case Type::STRING:
+                m_string = value.m_string;
+                break;
+            case Type::NUMBER:
+                m_number = value.m_number;
+                break;
+            case Type::BOOLEAN:
+                m_boolean = value.m_boolean;
+                break;
+            case Type::NIL:
+            default:
+                break;
+            }
+        }
+        else {
+            this->~Value();
+            m_type = value.m_type;
+            switch (m_type) {
+            case Type::OBJECT:
+                new (&m_object) Object(value.m_object);
+                break;
+            case Type::ARRAY:
+                new (&m_array) Array(value.m_array);
+                break;
+            case Type::STRING:
+                new (&m_string) String(value.m_string);
+                break;
+            case Type::NUMBER:
+                new (&m_number) Number(value.m_number);
+                break;
+            case Type::BOOLEAN:
+                m_boolean = value.m_boolean;
+                break;
+            case Type::NIL:
+            default:
+                break;
+            }
+        }
     }
-
-    switch (m_type) {
-    case Type::OBJECT:
-        m_object = value.m_object;
-        break;
-    case Type::ARRAY:
-        m_array = value.m_array;
-        break;
-    case Type::STRING:
-        m_string = value.m_string;
-        break;
-    case Type::NUMBER:
-        m_number = value.m_number;
-        break;
-    case Type::BOOLEAN:
-        m_boolean = value.m_boolean;
-        break;
-    case Type::NIL:
-    default:
-        break;
-    }
-
     return *this;
 }
 
 Value& Value::operator=(Value&& value) {
-    if (&value == this) { return *this; }
-
-    if (value.m_type != m_type) {
-        this->~Value();
-        create_container(value.m_type);
+    if (this != &value) {
+        if (value.m_type == m_type) {
+            switch (m_type) {
+            case Type::OBJECT:
+                m_object = std::move(value.m_object);
+                break;
+            case Type::ARRAY:
+                m_array = std::move(value.m_array);
+                break;
+            case Type::STRING:
+                m_string = std::move(value.m_string);
+                break;
+            case Type::NUMBER:
+                m_number = std::move(value.m_number);
+                break;
+            case Type::BOOLEAN:
+                m_boolean = value.m_boolean;
+                break;
+            case Type::NIL:
+            default:
+                break;
+            }
+        }
+        else {
+            this->~Value();
+            m_type = value.m_type;
+            switch (m_type) {
+            case Type::OBJECT:
+                new (&m_object) Object(std::move(value.m_object));
+                break;
+            case Type::ARRAY:
+                new (&m_array) Array(std::move(value.m_array));
+                break;
+            case Type::STRING:
+                new (&m_string) String(std::move(value.m_string));
+                break;
+            case Type::NUMBER:
+                new (&m_number) Number(std::move(value.m_number));
+                break;
+            case Type::BOOLEAN:
+                m_boolean = value.m_boolean;
+                break;
+            case Type::NIL:
+            default:
+                break;
+            }
+        }
     }
-
-    switch (m_type) {
-    case Type::OBJECT:
-        m_object = std::move(value.m_object);
-        break;
-    case Type::ARRAY:
-        m_array = std::move(value.m_array);
-        break;
-    case Type::STRING:
-        m_string = std::move(value.m_string);
-        break;
-    case Type::NUMBER:
-        m_number = std::move(value.m_number);
-        break;
-    case Type::BOOLEAN:
-        m_boolean = std::move(value.m_boolean);
-        break;
-    case Type::NIL:
-    default:
-        break;
-    }
-
-    value.m_type = Type::NIL;
-
-    return *this;
-}
-
-Value& Value::operator=(std::initializer_list<Pair> init_list) {
-    this->~Value();
-    create_container(Type::OBJECT);
-
-    for (auto it = init_list.begin(); it < init_list.end(); ++it) {
-        (*this)[it->first] = it->second;
-    }
-
-    return *this;
-}
-
-Value& Value::operator=(std::initializer_list<Value> init_list) {
-    this->~Value();
-    create_container(Type::ARRAY);
-
-    m_array = init_list;
-
     return *this;
 }
 
@@ -301,21 +349,44 @@ Value& Value::operator+=(const Value& value) {
 }
 
 void Value::assign(std::initializer_list<Pair> init_list) {
-    *this = init_list;
+    if (!is_object()) {
+        this->~Value();
+        m_type = Type::OBJECT;
+        new (&m_object) Object();
+    }
+    else {
+        m_object.clear();
+    }
+
+    for (auto it = init_list.begin(); it < init_list.end(); ++it) {
+        (*this)[it->first] = it->second;
+    }
 }
 
 void Value::assign(std::initializer_list<Value> init_list) {
-    *this = init_list;
+    if (is_array()) {
+        m_array.assign(init_list);
+    }
+    else {
+        this->~Value();
+        m_type = Type::ARRAY;
+        new (&m_array) Array(init_list);
+    }
 }
 
-void Value::assign(size_t count, const Value& value) {
-    this->~Value();
-    create_container(Type::ARRAY);
-    new (&m_array) Array(count, value);
+void Value::assign(std::size_t count, const Value& value) {
+    if (is_array()) {
+        m_array.assign(count, value);
+    }
+    else {
+        this->~Value();
+        m_type = Type::ARRAY;
+        new (&m_array) Array(count, value);
+    }
 }
 
-size_t Value::size() const {
-    size_t value = 0;
+std::size_t Value::size() const {
+    std::size_t value;
 
     switch (m_type) {
     case Type::OBJECT:
@@ -329,6 +400,7 @@ size_t Value::size() const {
     case Type::NUMBER:
     case Type::BOOLEAN:
     default:
+        value = 0;
         break;
     }
 
@@ -358,51 +430,16 @@ void Value::clear() {
     }
 }
 
-Value& Value::operator[](int index) {
-    return (*this)[size_t(index)];
-}
-
-const Value& Value::operator[](int index) const {
-    return (*this)[size_t(index)];
-}
-
-Value& Value::operator[](const String& key) {
-    return (*this)[key.c_str()];
-}
-
-const Value& Value::operator[](const String& key) const {
-    return (*this)[key.c_str()];
-}
-
-bool Value::is_member(const std::string& key) const {
-    return is_member(key.c_str());
-}
-
-bool Value::is_member(const char* key) const {
-    if (!is_object()) { return false; }
-
-    for (const auto& pair : m_object) {
-        if (key == pair.first) { return true; }
-    }
-
-    return false;
-}
-
-size_t Value::erase(const char* key) {
+std::size_t Value::erase(const char* key) {
     if (!is_object()) { return 0; }
 
-    for (auto it = m_object.begin(); it != m_object.end(); it++) {
-        if (key == it->first) {
+    for (auto it = m_object.begin(); it != m_object.end(); ++it) {
+        if (it->first == key) {
             m_object.erase(it);
             return 1;
         }
     }
-
     return 0;
-}
-
-size_t Value::erase(const String& key) {
-    return erase(key.c_str());
 }
 
 Value::iterator Value::erase(const_iterator pos) {
@@ -500,136 +537,14 @@ Value::iterator Value::insert(const_iterator pos,
     return insert(pos, init_list.begin(), init_list.end());
 }
 
-String& Value::as_string() {
-    if (Type::STRING != m_type) {
-        throw ValueError(ValueError::NOT_STRING);
-    }
-    return m_string;
-}
-
-const String& Value::as_string() const {
-    if (Type::STRING != m_type) {
-        throw ValueError(ValueError::NOT_STRING);
-    }
-    return m_string;
-}
-
-const char* Value::as_char() const {
-    if (Type::STRING != m_type) {
-        throw ValueError(ValueError::NOT_STRING);
-    }
-    return m_string.c_str();
-}
-
-Bool Value::as_bool() const {
-    if (Type::BOOLEAN != m_type) {
-        throw ValueError(ValueError::NOT_BOOLEAN);
-    }
-    return m_boolean;
-}
-
-Null Value::as_null() const {
-    if (Type::NIL != m_type) {
-        throw ValueError(ValueError::NOT_NULL);
-    }
-    return nullptr;
-}
-
-Int Value::as_int() const {
-    if (Type::NUMBER != m_type) {
-        throw ValueError(ValueError::NOT_NUMBER);
-    }
-    return Int(m_number);
-}
-
-Uint Value::as_uint() const {
-    if (Type::NUMBER != m_type) {
-        throw ValueError(ValueError::NOT_NUMBER);
-    }
-    return Uint(m_number);
-}
-
-Double Value::as_double() const {
-    if (Type::NUMBER != m_type) {
-        throw ValueError(ValueError::NOT_NUMBER);
-    }
-    return Double(m_number);
-}
-
-Array& Value::as_array() {
-    if (Type::ARRAY != m_type) {
-        throw ValueError(ValueError::NOT_ARRAY);
-    }
-    return m_array;
-}
-
-Number& Value::as_number() {
-    if (Type::NUMBER != m_type) {
-        throw ValueError(ValueError::NOT_NUMBER);
-    }
-    return m_number;
-}
-
-const Array& Value::as_array() const {
-    if (Type::ARRAY != m_type) {
-        throw ValueError(ValueError::NOT_ARRAY);
-    }
-    return m_array;
-}
-
-const Object& Value::as_object() const {
-    if (Type::OBJECT != m_type) {
-        throw ValueError(ValueError::NOT_OBJECT);
-    }
-    return m_object;
-}
-
-const Number& Value::as_number() const {
-    if (Type::NUMBER != m_type) {
-        throw ValueError(ValueError::NOT_NUMBER);
-    }
-    return m_number;
-}
-
-Value& Value::operator[](const char* key) {
-    if (!is_object()) {
-        if (is_null()) { *this = Type::OBJECT; }
-        else { return *this; }
-    }
-
-    for (auto& pair : m_object) {
-        if (key == pair.first) {
-            return pair.second;
-        }
-    }
-
-    m_object.emplace_back(key, Value());
-
-    return m_object.back().second;
-}
-
-const Value& Value::operator[](const char* key) const {
-    static const Value null_value{};
-
-    if (!is_object()) { return *this; }
-
-    for (const auto& pair : m_object) {
-        if (key == pair.first) {
-            return pair.second;
-        }
-    }
-
-    return null_value;
-}
-
-Value& Value::operator[](const size_t index) {
+Value& Value::operator[](std::size_t index) {
     if (is_null()) { *this = Type::ARRAY; }
 
     Value* ptr;
 
     if (is_array()) {
         if (size() == index) {
-            m_array.emplace_back(Value());
+            m_array.emplace_back(nullptr);
         }
         ptr = &m_array[index];
     }
@@ -643,7 +558,7 @@ Value& Value::operator[](const size_t index) {
     return *ptr;
 }
 
-const Value& Value::operator[](const size_t index) const {
+const Value& Value::operator[](std::size_t index) const {
     const Value* ptr;
 
     if (is_array()) {
@@ -657,6 +572,36 @@ const Value& Value::operator[](const size_t index) const {
     }
 
     return *ptr;
+}
+
+Value& Value::operator[](const char* key) {
+    if (!is_object()) {
+        if (is_null()) { *this = Type::OBJECT; }
+        else { return *this; }
+    }
+
+    for (auto& pair : m_object) {
+        if (pair.first == key) {
+            return pair.second;
+        }
+    }
+
+    m_object.emplace_back(key, nullptr);
+    return m_object.back().second;
+}
+
+const Value& Value::operator[](const char* key) const {
+    static const Value null_value{};
+
+    if (!is_object()) { return *this; }
+
+    for (const auto& pair : m_object) {
+        if (pair.first == key) {
+            return pair.second;
+        }
+    }
+
+    return null_value;
 }
 
 void Value::push_back(const Value& value) {
@@ -691,15 +636,117 @@ void Value::pop_back() {
 }
 
 void Value::swap(Value& value) {
-    Value temp(value);
-    value = *this;
-    *this = temp;
+    Value temp(std::move(value));
+    value = std::move(*this);
+    *this = std::move(temp);
+}
+
+bool Value::is_member(const char* key) const {
+    if (!is_object()) { return false; }
+
+    for (const auto& pair : m_object) {
+        if (pair.first == key) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+json::String& Value::as_string() {
+    if (Type::STRING != m_type) {
+        throw ValueError(ValueError::NOT_STRING);
+    }
+    return m_string;
+}
+
+const json::String& Value::as_string() const {
+    if (Type::STRING != m_type) {
+        throw ValueError(ValueError::NOT_STRING);
+    }
+    return m_string;
+}
+
+const char* Value::as_char() const {
+    if (Type::STRING != m_type) {
+        throw ValueError(ValueError::NOT_STRING);
+    }
+    return m_string.c_str();
+}
+
+json::Bool Value::as_bool() const {
+    if (Type::BOOLEAN != m_type) {
+        throw ValueError(ValueError::NOT_BOOLEAN);
+    }
+    return m_boolean;
+}
+
+json::Null Value::as_null() const {
+    if (Type::NIL != m_type) {
+        throw ValueError(ValueError::NOT_NULL);
+    }
+    return nullptr;
+}
+
+json::Int Value::as_int() const {
+    if (Type::NUMBER != m_type) {
+        throw ValueError(ValueError::NOT_NUMBER);
+    }
+    return Int(m_number);
+}
+
+json::Uint Value::as_uint() const {
+    if (Type::NUMBER != m_type) {
+        throw ValueError(ValueError::NOT_NUMBER);
+    }
+    return Uint(m_number);
+}
+
+json::Double Value::as_double() const {
+    if (Type::NUMBER != m_type) {
+        throw ValueError(ValueError::NOT_NUMBER);
+    }
+    return Double(m_number);
+}
+
+json::Array& Value::as_array() {
+    if (Type::ARRAY != m_type) {
+        throw ValueError(ValueError::NOT_ARRAY);
+    }
+    return m_array;
+}
+
+json::Number& Value::as_number() {
+    if (Type::NUMBER != m_type) {
+        throw ValueError(ValueError::NOT_NUMBER);
+    }
+    return m_number;
+}
+
+const json::Array& Value::as_array() const {
+    if (Type::ARRAY != m_type) {
+        throw ValueError(ValueError::NOT_ARRAY);
+    }
+    return m_array;
+}
+
+const json::Object& Value::as_object() const {
+    if (Type::OBJECT != m_type) {
+        throw ValueError(ValueError::NOT_OBJECT);
+    }
+    return m_object;
+}
+
+const json::Number& Value::as_number() const {
+    if (Type::NUMBER != m_type) {
+        throw ValueError(ValueError::NOT_NUMBER);
+    }
+    return m_number;
 }
 
 bool Value::operator==(const json::Value& other) const {
     if (m_type != other.m_type) { return false; }
-
-    bool result = false;
+    bool result;
 
     switch (m_type) {
     case Value::Type::OBJECT:
@@ -721,6 +768,7 @@ bool Value::operator==(const json::Value& other) const {
         result = true;
         break;
     default:
+        result = false;
         break;
     }
 
@@ -729,8 +777,7 @@ bool Value::operator==(const json::Value& other) const {
 
 bool Value::operator<(const json::Value& val) const {
     if (m_type != val.m_type) { return false; }
-
-    bool result = false;
+    bool result;
 
     switch (m_type) {
     case Value::Type::OBJECT:
@@ -750,6 +797,7 @@ bool Value::operator<(const json::Value& val) const {
         break;
     case Value::Type::NIL:
     default:
+        result = false;
         break;
     }
 

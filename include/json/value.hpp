@@ -53,10 +53,10 @@
 
 namespace json {
 
+class Value;
+
 template<bool is_const>
 class base_iterator;
-
-class Value;
 
 /*! JSON string */
 using String = std::string;
@@ -296,7 +296,10 @@ public:
      *
      * @param[in]   init_list   JSON object with JSON members
      * */
-    Value& operator=(std::initializer_list<Pair> init_list);
+    Value& operator=(std::initializer_list<Pair> init_list) {
+        assign(init_list);
+        return *this;
+    }
 
     /*!
      * @brief Assignment JSON array with JSON values
@@ -306,7 +309,10 @@ public:
      *
      * @param[in]   init_list   JSON array with JSON values
      * */
-    Value& operator=(std::initializer_list<Value> init_list);
+    Value& operator=(std::initializer_list<Value> init_list) {
+        assign(init_list);
+        return *this;
+    }
 
     /*!
      * @brief Add new JSON value to JSON array
@@ -320,6 +326,30 @@ public:
      * param[in]    value   JSON value
      * */
     Value& operator+=(const Value& value);
+
+    /*!
+     * @brief Assign JSON array with JSON value copies
+     *
+     * Replace actual content with new JSON array that holds JSON value copies.
+     * JSON Type will be changed to JSON array
+     *
+     * @param[in]   value   JSON value copies
+     * */
+    void assign(const Value& value) {
+        *this = value;
+    }
+
+    /*!
+     * @brief Assign JSON array with JSON value copies
+     *
+     * Replace actual content with new JSON array that holds JSON value copies.
+     * JSON Type will be changed to JSON array
+     *
+     * @param[in]   value   JSON value copies
+     * */
+    void assign(Value&& value) {
+        *this = std::move(value);
+    }
 
     /*!
      * @brief Assign JSON array with JSON value copies
@@ -412,18 +442,20 @@ public:
      *
      * Available only for JSON object
      *
-     * @param[in]   key     String object
+     * @param[in]   key     Null-terminated characters array
      * */
-    size_t erase(const String& key);
+    std::size_t erase(const char* key);
 
     /*!
      * @brief Erase member from JSON object with given key
      *
      * Available only for JSON object
      *
-     * @param[in]   key     Null-terminated characters array
+     * @param[in]   key     String object
      * */
-    size_t erase(const char* key);
+    std::size_t erase(const String& key) {
+        return erase(key.c_str());
+    }
 
     /*!
      * @brief Erase JSON value from JSON object or array
@@ -527,7 +559,7 @@ public:
      *
      * @return  JSON value indexed in array or object, otherwise return myself
      * */
-    Value& operator[](size_t index);
+    Value& operator[](std::size_t index);
 
     /*!
      * @brief Array access to JSON value in JSON array or JSON member in JSON
@@ -539,37 +571,7 @@ public:
      *
      * @return  JSON value indexed in array or object, otherwise return myself
      * */
-    const Value& operator[](size_t index) const;
-
-    /*!
-     * @brief Array access to JSON value in JSON array or object
-     *
-     * When object is null type, after calling operator[] change type to JSON
-     * array. When index is equal to size(), append JSON array with new
-     * JSON null element at the end
-     *
-     * @code
-     *  Value value;    // Create JSON null
-     *  value[0] = 1;   // Change type to JSON array and assign number
-     *  value[1];       // Append array with new JSON null element
-     * @endcode
-     *
-     * @param[in]   index   Element index access
-     *
-     * @return  JSON value indexed in array or object, otherwise return myself
-     * */
-    Value& operator[](int index);
-
-    /*!
-     * @brief Array access to JSON value in JSON array or object
-     *
-     * When object is neither array or object, return myself
-     *
-     * @param[in]   index   Element index access
-     *
-     * @return  JSON value indexed in array or object, otherwise return myself
-     * */
-    const Value& operator[](int index) const;
+    const Value& operator[](std::size_t index) const;
 
     /*!
      * @brief Array access to JSON value in JSON object
@@ -609,7 +611,9 @@ public:
      * @param[in]   key     JSON key member that identify JSON value in object
      * @return      JSON value from JSON object
      * */
-    Value& operator[](const String& key);
+    Value& operator[](const String& key) {
+        return operator[](key.c_str());
+    }
 
     /*!
      * @brief Array access to JSON value in JSON object
@@ -621,7 +625,9 @@ public:
      * @param[in]   key     JSON key member that identify JSON value in object
      * @return      JSON value from JSON object
      * */
-    const Value& operator[](const String& key) const;
+    const Value& operator[](const String& key) const {
+        return operator[](key.c_str());
+    }
 
     /*!
      * @brief Get JSON type
@@ -707,7 +713,7 @@ public:
      *
      * @return true when member exist otherwise false
      * */
-    bool is_member(const std::string& key) const;
+    bool is_member(const char* key) const;
 
     /*!
      * @brief Check if JSON member with given key exist in JSON object
@@ -716,7 +722,9 @@ public:
      *
      * @return true when member exist otherwise false
      * */
-    bool is_member(const char* key) const;
+    bool is_member(const std::string& key) const {
+        return is_member(key.c_str());
+    }
 
     /*! Convert JSON value to string */
     explicit operator String&() { return m_string; }
@@ -858,8 +866,6 @@ private:
         Number m_number;
         Bool m_boolean;
     };
-
-    void create_container(Type type);
 };
 
 } /* namespace json */

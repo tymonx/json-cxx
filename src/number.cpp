@@ -46,7 +46,7 @@
 #include <cmath>
 #include <limits>
 
-using namespace json;
+using json::Number;
 
 Number::operator Uint() const {
     Uint64 value = 0;

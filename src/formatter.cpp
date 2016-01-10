@@ -41,7 +41,7 @@
  * @brief JSON formatter implementation
  * */
 
-#include <json/formatter.hpp>
+#include "json/formatter.hpp"
 
 using json::Formatter;
 

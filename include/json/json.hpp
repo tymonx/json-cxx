@@ -44,14 +44,17 @@
 #ifndef JSON_CXX_HPP
 #define JSON_CXX_HPP
 
-#include "json/value.hpp"
-#include "json/number.hpp"
-#include "json/iterator.hpp"
-#include "json/formatter.hpp"
-#include "json/serializer.hpp"
-#include "json/deserializer.hpp"
+#include <json/value.hpp>
+#include <json/number.hpp>
+#include <json/iterator.hpp>
+#include <json/formatter.hpp>
+#include <json/serializer.hpp>
+#include <json/deserializer.hpp>
 
-#include "json/value_error.hpp"
-#include "json/deserializer_error.hpp"
+#include <json/formatter/compact.hpp>
+#include <json/formatter/pretty.hpp>
+
+#include <json/value_error.hpp>
+#include <json/deserializer_error.hpp>
 
 #endif /* JSON_CXX_HPP */

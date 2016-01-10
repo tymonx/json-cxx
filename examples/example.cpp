@@ -38,7 +38,6 @@
  * */
 
 #include <json/json.hpp>
-#include <json/formatter/pretty.hpp>
 
 #include <functional>
 #include <iostream>

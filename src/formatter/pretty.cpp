@@ -41,7 +41,7 @@
  * @brief JSON formatter implementation
  * */
 
-#include <json/formatter/pretty.hpp>
+#include "json/formatter/pretty.hpp"
 
 using json::formatter::Pretty;
 

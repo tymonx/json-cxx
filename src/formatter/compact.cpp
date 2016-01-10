@@ -41,7 +41,7 @@
  * @brief JSON formatter implementation
  * */
 
-#include <json/formatter/compact.hpp>
+#include "json/formatter/compact.hpp"
 
 #include <array>
 #include <cmath>
