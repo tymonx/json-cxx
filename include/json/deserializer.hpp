@@ -60,7 +60,7 @@ namespace json {
 class Deserializer {
 public:
     static constexpr const std::size_t MAX_LIMIT_PER_OBJECT =
-        std::numeric_limits<std::size_t>::max();
+        std::numeric_limits<std::uint32_t>::max();
 
     /*!
      * @brief Default constructor

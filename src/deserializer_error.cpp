@@ -47,9 +47,10 @@
 
 using json::DeserializerError;
 
-static const std::array<const char*, 16> g_error_codes{{
+static const std::array<const char*, 17> g_error_codes{{
     "No error",
     "End of file reached",
+    "Stack limit reached. Increase limit",
     "Missing value in array/member",
     "Missing quote '\"' for string",
     "Missing colon ':' in member pair",

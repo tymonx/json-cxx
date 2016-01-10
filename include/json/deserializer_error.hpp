@@ -56,6 +56,7 @@ public:
     enum Code {
         NONE,
         END_OF_FILE,
+        STACK_LIMIT_REACHED,
         MISS_VALUE,
         MISS_QUOTE,
         MISS_COLON,

@@ -102,6 +102,7 @@ static const std::array<std::function<void()>, 7> g_examples{{
             "number": 5,
             "string": "hello",
             "boolean": true,
+            "double": 137.00123e-04,
             "null": null,
             "array": [1, 2, 3],
             "value": {
@@ -114,6 +115,7 @@ static const std::array<std::function<void()>, 7> g_examples{{
         cout << "number: " << value["number"].as_uint() << endl;
         cout << "string: " << value["string"].as_string() << endl;
         cout << "boolean: " << value["boolean"].as_bool() << endl;
+        cout << "double: " << value["double"].as_double() << endl;
         cout << "null: " << value["null"].is_null() << endl;
         cout << "array:";
         for (const auto& v : value["array"]) {

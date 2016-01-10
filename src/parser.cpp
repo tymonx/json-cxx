@@ -43,7 +43,7 @@
 
 #include "parser.hpp"
 
-#include <cmath>
+#include <array>
 #include <cstring>
 
 using json::Value;
@@ -57,6 +57,39 @@ static constexpr const char JSON_NULL[] = "null";
 static constexpr const char JSON_TRUE[] = "true";
 static constexpr const char JSON_FALSE[] = "false";
 static constexpr const std::size_t UNICODE_LENGTH = 4;
+
+static constexpr const Surrogate SURROGATE_MIN(0xD800, 0xDC00);
+static constexpr const Surrogate SURROGATE_MAX(0xDBFF, 0xDFFF);
+
+static constexpr std::uint32_t HEX_0_9 = '0' - 0x0;
+static constexpr std::uint32_t HEX_A_F = 'A' - 0xA;
+static constexpr std::uint32_t HEX_a_f = 'a' - 0xA;
+
+static const std::array<json::Uint64, 19> g_pow10{{
+    1,
+    10,
+    100,
+    1000,
+    10000,
+    100000,
+    1000000,
+    10000000,
+    100000000,
+    1000000000,
+    10000000000,
+    100000000000,
+    1000000000000,
+    10000000000000,
+    100000000000000,
+    1000000000000000,
+    10000000000000000,
+    100000000000000000,
+    1000000000000000000
+}};
+
+template<typename T>
+static inline
+T pow10(std::uint64_t index) { return T(g_pow10[index]); }
 
 /*!
  * @brief   Get string length without null termination '\0'
@@ -109,6 +142,7 @@ void Parser::read_object_member(Value& value, std::size_t& count) {
     read_whitespaces();
 
     ++count;
+    if (0 == m_limit--) { throw_error(Error::STACK_LIMIT_REACHED); }
 
     if (',' == *m_current) {
         ++m_current;
@@ -194,9 +228,6 @@ uint32_t decode_utf16_surrogate_pair(const Surrogate& surrogate) {
 }
 
 void Parser::read_string_unicode(String& str) {
-    static const Surrogate SURROGATE_MIN(0xD800, 0xDC00);
-    static const Surrogate SURROGATE_MAX(0xDBFF, 0xDFFF);
-
     Surrogate surrogate;
     uint32_t code;
 
@@ -214,34 +245,37 @@ void Parser::read_string_unicode(String& str) {
         }
     }
 
+    std::size_t code_length;
+    std::array<String::value_type, UNICODE_LENGTH> codes;
     if (code < 0x80) {
-        str.push_back(char(code));
+        codes[0] = String::value_type(code);
+        code_length = 1;
     }
     else if (code < 0x800) {
-        str.push_back(char(0xC0 | (0x1F & (code >>  6))));
-        str.push_back(char(0x80 | (0x3F & (code >>  0))));
+        codes[0] = String::value_type(0xC0 | (0x1F & (code >>  6)));
+        codes[1] = String::value_type(0x80 | (0x3F & (code >>  0)));
+        code_length = 2;
     }
     else if (code < 0x10000) {
-        str.push_back(char(0xE0 | (0x0F & (code >> 12))));
-        str.push_back(char(0x80 | (0x3F & (code >>  6))));
-        str.push_back(char(0x80 | (0x3F & (code >>  0))));
+        codes[0] = String::value_type(0xE0 | (0x0F & (code >> 12)));
+        codes[1] = String::value_type(0x80 | (0x3F & (code >>  6)));
+        codes[2] = String::value_type(0x80 | (0x3F & (code >>  0)));
+        code_length = 3;
     }
     else {
-        str.push_back(char(0xF0 | (0x07 & (code >> 18))));
-        str.push_back(char(0x80 | (0x3F & (code >> 12))));
-        str.push_back(char(0x80 | (0x3F & (code >>  6))));
-        str.push_back(char(0x80 | (0x3F & (code >>  0))));
+        codes[0] = String::value_type(0xF0 | (0x07 & (code >> 18)));
+        codes[1] = String::value_type(0x80 | (0x3F & (code >> 12)));
+        codes[2] = String::value_type(0x80 | (0x3F & (code >>  6)));
+        codes[3] = String::value_type(0x80 | (0x3F & (code >>  0)));
+        code_length = 4;
     }
+    str.append(codes.data(), code_length);
 }
 
 void Parser::read_unicode(const char** pos, uint32_t& code) {
     if (*pos + UNICODE_LENGTH >= m_end) {
         throw_error(Error::END_OF_FILE);
     }
-
-    static constexpr uint32_t HEX_0_9 = '0' - 0x0;
-    static constexpr uint32_t HEX_A_F = 'A' - 0xA;
-    static constexpr uint32_t HEX_a_f = 'a' - 0xA;
 
     uint32_t ch;
     std::size_t count = UNICODE_LENGTH;
@@ -267,9 +301,6 @@ void Parser::read_unicode(const char** pos, uint32_t& code) {
 }
 
 void Parser::count_string_chars(std::size_t& count) {
-    static const Surrogate SURROGATE_MIN(0xD800, 0xDC00);
-    static const Surrogate SURROGATE_MAX(0xDBFF, 0xDFFF);
-
     const char* pos = m_current;
 
     while (pos < m_end) {
@@ -303,17 +334,17 @@ void Parser::count_string_chars(std::size_t& count) {
 }
 
 void Parser::read_value(Value& value) {
-    String str;
-
     read_whitespaces();
 
     switch (*m_current) {
-    case '"':
+    case '"': {
+        String str;
         ++m_current;
         read_string(str);
         value.m_type = Value::Type::STRING;
         new (&value.m_string) String(std::move(str));
         break;
+    }
     case '{':
         ++m_current;
         read_object(value);
@@ -364,7 +395,9 @@ void Parser::read_array_element(Value& value, std::size_t& count)  {
 
     read_value(tmp);
     read_whitespaces();
+
     ++count;
+    if (0 == m_limit--) { throw_error(Error::STACK_LIMIT_REACHED); }
 
     if (',' == *m_current) {
         ++m_current;
@@ -434,8 +467,6 @@ void Parser::read_number_digit(Uint64& value) {
 }
 
 void Parser::read_number_integer(Number& number) {
-    using std::isdigit;
-
     Uint64 value;
     read_number_digit(value);
 
@@ -487,26 +518,26 @@ void Parser::read_number_exponent(Number& number) {
     switch (number.m_type) {
     case Number::Type::INT:
         if (is_negative) {
-            number.m_double *= pow(0.1, Double(value));
+            number.m_double /= pow10<Double>(value);
             number.m_type = Number::Type::DOUBLE;
         } else {
-            number.m_int *= Int64(pow(10, Double(value)));
+            number.m_int *= pow10<Int64>(value);
         }
         break;
     case Number::Type::UINT:
         if (is_negative) {
-            number.m_double *= pow(0.1, Double(value));
+            number.m_double /= pow10<Double>(value);
             number.m_type = Number::Type::DOUBLE;
         } else {
-            number.m_uint *= Uint64(pow(10, Double(value)));
+            number.m_uint *= pow10<Uint64>(value);
         }
         break;
     case Number::Type::DOUBLE:
         if (is_negative) {
-            number.m_double *= pow(0.1, Double(value));
+            number.m_double /= pow10<Double>(value);
         }
         else {
-            number.m_double *= pow(10, Double(value));
+            number.m_double *= pow10<Double>(value);
         }
         break;
     default:
