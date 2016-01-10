@@ -49,7 +49,7 @@ using json::Parser;
 using json::Deserializer;
 
 /*! Maximu characters to parse per single JSON value. Stack protection */
-const std::size_t Deserializer::MAX_LIMIT_PER_OBJECT;
+const std::size_t Deserializer::DEFAULT_LIMIT_PER_OBJECT;
 
 Deserializer::Deserializer() { }
 
