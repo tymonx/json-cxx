@@ -27,18 +27,25 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-if (NOT GTEST_FOUND)
-    return()
-endif()
+include_directories(SYSTEM gtest/include)
 
-set(SOURCES
+add_subdirectory(gtest)
+
+add_executable(test_json
     test_runner.cpp
     test_deserializer.cpp
 )
 
-add_gtest(test_json "${SOURCES}")
-target_link_libraries(
-    test_json
+target_link_libraries(test_json
     json-cxx
-    ${SAFESTRING_LIBRARIES}
+    gtest
+    pthread
+)
+
+add_test(JsonTest ${CMAKE_BINARY_DIR}/bin/test_json)
+
+if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
+    set_target_properties(test_json PROPERTIES
+        COMPILE_FLAGS "-Wno-global-constructors"
     )
+endif()

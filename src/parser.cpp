@@ -478,32 +478,33 @@ void Parser::read_number_integer(Number& number) {
 }
 
 void Parser::read_number_fractional(Number& number) {
-    Double step = 0.1;
-    Double fractional = 0;
+    std::size_t step{0};
+    Uint64 fractional{0};
+
+    if (!std::isdigit(*m_current)) {
+        throw_error(Error::INVALID_NUMBER_FRACTION);
+    }
 
     while (m_current < m_end) {
         if (std::isdigit(*m_current)) {
-            fractional += (step * (*m_current - '0'));
-            step = 0.1 * step;
-            ++m_current;
-        } else {
-            if (Number::Type::UINT == number.m_type) {
-                Double tmp = Double(number.m_uint);
-                number.m_double = tmp + fractional;
-            } else {
-                Double tmp = Double(number.m_int);
-                number.m_double = tmp - fractional;
-            }
-            number.m_type = Number::Type::DOUBLE;
-            return;
+            fractional = 10*fractional + Uint64(*(m_current++) - '0');
+            ++step;
         }
+        else { break; }
     }
 
-    throw_error(Error::END_OF_FILE);
+    if (Number::Type::UINT == number.m_type) {
+        Double tmp = Double(number.m_uint);
+        number.m_double = tmp + Double(fractional)/pow10<Double>(step);
+    } else {
+        Double tmp = Double(number.m_int);
+        number.m_double = tmp - Double(fractional)/pow10<Double>(step);
+    }
+    number.m_type = Number::Type::DOUBLE;
 }
 
 void Parser::read_number_exponent(Number& number) {
-    bool is_negative = false;
+    bool is_negative{false};
     Uint64 value;
 
     if ('+' == *m_current) {

@@ -27,24 +27,9 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-cmake_minimum_required(VERSION 3.4)
-project(json-cxx CXX)
-
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/cmake)
-
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
-
-include(AddGnuCompiler)
-include(AddClangCompiler)
-
-include_directories(include)
-
-enable_testing()
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    include
+)
 
 add_subdirectory(src)
-add_subdirectory(tests)
-add_subdirectory(examples)
-
-install(DIRECTORY include/json DESTINATION include)

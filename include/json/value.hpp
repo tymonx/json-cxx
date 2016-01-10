@@ -574,6 +574,42 @@ public:
     const Value& operator[](std::size_t index) const;
 
     /*!
+     * @brief Array access to JSON value in JSON array or JSON member in JSON
+     * object
+     *
+     * When object is null type, after calling operator[] change type to JSON
+     * array. When index is equal to size(), append only JSON array with new
+     * JSON null element at the end
+     *
+     * @code
+     *  Value value;    // Create JSON null
+     *  value[0] = 1;   // Change type to JSON array and assign number
+     *  value[1];       // Append array with new JSON null element
+     * @endcode
+     *
+     * @param[in]   index   Element index access
+     *
+     * @return  JSON value indexed in array or object, otherwise return myself
+     * */
+    Value& operator[](int index) {
+        return (*this)[std::size_t(index)];
+    }
+
+    /*!
+     * @brief Array access to JSON value in JSON array or JSON member in JSON
+     * object
+     *
+     * When object is not neither array or object, return myself
+     *
+     * @param[in]   index   Element index access
+     *
+     * @return  JSON value indexed in array or object, otherwise return myself
+     * */
+    const Value& operator[](int index) const {
+        return (*this)[std::size_t(index)];
+    }
+
+    /*!
      * @brief Array access to JSON value in JSON object
      *
      * Only valid for JSON object or null type. When object is a JSON null, it

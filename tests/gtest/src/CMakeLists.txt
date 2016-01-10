@@ -27,24 +27,57 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-cmake_minimum_required(VERSION 3.4)
-project(json-cxx CXX)
+add_library(gtest STATIC
+    gtest.cc
+    gtest-death-test.cc
+    gtest-filepath.cc
+    gtest-port.cc
+    gtest-printers.cc
+    gtest-test-part.cc
+    gtest-typed-test.cc
+)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/cmake)
+if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
+    set_target_properties(gtest PROPERTIES
+        COMPILE_FLAGS "\
+        -Wno-global-constructors \
+        -Wno-undef \
+        -Wno-sign-conversion \
+        -Wno-exit-time-destructors \
+        -Wno-missing-variable-declarations \
+        -Wno-missing-prototypes \
+        -Wno-used-but-marked-unused \
+        -Wno-switch-enum \
+        -Wno-format-nonliteral \
+        -Wno-weak-vtables \
+        -Wno-unused-member-function \
+        -Wno-disabled-macro-expansion
+        "
+    )
+endif()
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
-
-include(AddGnuCompiler)
-include(AddClangCompiler)
-
-include_directories(include)
-
-enable_testing()
-
-add_subdirectory(src)
-add_subdirectory(tests)
-add_subdirectory(examples)
-
-install(DIRECTORY include/json DESTINATION include)
+if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
+    set_target_properties(gtest PROPERTIES
+        COMPILE_FLAGS "\
+        -Wno-global-constructors \
+        -Wno-undef \
+        -Wno-sign-conversion \
+        -Wno-exit-time-destructors \
+        -Wno-missing-variable-declarations \
+        -Wno-used-but-marked-unused \
+        -Wno-switch-enum \
+        -Wno-format-nonliteral \
+        -Wno-weak-vtables \
+        -Wno-unused-member-function \
+        -Wno-disabled-macro-expansion \
+        -Wno-effc++ \
+        -Wno-zero-as-null-pointer-constant \
+        -Wno-missing-declarations \
+        -Wno-useless-cast \
+        -Wno-switch-default \
+        -Wno-suggest-attribute=format \
+        -Wno-strict-overflow \
+        -Wno-suggest-attribute=noreturn
+        "
+    )
+endif()

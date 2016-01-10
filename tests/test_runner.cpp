@@ -37,12 +37,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * */
 
-#include <stdio.h>
-
 #include "gtest/gtest.h"
 
-int main(int argc, char **argv) {
-  printf("Running main() from test_runner.cpp\n");
+#include <iostream>
+
+int main(int argc, char* argv[]) {
+  std::cout << "Running " << __func__ << " from " << __FILE__ << std::endl;
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
