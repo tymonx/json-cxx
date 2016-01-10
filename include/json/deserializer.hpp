@@ -181,9 +181,7 @@ public:
         return *this;
     }
 
-    void clear() {
-        m_value = nullptr;
-    }
+    void clear();
 
     /*!
      * @brief Set maximum characters to parse per JSON object or array

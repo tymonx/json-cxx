@@ -55,6 +55,10 @@ Deserializer::Deserializer() { }
 
 Deserializer::~Deserializer() { }
 
+void Deserializer::clear() {
+    m_value = nullptr;
+}
+
 void Deserializer::parsing(const char* str, std::size_t length) {
     Parser parser(str, length, m_limit);
     parser.parsing(m_value);
