@@ -43,4 +43,8 @@ if (MEMORY_CHECK)
         --error-exitcode=1
         --suppressions=${CMAKE_SOURCE_DIR}/valgrind/valgrind.supp
     )
+
+    message(STATUS "Enabled memory check support")
+else()
+    message(STATUS "Disabled memory check support")
 endif()

@@ -36,7 +36,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
-option(MEMORY_CHECK  "Enable/disable memory checking" OFF)
+option(TESTS "Enable/disable tests" ON)
+option(EXAMPLES  "Enable/disable examples" ON)
+option(MEMORY_CHECK "Enable/disable memory checking" OFF)
 option(CODE_COVERAGE "Enable/disable code coverage" OFF)
 
 include(AddGnuCompiler)

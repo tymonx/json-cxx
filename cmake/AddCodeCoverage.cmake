@@ -77,4 +77,8 @@ if (CODE_COVERAGE)
             --output-directory coverage-html
             coverage.info
     )
+
+    message(STATUS "Enabled code coverage support")
+else ()
+    message(STATUS "Disabled code coverage support")
 endif()

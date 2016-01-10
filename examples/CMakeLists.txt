@@ -27,14 +27,20 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-add_executable(example example.cpp)
-target_link_libraries(example json-cxx)
+if (${EXAMPLES})
+    add_executable(example example.cpp)
+    target_link_libraries(example json-cxx)
 
-add_executable(performance performance.cpp)
-target_link_libraries(performance json-cxx)
+    add_executable(performance performance.cpp)
+    target_link_libraries(performance json-cxx)
 
-if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
-    set_source_files_properties(example.cpp PROPERTIES
-        COMPILE_FLAGS "-Wno-global-constructors -Wno-exit-time-destructors"
-    )
+    if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
+        set_source_files_properties(example.cpp PROPERTIES
+            COMPILE_FLAGS "-Wno-global-constructors -Wno-exit-time-destructors"
+        )
+    endif()
+
+    message(STATUS "Enabled examples")
+else()
+    message(STATUS "Disabled examples")
 endif()

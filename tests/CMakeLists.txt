@@ -27,48 +27,54 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-include_directories(SYSTEM gtest/include)
+if (${TESTS})
+    include_directories(SYSTEM gtest/include)
 
-add_subdirectory(gtest)
+    add_subdirectory(gtest)
 
-add_executable(tests_runner
-    tests_runner.cpp
-    test_deserializer.cpp
-)
-
-target_link_libraries(tests_runner
-    json-cxx
-    gtest
-    pthread
-)
-
-if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
-    set_target_properties(tests_runner PROPERTIES
-        COMPILE_FLAGS "-Wno-global-constructors"
+    add_executable(tests_runner
+        tests_runner.cpp
+        test_deserializer.cpp
     )
-endif()
 
-if (MEMORY_CHECK)
-    add_custom_target(memory_check
-        COMMAND ${MEMORY_CHECK_COMMAND} ${MEMORY_CHECK_ARGS} bin/tests_runner
-        DEPENDS tests_runner
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    target_link_libraries(tests_runner
+        json-cxx
+        gtest
+        pthread
     )
+
+    if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
+        set_target_properties(tests_runner PROPERTIES
+            COMPILE_FLAGS "-Wno-global-constructors"
+        )
+    endif()
+
+    if (MEMORY_CHECK)
+        add_custom_target(memory_check
+            COMMAND ${MEMORY_CHECK_COMMAND} ${MEMORY_CHECK_ARGS} bin/tests_runner
+            DEPENDS tests_runner
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        )
+    else()
+        add_custom_target(memory_check
+            COMMAND ${CMAKE_COMMAND} -E echo "Memory check option is disabled!"
+        )
+    endif()
+
+    if (CODE_COVERAGE)
+        add_custom_target(code_coverage
+            COMMAND bin/tests_runner
+            ${CODE_COVERAGE_COMMANDS}
+            DEPENDS tests_runner
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        )
+    else()
+        add_custom_target(code_coverage
+            COMMAND ${CMAKE_COMMAND} -E echo "Code coverage option is disabled!"
+        )
+    endif()
+
+    message(STATUS "Enabled tests")
 else()
-    add_custom_target(memory_check
-        COMMAND ${CMAKE_COMMAND} -E echo "Memory check option is disabled!"
-    )
-endif()
-
-if (CODE_COVERAGE)
-    add_custom_target(code_coverage
-        COMMAND bin/tests_runner
-        ${CODE_COVERAGE_COMMANDS}
-        DEPENDS tests_runner
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    )
-else()
-    add_custom_target(code_coverage
-        COMMAND ${CMAKE_COMMAND} -E echo "Code coverage option is disabled!"
-    )
+    message(STATUS "Disabled tests")
 endif()
