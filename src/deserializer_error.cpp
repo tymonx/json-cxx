@@ -41,22 +41,36 @@
  * @brief JSON deserializer implementation
  * */
 
-#include <json/deserializer.hpp>
+#include <json/deserializer_error.hpp>
 
-#include "parser.hpp"
+#include <array>
 
-using json::Value;
-using json::Parser;
-using json::Deserializer;
+using json::DeserializerError;
 
-/*! Maximu characters to parse per single JSON value. Stack protection */
-const std::size_t Deserializer::MAX_LIMIT_PER_OBJECT;
+static const std::array<const char*, 16> g_error_codes{{
+    "No error",
+    "End of file reached",
+    "Missing value in array/member",
+    "Missing quote '\"' for string",
+    "Missing colon ':' in member pair",
+    "Missing comma ',' or closing curly '}' for object",
+    "Missing comma ',' or closing square ']' for array",
+    "Did you mean 'null'?",
+    "Did you mean 'true'?",
+    "Did you mean 'false'?",
+    "Invalid whitespace character",
+    "Invalid escape character",
+    "Invalid unicode",
+    "Invalid number integer part",
+    "Invalid number fractional part",
+    "Invalid number exponent part"
+}};
 
-Deserializer::Deserializer() { }
+DeserializerError::DeserializerError(Code code, std::size_t offset) :
+    m_code{code}, m_offset{offset}  { }
 
-Deserializer::~Deserializer() { }
+DeserializerError::~DeserializerError() { }
 
-void Deserializer::parsing(const char* str, std::size_t length) {
-    Parser parser(str, length, m_limit);
-    parser.parsing(m_value);
+const char* DeserializerError::what() const noexcept {
+    return g_error_codes[m_code];
 }

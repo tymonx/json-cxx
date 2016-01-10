@@ -46,9 +46,10 @@
 
 #include <json/value.hpp>
 
-#include <exception>
+#include <string>
 #include <cstring>
 #include <cstdint>
+#include <limits>
 
 namespace json {
 
@@ -58,12 +59,15 @@ namespace json {
  * */
 class Deserializer {
 public:
+    static constexpr const std::size_t MAX_LIMIT_PER_OBJECT =
+        std::numeric_limits<std::size_t>::max();
+
     /*!
      * @brief Default constructor
      *
      * No JSON values stored, no parsing started
      * */
-    Deserializer() { }
+    Deserializer();
 
     /*!
      * @brief JSON deserialization from null-terminated character array
@@ -76,22 +80,7 @@ public:
      *                      It may contains whitespaces (spaces, newlines,
      *                      tabulations or carriage returns)
      * */
-    Deserializer(const char* str) {
-        parsing(str);
-    }
-
-    /*!
-     * @brief JSON deserialization from null-terminated character array
-     * to JSON C++ object or array
-     *
-     * This constructor will start parsing string and store valid JSON
-     * object {} or array [] on the stack. To pop from stack use operator>>()
-     *
-     * @param[in]   str     String contains JSON objects {} or arrays [].
-     *                      It may contains whitespaces (spaces, newlines,
-     *                      tabulations or carriage returns)
-     * */
-    Deserializer(const char* str, std::size_t length) {
+    Deserializer(const char* str, std::size_t length) : Deserializer() {
         parsing(str, length);
     }
 
@@ -106,9 +95,8 @@ public:
      *                      It may contains whitespaces (spaces, newlines,
      *                      tabulations or carriage returns)
      * */
-    template<std::size_t N>
-    Deserializer(const char str[N]) {
-        parsing(str);
+    Deserializer(const char* str) : Deserializer() {
+        parsing(str, std::strlen(str));
     }
 
     /*!
@@ -122,14 +110,32 @@ public:
      *                      It may contains whitespaces (spaces, newlines,
      *                      tabulations or carriage returns)
      * */
-    Deserializer(const String& str) {
-        parsing(str);
+    Deserializer(const std::string& str) : Deserializer() {
+        parsing(str.c_str(), str.length());
+    }
+
+    /*!
+     * @brief JSON deserialization from null-terminated character array
+     * to JSON C++ object or array
+     *
+     * This constructor will start parsing string and store valid JSON
+     * object {} or array [] on the stack. To pop from stack use operator>>()
+     *
+     * @param[in]   str     String contains JSON objects {} or arrays [].
+     *                      It may contains whitespaces (spaces, newlines,
+     *                      tabulations or carriage returns)
+     * */
+    template<std::size_t N>
+    Deserializer(const char str[N]) : Deserializer() {
+        parsing(str, N);
     }
 
     Deserializer(const Deserializer&) = default;
     Deserializer(Deserializer&&) = default;
     Deserializer& operator=(const Deserializer&) = default;
     Deserializer& operator=(Deserializer&&) = default;
+
+    ~Deserializer();
 
     /*!
      * @brief Start parsing null-terminated character array that contains JSON
@@ -143,7 +149,7 @@ public:
      *                      tabulations or carriage returns)
      * */
     Deserializer& operator<<(const char* str) {
-        parsing(str);
+        parsing(str, std::strlen(str));
         return *this;
     }
 
@@ -157,8 +163,8 @@ public:
      *                      It may contains whitespaces (spaces, newlines,
      *                      tabulations or carriage returns)
      * */
-    Deserializer& operator<<(const String& str) {
-        parsing(str);
+    Deserializer& operator<<(const std::string& str) {
+        parsing(str.c_str(), str.length());
         return *this;
     }
 
@@ -175,6 +181,10 @@ public:
         return *this;
     }
 
+    void clear() {
+        m_value = nullptr;
+    }
+
     /*!
      * @brief Set maximum characters to parse per JSON object or array
      *
@@ -187,10 +197,6 @@ public:
      * */
     void set_limit(std::size_t limit = MAX_LIMIT_PER_OBJECT) {
         m_limit = limit;
-    }
-
-    void clear() {
-        m_value = nullptr;
     }
 
     const Value& get_value() const {
@@ -211,126 +217,11 @@ public:
     void parsing(const char str[N]) {
         parsing(str, N - 1);
     }
-
-    /*! JSON error parsing */
-    class Error : public std::exception {
-    public:
-        /*! Error parsing codes */
-        enum Code {
-            NONE,
-            END_OF_FILE,
-            MISS_VALUE,
-            MISS_QUOTE,
-            MISS_COLON,
-            MISS_CURLY_CLOSE,
-            MISS_SQUARE_CLOSE,
-            NOT_MATCH_NULL,
-            NOT_MATCH_TRUE,
-            NOT_MATCH_FALSE,
-            INVALID_WHITESPACE,
-            INVALID_ESCAPE,
-            INVALID_UNICODE,
-            INVALID_NUMBER_INTEGER,
-            INVALID_NUMBER_FRACTION,
-            INVALID_NUMBER_EXPONENT
-        };
-
-        Error(Code code, const char* cbegin, const char* cend,
-                const char* position);
-
-        Error(const Error&) = default;
-        Error(Error&&) = default;
-        Error& operator=(const Error&) = default;
-        Error& operator=(Error&&) = default;
-
-        /*!
-         * @brief Return error explanatory string
-         *
-         * @return  When success return decoded error code as a human readable
-         *          message, otherwise return empty string ""
-         * */
-        virtual const char* what() const noexcept;
-
-        Code get_code() const { return m_code; }
-
-        std::size_t get_line() const { return m_line; }
-
-        std::size_t get_column() const { return m_column; }
-
-        std::size_t get_offset() const { return m_offset; }
-
-        virtual ~Error();
-    private:
-        /*! Error parsing code */
-        Code m_code;
-        /*! Line position indicative error */
-        std::size_t m_line;
-        /*! Column number indicative error */
-        std::size_t m_column;
-        /*! Column number indicative error */
-        std::size_t m_offset;
-
-        const char* m_message;
-    };
 private:
-    /*! Stack protection */
-    static const std::size_t MAX_LIMIT_PER_OBJECT;
-
     Value m_value = nullptr;
     std::size_t m_limit{MAX_LIMIT_PER_OBJECT};
-
-    const char* m_begin{nullptr};
-    const char* m_current{nullptr};
-    const char* m_end{nullptr};
-
-    void read_object(Value& value);
-    void read_object_member(Value& value, std::size_t& count);
-    void read_string(String& str);
-    void read_string_unicode(String& str);
-    void read_string_escape(String& str);
-    void read_value(Value& value);
-    void read_array(Value& value);
-    void read_array_element(Value& value, std::size_t& count);
-    void read_colon();
-    void read_quote();
-    void read_true(Value& value);
-    void read_false(Value& value);
-    void read_null(Value& value);
-    void read_number(Value& value);
-    void read_number_digit(Uint64& str);
-    void read_number_integer(Number& number);
-    void read_number_fractional(Number& number);
-    void read_number_exponent(Number& number);
-    void read_unicode(const char** pos, std::uint32_t& code);
-    void read_whitespaces(bool enable_error = true);
-    void count_string_chars(std::size_t& count);
-
-    [[noreturn]] void throw_error(Error::Code code);
 };
 
-/*!
- * @brief Parsing given null-terminated character array and store all parsed
- * JSON objects {} or arrays [] on the stack
- *
- * Because this use stack to store all parsed JSON objects, only last
- * parsed data will be pop from stack and stored to given value output.
- * operator>>() behave like input stream and may be used in the chain:
- *
- * @code
- * R"({"key1":1, "key2":2}[1, 2])" >> value2 >> value1;
- * @endcode
- *
- * @param[in]   str     String contains JSON objects {} or arrays [].
- *                      It may contains whitespaces (spaces, newlines,
- *                      tabulations or carriage returns)
- *
- * @param[out]  value   JSON value to store from the stack
- * */
-static inline
-Deserializer operator>>(const char* str, Value& value) {
-    Deserializer deserializer(str);
-    value = deserializer.get_value();
-    return deserializer;
 }
 
 /*!
@@ -351,9 +242,9 @@ Deserializer operator>>(const char* str, Value& value) {
  *
  * @param[out]  value   JSON value to store from the stack
  * */
-template<std::size_t N>
-Deserializer operator>>(const char str[N], Value& value) {
-    Deserializer deserializer(str);
+static inline
+json::Deserializer operator>>(const char* str, json::Value& value) {
+    json::Deserializer deserializer(str);
     value = deserializer.get_value();
     return deserializer;
 }
@@ -377,12 +268,33 @@ Deserializer operator>>(const char str[N], Value& value) {
  * @param[out]  value   JSON value to store from the stack
  * */
 static inline
-Deserializer operator>>(const String& str, Value& value) {
-    Deserializer deserializer(str);
+json::Deserializer operator>>(const std::string& str, json::Value& value) {
+    json::Deserializer deserializer(str);
     value = deserializer.get_value();
     return deserializer;
 }
 
+/*!
+ * @brief Parsing given null-terminated character array and store all parsed
+ * JSON objects {} or arrays [] on the stack
+ *
+ * Because this use stack to store all parsed JSON objects, only last
+ * parsed data will be pop from stack and stored to given value output.
+ * operator>>() behave like input stream and may be used in the chain:
+ *
+ * @code
+ * R"({"key1":1, "key2":2}[1, 2])" >> value2 >> value1;
+ * @endcode
+ *
+ * @param[in]   str     String contains JSON objects {} or arrays [].
+ *                      It may contains whitespaces (spaces, newlines,
+ *                      tabulations or carriage returns)
+ *
+ * @param[out]  value   JSON value to store from the stack
+ * */
+template<std::size_t N>
+json::Deserializer operator>>(const char str[N], json::Value& value) {
+    return str >> value;
 }
 
 #endif /* JSON_CXX_DESERIALIZER_HPP */

@@ -69,7 +69,7 @@ using Double = double;
  * */
 class Number {
 public:
-    friend class Deserializer;
+    friend class Parser;
 
     /*! JSON number type */
     enum Type {

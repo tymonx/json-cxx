@@ -33,7 +33,9 @@ add_library(json-cxx
     iterator.cpp
     serializer.cpp
     deserializer.cpp
+    deserializer_error.cpp
     exception.cpp
+    parser.cpp
     formatter.cpp
     formatter/compact.cpp
     formatter/pretty.cpp

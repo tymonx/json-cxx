@@ -83,7 +83,7 @@ using Null = std::nullptr_t;
  * */
 class Value {
 public:
-    friend class Deserializer;
+    friend class Parser;
 
     /*! Value type */
     using value_type = Value;

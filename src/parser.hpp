@@ -36,27 +36,57 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file deserializer.cpp
+ * @file parser.hpp
  *
- * @brief JSON deserializer implementation
+ * @brief JSON parser interface
  * */
 
-#include <json/deserializer.hpp>
+#ifndef JSON_CXX_PARSER_HPP
+#define JSON_CXX_PARSER_HPP
 
-#include "parser.hpp"
+#include <json/value.hpp>
+#include <json/deserializer_error.hpp>
 
-using json::Value;
-using json::Parser;
-using json::Deserializer;
+#include <cstdint>
 
-/*! Maximu characters to parse per single JSON value. Stack protection */
-const std::size_t Deserializer::MAX_LIMIT_PER_OBJECT;
+namespace json {
 
-Deserializer::Deserializer() { }
+class Parser {
+public:
+    Parser(const char* str, std::size_t length, std::size_t limit);
 
-Deserializer::~Deserializer() { }
+    void parsing(Value& value);
+private:
+    const char* m_begin;
+    const char* m_current;
+    const char* m_end;
+    std::size_t m_limit;
 
-void Deserializer::parsing(const char* str, std::size_t length) {
-    Parser parser(str, length, m_limit);
-    parser.parsing(m_value);
+    void read_object(Value& value);
+    void read_object_member(Value& value, std::size_t& count);
+    void read_string(String& str);
+    void read_string_unicode(String& str);
+    void read_string_escape(String& str);
+    void read_value(Value& value);
+    void read_array(Value& value);
+    void read_array_element(Value& value, std::size_t& count);
+    void read_colon();
+    void read_quote();
+    void read_true(Value& value);
+    void read_false(Value& value);
+    void read_null(Value& value);
+    void read_number(Value& value);
+    void read_number_digit(Uint64& str);
+    void read_number_integer(Number& number);
+    void read_number_fractional(Number& number);
+    void read_number_exponent(Number& number);
+    void read_unicode(const char** pos, std::uint32_t& code);
+    void read_whitespaces(bool enable_error = true);
+    void count_string_chars(std::size_t& count);
+
+    [[noreturn]] void throw_error(DeserializerError::Code code);
+};
+
 }
+
+#endif /* JSON_CXX_PARSER_HPP */

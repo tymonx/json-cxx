@@ -36,27 +36,69 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file deserializer.cpp
+ * @file deserializer_error.hpp
  *
- * @brief JSON deserializer implementation
+ * @brief JSON deserializer error interface
  * */
 
-#include <json/deserializer.hpp>
+#ifndef JSON_CXX_DESERIALIZER_ERROR_HPP
+#define JSON_CXX_DESERIALIZER_ERROR_HPP
 
-#include "parser.hpp"
+#include <exception>
+#include <cstdint>
 
-using json::Value;
-using json::Parser;
-using json::Deserializer;
+namespace json {
 
-/*! Maximu characters to parse per single JSON value. Stack protection */
-const std::size_t Deserializer::MAX_LIMIT_PER_OBJECT;
+/*! JSON error parsing */
+class DeserializerError : public std::exception {
+public:
+    /*! Error parsing codes */
+    enum Code {
+        NONE,
+        END_OF_FILE,
+        MISS_VALUE,
+        MISS_QUOTE,
+        MISS_COLON,
+        MISS_CURLY_CLOSE,
+        MISS_SQUARE_CLOSE,
+        NOT_MATCH_NULL,
+        NOT_MATCH_TRUE,
+        NOT_MATCH_FALSE,
+        INVALID_WHITESPACE,
+        INVALID_ESCAPE,
+        INVALID_UNICODE,
+        INVALID_NUMBER_INTEGER,
+        INVALID_NUMBER_FRACTION,
+        INVALID_NUMBER_EXPONENT
+    };
 
-Deserializer::Deserializer() { }
+    DeserializerError(Code code, std::size_t offset);
 
-Deserializer::~Deserializer() { }
+    DeserializerError(const DeserializerError&) = default;
+    DeserializerError(DeserializerError&&) = default;
+    DeserializerError& operator=(const DeserializerError&) = default;
+    DeserializerError& operator=(DeserializerError&&) = default;
 
-void Deserializer::parsing(const char* str, std::size_t length) {
-    Parser parser(str, length, m_limit);
-    parser.parsing(m_value);
+    /*!
+     * @brief Return error explanatory string
+     *
+     * @return  When success return decoded error code as a human readable
+     *          message, otherwise return empty string ""
+     * */
+    virtual const char* what() const noexcept;
+
+    Code get_code() const { return m_code; }
+
+    std::size_t get_offset() const { return m_offset; }
+
+    virtual ~DeserializerError();
+private:
+    /*! Error parsing code */
+    Code m_code{NONE};
+    /*! Column number indicative error */
+    std::size_t m_offset{0};
+};
+
 }
+
+#endif /* JSON_CXX_DESERIALIZER_ERROR_HPP */
