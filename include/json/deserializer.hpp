@@ -193,7 +193,7 @@ public:
      *                      JSON object or array. Invoking method without
      *                      any argument sets default limitation
      * */
-    void set_limit(std::size_t limit = MAX_LIMIT_PER_OBJECT) {
+    void set_limit(std::size_t limit) {
         m_limit = limit;
     }
 
