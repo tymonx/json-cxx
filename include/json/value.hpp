@@ -85,24 +85,6 @@ class Value {
 public:
     friend class Parser;
 
-    /*! Value type */
-    using value_type = Value;
-
-    /*! Size type */
-    using size_type = std::size_t;
-
-    /*! Reference type */
-    using reference = value_type&;
-
-    /*! Constant reference type */
-    using const_reference = const value_type&;
-
-    /*! Pointer type */
-    using pointer = value_type*;
-
-    /*! Constant pointer type */
-    using const_pointer = const value_type*;
-
     /*! Non-const iterator that can iterate through JSON values */
     using iterator = base_iterator<false>;
 
@@ -249,7 +231,7 @@ public:
      * @param[in]   count   Array size
      * @param[in]   value   JSON value used to fill JSON array
      * */
-    Value(size_type count, const Value& value);
+    Value(std::size_t count, const Value& value);
 
     /*!
      * @brief Create JSON object with given JSON members
@@ -348,7 +330,7 @@ public:
      * @param[in]   count   Array size
      * @param[in]   value   JSON value copies
      * */
-    void assign(size_type count, const Value& value);
+    void assign(std::size_t count, const Value& value);
 
     /*!
      * @brief Assign JSON object with JSON members

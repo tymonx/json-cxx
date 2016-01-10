@@ -36,44 +36,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file exception.hpp
+ * @file value_error.cpp
  *
- * @brief JSON exception
+ * @brief JSON value error implementation
  * */
 
-#ifndef JSON_CXX_EXCEPTION_HPP
-#define JSON_CXX_EXCEPTION_HPP
+#include <json/value_error.hpp>
 
-#include <stdexcept>
+#include <array>
 
-namespace json {
+using json::ValueError;
 
-/*!
- * @brief JSON value exception
- * */
-class Exception : public std::runtime_error {
-public:
-    /*!
-     * @brief JSON value exception constructor
-     *
-     * @param[in]   str JSON value exception message
-     * */
-    Exception(const char* str);
+static const std::array<const char*, 7> g_error_codes{{
+    "No error",
+    "JSON value isn't a null",
+    "JSON value isn't a string",
+    "JSON value isn't a number",
+    "JSON value isn't a boolean",
+    "JSON value isn't a array",
+    "JSON value isn't a object"
+}};
 
-    /*!
-     * @brief JSON value exception constructor
-     *
-     * @param[in]   str JSON value exception message
-     * */
-    Exception(const std::string& str);
+ValueError::ValueError(Code code) :
+    m_code{code} { }
 
-    /*! Exception copy constructor */
-    Exception(const Exception&) = default;
+ValueError::~ValueError() { }
 
-    /*! Exception destructor */
-    ~Exception();
-};
-
+const char* ValueError::what() const noexcept {
+    return g_error_codes[m_code];
 }
-
-#endif /* JSON_CXX_EXCEPTION_HPP */

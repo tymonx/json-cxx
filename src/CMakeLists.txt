@@ -31,12 +31,12 @@ add_subdirectory(formatter)
 
 add_library(json-cxx
     value.cpp
+    value_error.cpp
     number.cpp
     iterator.cpp
     serializer.cpp
     deserializer.cpp
     deserializer_error.cpp
-    exception.cpp
     parser.cpp
     formatter.cpp
     $<TARGET_OBJECTS:json-cxx-formatter>

@@ -51,4 +51,7 @@
 #include "json/serializer.hpp"
 #include "json/deserializer.hpp"
 
+#include "json/value_error.hpp"
+#include "json/deserializer_error.hpp"
+
 #endif /* JSON_CXX_HPP */

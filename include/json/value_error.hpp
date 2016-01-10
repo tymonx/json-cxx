@@ -36,17 +36,55 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file exception.cpp
+ * @file deserializer_error.hpp
  *
- * @brief JSON exception
+ * @brief JSON deserializer error interface
  * */
 
-#include <json/exception.hpp>
+#ifndef JSON_CXX_VALUE_ERROR_HPP
+#define JSON_CXX_VALUE_ERROR_HPP
 
-using json::Exception;
+#include <exception>
 
-Exception::Exception(const char* str) : runtime_error(str) { }
+namespace json {
 
-Exception::Exception(const std::string& str) : runtime_error(str) { }
+/*! JSON error parsing */
+class ValueError : public std::exception {
+public:
+    /*! Error parsing codes */
+    enum Code {
+        NONE,
+        NOT_NULL,
+        NOT_STRING,
+        NOT_NUMBER,
+        NOT_BOOLEAN,
+        NOT_ARRAY,
+        NOT_OBJECT
+    };
 
-Exception::~Exception() { }
+    ValueError(Code code);
+
+    ValueError(const ValueError&) = default;
+    ValueError(ValueError&&) = default;
+    ValueError& operator=(const ValueError&) = default;
+    ValueError& operator=(ValueError&&) = default;
+
+    /*!
+     * @brief Return error explanatory string
+     *
+     * @return  When success return decoded error code as a human readable
+     *          message, otherwise return empty string ""
+     * */
+    virtual const char* what() const noexcept;
+
+    Code get_code() const { return m_code; }
+
+    virtual ~ValueError();
+private:
+    /*! Error parsing code */
+    Code m_code{NONE};
+};
+
+}
+
+#endif /* JSON_CXX_VALUE_ERROR_HPP */

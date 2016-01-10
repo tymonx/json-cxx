@@ -43,7 +43,7 @@
 
 #include <json/value.hpp>
 #include <json/iterator.hpp>
-#include <json/exception.hpp>
+#include <json/value_error.hpp>
 
 #include <limits>
 #include <type_traits>
@@ -502,91 +502,91 @@ Value::iterator Value::insert(const_iterator pos,
 
 String& Value::as_string() {
     if (Type::STRING != m_type) {
-        throw Exception("JSON isn't a string");
+        throw ValueError(ValueError::NOT_STRING);
     }
     return m_string;
 }
 
 const String& Value::as_string() const {
     if (Type::STRING != m_type) {
-        throw Exception("JSON isn't a string");
+        throw ValueError(ValueError::NOT_STRING);
     }
     return m_string;
 }
 
 const char* Value::as_char() const {
     if (Type::STRING != m_type) {
-        throw Exception("JSON isn't a string");
+        throw ValueError(ValueError::NOT_STRING);
     }
     return m_string.c_str();
 }
 
 Bool Value::as_bool() const {
     if (Type::BOOLEAN != m_type) {
-        throw Exception("JSON isn't a boolean");
+        throw ValueError(ValueError::NOT_BOOLEAN);
     }
     return m_boolean;
 }
 
 Null Value::as_null() const {
     if (Type::NIL != m_type) {
-        throw Exception("JSON isn't a null");
+        throw ValueError(ValueError::NOT_NULL);
     }
     return nullptr;
 }
 
 Int Value::as_int() const {
     if (Type::NUMBER != m_type) {
-        throw Exception("JSON isn't a number");
+        throw ValueError(ValueError::NOT_NUMBER);
     }
     return Int(m_number);
 }
 
 Uint Value::as_uint() const {
     if (Type::NUMBER != m_type) {
-        throw Exception("JSON isn't a number");
+        throw ValueError(ValueError::NOT_NUMBER);
     }
     return Uint(m_number);
 }
 
 Double Value::as_double() const {
     if (Type::NUMBER != m_type) {
-        throw Exception("JSON isn't a number");
+        throw ValueError(ValueError::NOT_NUMBER);
     }
     return Double(m_number);
 }
 
 Array& Value::as_array() {
     if (Type::ARRAY != m_type) {
-        throw Exception("JSON isn't an array");
+        throw ValueError(ValueError::NOT_ARRAY);
     }
     return m_array;
 }
 
 Number& Value::as_number() {
     if (Type::NUMBER != m_type) {
-        throw Exception("JSON isn't a number");
+        throw ValueError(ValueError::NOT_NUMBER);
     }
     return m_number;
 }
 
 const Array& Value::as_array() const {
     if (Type::ARRAY != m_type) {
-        throw Exception("JSON isn't an array");
+        throw ValueError(ValueError::NOT_ARRAY);
     }
     return m_array;
 }
 
 const Object& Value::as_object() const {
     if (Type::OBJECT != m_type) {
-        throw Exception("JSON isn't an object");
+        throw ValueError(ValueError::NOT_OBJECT);
     }
     return m_object;
 }
 
 const Number& Value::as_number() const {
     if (Type::NUMBER != m_type) {
-        throw Exception("JSON isn't a number");
+        throw ValueError(ValueError::NOT_NUMBER);
     }
     return m_number;
 }
