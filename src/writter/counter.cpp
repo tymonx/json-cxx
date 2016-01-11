@@ -41,34 +41,36 @@
  * @brief JSON formatter implementation
  * */
 
-#include "json/writter/string.hpp"
+#include "json/writter/counter.hpp"
 
-using json::writter::String;
+#include <cstring>
 
-String::String() : m_string{} { }
+using json::writter::Counter;
 
-String::~String() { }
+Counter::Counter() : m_counter{0} { }
 
-void String::clear() {
-    m_string.clear();
+Counter::~Counter() { }
+
+void Counter::clear() {
+    m_counter = 0;
 }
 
-void String::write(char ch) {
-    m_string.push_back(ch);
+void Counter::write(char) {
+    ++m_counter;
 }
 
-void String::write(std::size_t size, char ch) {
-    m_string.append(size, ch);
+void Counter::write(std::size_t size, char) {
+    m_counter += size;
 }
 
-void String::write(const char* str) {
-    m_string.append(str);
+void Counter::write(const char* str) {
+    m_counter += std::strlen(str);
 }
 
-void String::write(const char* str, std::size_t length) {
-    m_string.append(str, length);
+void Counter::write(const char*, std::size_t length) {
+    m_counter += length;
 }
 
-void String::write(const std::string& str) {
-    m_string.append(str);
+void Counter::write(const std::string& str) {
+    m_counter += str.length();
 }

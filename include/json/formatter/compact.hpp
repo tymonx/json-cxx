@@ -56,7 +56,7 @@ namespace formatter {
  * */
 class Compact : public Formatter {
 public:
-    Compact(WritterPtr writter = nullptr);
+    Compact(Writter* writter = nullptr);
 
     /*!
      * @brief Serialize JSON value
@@ -75,10 +75,6 @@ protected:
     virtual void write_number(const Number& number);
     virtual void write_boolean(Bool value);
     virtual void write_empty();
-
-    virtual void write_number_int(Int64 value);
-    virtual void write_number_uint(Uint64 value);
-    virtual void write_number_double(Double value);
 };
 
 }

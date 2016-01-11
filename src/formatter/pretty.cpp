@@ -45,35 +45,29 @@
 
 using json::formatter::Pretty;
 
-Pretty::Pretty(WritterPtr writter) :
-    Compact(std::move(writter)) { }
+Pretty::Pretty(Writter* writter) :
+    Compact(writter) { }
 
 Pretty::~Pretty() { }
 
 void Pretty::write_object(const Object& object) {
-    if (!object.empty()) {
-        Object::const_iterator it_pos = object.cbegin();
-        Object::const_iterator it_end = object.cend();
+    auto it_pos = object.cbegin();
+    auto it_end = object.cend();
 
+    if (it_pos != it_end) {
         m_writter->write('{');
 
         ++m_level;
         std::size_t indent_length = m_indent * m_level;
-        if (it_pos < it_end) {
+        while (it_pos < it_end) {
             m_writter->write('\n');
             m_writter->write(indent_length, ' ');
             write_string(it_pos->first);
             m_writter->write(" : ", 3);
             write_value(it_pos->second);
-            ++it_pos;
-        }
-        while (it_pos < it_end) {
-            m_writter->write(",\n", 2);
-            m_writter->write(indent_length, ' ');
-            write_string(it_pos->first);
-            m_writter->write(" : ", 3);
-            write_value(it_pos->second);
-            ++it_pos;
+            if (++it_pos != it_end) {
+                m_writter->write(',');
+            }
         }
         m_writter->write('\n');
 
@@ -88,25 +82,21 @@ void Pretty::write_object(const Object& object) {
 }
 
 void Pretty::write_array(const Array& array) {
-    if (!array.empty()) {
-        Array::const_iterator it_pos = array.cbegin();
-        Array::const_iterator it_end = array.cend();
+    auto it_pos = array.cbegin();
+    auto it_end = array.cend();
 
+    if (it_pos != it_end) {
         m_writter->write('[');
 
         ++m_level;
         std::size_t indent_length = m_indent * m_level;
-        if (it_pos < it_end) {
+        while (it_pos < it_end) {
             m_writter->write('\n');
             m_writter->write(indent_length, ' ');
             write_value(*it_pos);
-            ++it_pos;
-        }
-        while (it_pos < it_end) {
-            m_writter->write(",\n", 2);
-            m_writter->write(indent_length, ' ');
-            write_value(*it_pos);
-            ++it_pos;
+            if (++it_pos != it_end) {
+                m_writter->write(',');
+            }
         }
         m_writter->write('\n');
 

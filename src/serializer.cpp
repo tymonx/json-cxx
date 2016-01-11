@@ -43,40 +43,32 @@
 
 #include "json/serializer.hpp"
 
-#include <json/formatter/compact.hpp>
-#include <json/writter/string.hpp>
+#include "json/formatter/compact.hpp"
+#include "json/writter/string.hpp"
 
 using json::Serializer;
 
-Serializer::Serializer(FormatterPtr formatter) :
-    m_formatter(std::move(formatter))
-{
-    if (nullptr == m_formatter) {
-        m_formatter = make_formatter<formatter::Compact>();
-    }
-    m_formatter->set_writter(make_writter<writter::String>());
-}
+Serializer::Serializer(Formatter* formatter) :
+    m_formatter(formatter),
+    m_serialized()
+{ }
 
 Serializer::~Serializer() { }
 
 void Serializer::write(const Value& value) {
-    static_cast<writter::String*>(m_formatter->get_writter().get())
-        ->get_string().clear();
+    Formatter* formatter;
+    formatter::Compact default_formatter;
+    writter::String string;
 
-    m_formatter->formatting(value);
-}
+    if (nullptr != m_formatter) {
+        formatter = m_formatter;
+    }
+    else {
+        formatter = &default_formatter;
+    }
 
-void Serializer::clear() {
-    static_cast<writter::String*>(m_formatter->get_writter().get())
-        ->get_string().clear();
-}
+    formatter->set_writter(&string);
+    formatter->formatting(value);
 
-std::string& Serializer::read() {
-    return static_cast<writter::String*>(m_formatter->get_writter().get())
-        ->get_string();
-}
-
-const std::string& Serializer::read() const {
-    return static_cast<writter::String*>(m_formatter->get_writter().get())
-        ->get_string();
+    m_serialized = std::move(string.read());
 }

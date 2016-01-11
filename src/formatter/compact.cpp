@@ -46,6 +46,7 @@
 #include <array>
 #include <cmath>
 #include <limits>
+#include <algorithm>
 
 using json::formatter::Compact;
 
@@ -62,8 +63,8 @@ static constexpr const char JSON_FALSE[] = "false";
 
 static constexpr const char NUMBER_CHARS[] = "0123456789";
 
-Compact::Compact(WritterPtr writter) :
-    Formatter(std::move(writter)) { }
+Compact::Compact(Writter* writter) :
+    Formatter(writter) { }
 
 Compact::~Compact() { }
 
@@ -99,167 +100,65 @@ void Compact::write_value(const Value& value) {
 }
 
 void Compact::write_object(const Object& object) {
-    Object::const_iterator it_pos = object.cbegin();
-    Object::const_iterator it_end = object.cend();
+    auto it_pos = object.cbegin();
+    auto it_end = object.cend();
 
     m_writter->write('{');
-    if (it_pos < it_end) {
-        write_string(it_pos->first);
-        m_writter->write(':');
-        write_value(it_pos->second);
-        ++it_pos;
-    }
     while (it_pos < it_end) {
-        m_writter->write(',');
         write_string(it_pos->first);
         m_writter->write(':');
         write_value(it_pos->second);
-        ++it_pos;
+        if (++it_pos != it_end) {
+            m_writter->write(',');
+        }
     }
     m_writter->write('}');
 }
 
 void Compact::write_array(const Array& array) {
-    Array::const_iterator it_pos = array.cbegin();
-    Array::const_iterator it_end = array.cend();
+    auto it_pos = array.cbegin();
+    auto it_end = array.cend();
 
     m_writter->write('[');
-    if (it_pos < it_end) {
-        write_value(*it_pos);
-        ++it_pos;
-    }
     while (it_pos < it_end) {
-        m_writter->write(',');
         write_value(*it_pos);
-        ++it_pos;
+        if (++it_pos != it_end) {
+            m_writter->write(',');
+        }
     }
     m_writter->write(']');
 }
 
 void Compact::write_string(const String& str) {
     std::size_t count = 0;
-    std::string tmp;
 
-    for (const auto& ch : str) {
-        if (('\\' == ch) || ('\"' == ch)) { ++count; }
-        ++count;
-    }
+    std::for_each(str.cbegin(), str.cend(),
+        [&count] (const char& ch) {
+            if (('\\' == ch) || ('\"' == ch)) {
+                ++count;
+            }
+            ++count;
+        }
+    );
 
-    tmp.reserve(2 + count);
-    tmp.push_back('"');
+    m_writter->write('"');
     if (count == str.size()) {
-        tmp.append(str);
+        m_writter->write(str);
     }
     else {
-        for (const auto& ch : str) {
-            if (('\\' == ch) || ('\"' == ch)) {
-                tmp.push_back('\\');
+        std::string tmp;
+        tmp.reserve(count);
+        std::for_each(str.cbegin(), str.cend(),
+            [&tmp] (const char& ch) {
+                if (('\\' == ch) || ('\"' == ch)) {
+                    tmp.push_back('\\');
+                }
+                tmp.push_back(ch);
             }
-            tmp.push_back(ch);
-        }
+        );
+        m_writter->write(tmp);
     }
-    tmp.push_back('"');
-    m_writter->write(tmp);
-}
-
-void Compact::write_number(const Number& number) {
-    switch (number.get_type()) {
-    case Number::Type::INT:
-        write_number_int(Int64(number));
-        break;
-    case Number::Type::UINT:
-        write_number_uint(Uint64(number));
-        break;
-    case Number::Type::DOUBLE:
-        write_number_double(Double(number));
-        break;
-    default:
-        break;
-    }
-}
-
-void Compact::write_number_int(Int64 value) {
-    std::array<char, MAX_CHAR_BUFFER> buffer;
-    std::size_t count = 0;
-    Uint64 tmp;
-
-    if (value < 0) {
-        buffer[0] = '-';
-        ++count;
-        value = -value;
-    }
-
-    tmp = Uint64(value);
-    do {
-        ++count;
-        tmp /= 10;
-    } while (tmp);
-
-    tmp = Uint64(value);
-    char* pos = buffer.data() + count;
-    do {
-        *(--pos) = NUMBER_CHARS[tmp % 10];
-        tmp /= 10;
-    } while (tmp);
-
-    m_writter->write(buffer.data(), count);
-}
-
-void Compact::write_number_uint(Uint64 value) {
-    std::array<char, MAX_CHAR_BUFFER> buffer;
-    std::size_t count = 0;
-    Uint64 tmp;
-
-    tmp = value;
-    do {
-        ++count;
-        tmp /= 10;
-    } while (tmp);
-
-    tmp = value;
-    char* pos = buffer.data() + count;
-    do {
-        *(--pos) = NUMBER_CHARS[tmp % 10];
-        tmp /= 10;
-    } while (tmp);
-
-    m_writter->write(buffer.data(), count);
-}
-
-void Compact::write_number_double(Double value) {
-    std::array<char, MAX_CHAR_BUFFER> buffer;
-    std::size_t count = 0;
-    double integral_part;
-    Uint64 tmp;
-
-    if (std::signbit(value)) {
-        buffer[0] = '-';
-        ++count;
-        value = std::abs(value);
-    }
-
-    tmp = Uint64(value);
-    do {
-        ++count;
-        tmp /= 10;
-    } while (tmp);
-
-    tmp = Uint64(value);
-    char* pos = buffer.data() + count;
-    do {
-        *(--pos) = NUMBER_CHARS[tmp % 10];
-        tmp /= 10;
-    } while (tmp);
-
-    buffer[count++] = '.';
-
-    value = 10 * std::modf(value, &integral_part);
-    do {
-        buffer[count++] = NUMBER_CHARS[Uint64(value) % 10];
-        value = 10 * std::modf(value, &integral_part);
-    } while (value >= std::numeric_limits<Double>::epsilon());
-
-    m_writter->write(buffer.data(), count);
+    m_writter->write('"');
 }
 
 void Compact::write_boolean(Bool value) {
@@ -273,4 +172,83 @@ void Compact::write_boolean(Bool value) {
 
 void Compact::write_empty() {
     m_writter->write(JSON_NULL, 4);
+}
+
+static std::size_t write_number_uint(char* buffer, json::Uint64 value) {
+    std::size_t count = 0;
+    json::Uint64 tmp = value;
+
+    do {
+        ++count;
+        tmp /= 10;
+    } while (tmp);
+
+    char* pos = buffer + count;
+    do {
+        *(--pos) = NUMBER_CHARS[value % 10];
+        value /= 10;
+    } while (value);
+
+    return count;
+}
+
+static std::size_t write_number_int(char* buffer, json::Int64 value) {
+    std::size_t count = 0;
+
+    if (value < 0) {
+        buffer[0] = '-';
+        value = -value;
+        ++buffer;
+        ++count;
+    }
+
+    count += write_number_uint(buffer, json::Uint64(value));
+
+    return count;
+}
+
+static std::size_t write_number_double(char* buffer, json::Double value) {
+    std::size_t count = 0;
+
+    if (std::signbit(value)) {
+        buffer[0] = '-';
+        value = std::abs(value);
+        ++buffer;
+        ++count;
+    }
+
+    count += write_number_uint(buffer, json::Uint64(value));
+    buffer += count;
+    buffer[count++] = '.';
+
+    double integral_part;
+    value = 10 * std::modf(value, &integral_part);
+    do {
+        buffer[count++] = NUMBER_CHARS[json::Uint64(value) % 10];
+        value = 10 * std::modf(value, &integral_part);
+    } while (value >= std::numeric_limits<json::Double>::epsilon());
+
+    return count;
+}
+
+void Compact::write_number(const Number& number) {
+    std::array<char, MAX_CHAR_BUFFER> buffer;
+    std::size_t count;
+
+    switch (number.get_type()) {
+    case Number::Type::INT:
+        count = write_number_int(buffer.data(), Int64(number));
+        break;
+    case Number::Type::UINT:
+        count = write_number_uint(buffer.data(), Uint64(number));
+        break;
+    case Number::Type::DOUBLE:
+        count = write_number_double(buffer.data(), Double(number));
+        break;
+    default:
+        count = 0;
+        break;
+    }
+
+    m_writter->write(buffer.data(), count);
 }

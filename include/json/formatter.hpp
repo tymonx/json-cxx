@@ -47,9 +47,7 @@
 #include <json/writter.hpp>
 #include <json/value.hpp>
 
-#include <functional>
 #include <cstdint>
-#include <memory>
 
 namespace json {
 
@@ -58,17 +56,13 @@ namespace json {
  * */
 class Formatter {
 public:
-    Formatter(WritterPtr writter = nullptr);
+    Formatter(Writter* writter = nullptr);
 
-    void set_writter(WritterPtr writter) {
-        m_writter = std::move(writter);
+    void set_writter(Writter* writter) {
+        m_writter = writter;
     }
 
-    WritterPtr& get_writter() {
-        return m_writter;
-    }
-
-    const WritterPtr& get_writter() const {
+    const Writter* get_writter() const {
         return m_writter;
     }
 
@@ -82,20 +76,13 @@ public:
     /*! Destructor */
     virtual ~Formatter();
 protected:
-    WritterPtr m_writter;
+    Writter* m_writter;
+private:
+    Formatter(const Formatter&) = delete;
+    Formatter(Formatter&&) = delete;
+    Formatter& operator=(const Formatter&) = delete;
+    Formatter& operator=(Formatter&&) = delete;
 };
-
-using FormatterPtr = std::unique_ptr<Formatter>;
-
-template<typename T>
-FormatterPtr make_formatter() {
-    return FormatterPtr(static_cast<Formatter*>(new T()));
-}
-
-template<typename T>
-FormatterPtr make_formatter(WritterPtr writter) {
-    return FormatterPtr(static_cast<Formatter*>(new T(writter)));
-}
 
 }
 

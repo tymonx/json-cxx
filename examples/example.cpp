@@ -49,7 +49,6 @@ using json::Value;
 using json::Pair;
 using json::Serializer;
 using json::Deserializer;
-using json::make_formatter;
 using json::formatter::Pretty;
 
 using std::cout;
@@ -94,7 +93,8 @@ static const std::array<std::function<void()>, 7> g_examples{{
         value.push_back("Hello");
         value.push_back(value);
 
-        cout << "Array value: " << Serializer{value, make_formatter<Pretty>()} << endl;
+        Pretty pretty;
+        cout << "Array value: " << Serializer{value, &pretty} << endl;
     },
     [] {
         Value value;

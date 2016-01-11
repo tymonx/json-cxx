@@ -44,9 +44,7 @@
 #ifndef JSON_CXX_WRITTER_HPP
 #define JSON_CXX_WRITTER_HPP
 
-#include <functional>
 #include <cstdint>
-#include <memory>
 #include <string>
 
 namespace json {
@@ -57,6 +55,8 @@ namespace json {
 class Writter {
 public:
     Writter();
+
+    virtual void clear() = 0;
 
     virtual void write(char ch) = 0;
 
@@ -71,13 +71,6 @@ public:
     /*! Destructor */
     virtual ~Writter();
 };
-
-using WritterPtr = std::unique_ptr<Writter>;
-
-template<typename T>
-WritterPtr make_writter() {
-    return WritterPtr(static_cast<Writter*>(new T()));
-}
 
 }
 

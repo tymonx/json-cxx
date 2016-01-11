@@ -45,7 +45,7 @@
 
 using json::Formatter;
 
-Formatter::Formatter(WritterPtr writter) :
-    m_writter(std::move(writter)) { }
+Formatter::Formatter(Writter* writter) :
+    m_writter(writter) { }
 
 Formatter::~Formatter() { }

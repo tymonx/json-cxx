@@ -36,39 +36,52 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file formatter/pretty.cpp
+ * @file writter/counter.hpp
  *
- * @brief JSON formatter implementation
+ * @brief JSON writter interface
  * */
 
-#include "json/writter/string.hpp"
+#ifndef JSON_CXX_WRITTER_COUNTER_HPP
+#define JSON_CXX_WRITTER_COUNTER_HPP
 
-using json::writter::String;
+#include <json/writter.hpp>
 
-String::String() : m_string{} { }
+#include <cstdint>
 
-String::~String() { }
+namespace json {
+namespace writter {
 
-void String::clear() {
-    m_string.clear();
+/*!
+ * @brief Compact writter
+ *
+ * Creates serialized compact JSON data that not include whitespace or newlines
+ * */
+class Counter : public Writter {
+public:
+    Counter();
+
+    virtual void clear() override;
+
+    virtual void write(char ch) override;
+
+    virtual void write(std::size_t size, char ch) override;
+
+    virtual void write(const char* str) override;
+
+    virtual void write(const char* str, std::size_t length) override;
+
+    virtual void write(const std::string& str) override;
+
+    std::size_t read() const {
+        return m_counter;
+    }
+
+    virtual ~Counter();
+private:
+    std::size_t m_counter;
+};
+
+}
 }
 
-void String::write(char ch) {
-    m_string.push_back(ch);
-}
-
-void String::write(std::size_t size, char ch) {
-    m_string.append(size, ch);
-}
-
-void String::write(const char* str) {
-    m_string.append(str);
-}
-
-void String::write(const char* str, std::size_t length) {
-    m_string.append(str, length);
-}
-
-void String::write(const std::string& str) {
-    m_string.append(str);
-}
+#endif /* JSON_CXX_WRITTER_COUNTER_HPP */

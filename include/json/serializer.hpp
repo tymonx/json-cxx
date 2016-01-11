@@ -47,7 +47,6 @@
 #include <json/value.hpp>
 #include <json/formatter.hpp>
 
-#include <memory>
 #include <string>
 
 namespace json {
@@ -58,14 +57,12 @@ namespace json {
  * */
 class Serializer {
 public:
-    using FormatterPtr = std::unique_ptr<Formatter>;
-
     /*!
      * @brief Default constructor
      *
      * Create JSON serializer object with default settings
      * */
-    Serializer(FormatterPtr formatter = nullptr);
+    Serializer(Formatter* formatter = nullptr);
 
     /*!
      * @brief Serializer JSON C++ object or JSON C++ array
@@ -74,19 +71,21 @@ public:
      *
      * @param[in]   value   JSON C++ to serialize
      * */
-    Serializer(const Value& value, FormatterPtr formatter = nullptr) :
-            Serializer(std::move(formatter)) { write(value); }
+    Serializer(const Value& value, Formatter* formatter = nullptr) :
+            Serializer(formatter) { write(value); }
 
     void write(const Value& value);
 
-    std::string& read();
-
-    const std::string& read() const;
+    const std::string& read() const {
+        return m_serialized;
+    }
 
     /*!
      * @brief Clear serialization content
      * */
-    void clear();
+    void clear() {
+        m_serialized.clear();
+    }
 
     /*!
      * @brief Serialize JSON C++ object or array
@@ -100,7 +99,13 @@ public:
 
     ~Serializer();
 private:
-    FormatterPtr m_formatter;
+    Serializer(const Serializer&) = delete;
+    Serializer(Serializer&&) = delete;
+    Serializer& operator=(const Serializer&) = delete;
+    Serializer& operator=(Serializer&&) = delete;
+
+    Formatter* m_formatter;
+    std::string m_serialized;
 };
 
 }

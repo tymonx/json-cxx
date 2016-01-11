@@ -29,4 +29,5 @@
 
 add_library(json-cxx-writter OBJECT
     string.cpp
+    counter.cpp
 )

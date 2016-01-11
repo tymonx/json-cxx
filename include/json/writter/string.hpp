@@ -60,21 +60,27 @@ class String : public Writter {
 public:
     String();
 
-    virtual void write(char ch);
+    virtual void clear() override;
 
-    virtual void write(std::size_t size, char ch);
+    virtual void write(char ch) override;
 
-    virtual void write(const char* str);
+    virtual void write(std::size_t size, char ch) override;
 
-    virtual void write(const char* str, std::size_t length);
+    virtual void write(const char* str) override;
 
-    virtual void write(const std::string& str);
+    virtual void write(const char* str, std::size_t length) override;
 
-    std::string& get_string() {
+    virtual void write(const std::string& str) override;
+
+    void reserve(std::size_t size) {
+        m_string.reserve(size);
+    }
+
+    std::string& read() {
         return m_string;
     }
 
-    const std::string& get_string() const {
+    const std::string& read() const {
         return m_string;
     }
 
