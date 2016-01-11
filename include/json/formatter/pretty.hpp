@@ -77,8 +77,8 @@ public:
     /*! Destructor */
     virtual ~Pretty();
 private:
-    virtual void write_object(const Value& value) override;
-    virtual void write_array(const Value& value) override;
+    virtual void write_object(const Object& object) override;
+    virtual void write_array(const Array& array) override;
 
     std::size_t m_indent{DEFAULT_INDENT};
     std::size_t m_level{0};

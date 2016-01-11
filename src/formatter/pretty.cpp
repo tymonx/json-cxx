@@ -50,20 +50,30 @@ Pretty::Pretty(WritterPtr writter) :
 
 Pretty::~Pretty() { }
 
-void Pretty::write_object(const Value& value) {
-    std::size_t num = value.size();
-    if (num) {
+void Pretty::write_object(const Object& object) {
+    if (!object.empty()) {
+        Object::const_iterator it_pos = object.cbegin();
+        Object::const_iterator it_end = object.cend();
+
         m_writter->write('{');
 
         ++m_level;
         std::size_t indent_length = m_indent * m_level;
-        for (const auto& obj : Object(value)) {
+        if (it_pos < it_end) {
             m_writter->write('\n');
             m_writter->write(indent_length, ' ');
-            write_string(obj.first);
+            write_string(it_pos->first);
             m_writter->write(" : ", 3);
-            write_value(obj.second);
-            if (--num) { m_writter->write(','); }
+            write_value(it_pos->second);
+            ++it_pos;
+        }
+        while (it_pos < it_end) {
+            m_writter->write(",\n", 2);
+            m_writter->write(indent_length, ' ');
+            write_string(it_pos->first);
+            m_writter->write(" : ", 3);
+            write_value(it_pos->second);
+            ++it_pos;
         }
         m_writter->write('\n');
 
@@ -77,19 +87,26 @@ void Pretty::write_object(const Value& value) {
     }
 }
 
-void Pretty::write_array(const Value& value) {
-    std::size_t num = value.size();
-    if (num) {
+void Pretty::write_array(const Array& array) {
+    if (!array.empty()) {
+        Array::const_iterator it_pos = array.cbegin();
+        Array::const_iterator it_end = array.cend();
+
         m_writter->write('[');
 
         ++m_level;
         std::size_t indent_length = m_indent * m_level;
-
-        for (const auto& v : Array(value)) {
+        if (it_pos < it_end) {
             m_writter->write('\n');
             m_writter->write(indent_length, ' ');
-            write_value(v);
-            if (--num) { m_writter->write(','); }
+            write_value(*it_pos);
+            ++it_pos;
+        }
+        while (it_pos < it_end) {
+            m_writter->write(",\n", 2);
+            m_writter->write(indent_length, ' ');
+            write_value(*it_pos);
+            ++it_pos;
         }
         m_writter->write('\n');
 

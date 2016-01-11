@@ -69,12 +69,12 @@ public:
     virtual ~Compact();
 protected:
     virtual void write_value(const Value& value);
-    virtual void write_object(const Value& value);
-    virtual void write_array(const Value& value);
-    virtual void write_string(const std::string& str);
-    virtual void write_number(const Value& value);
-    virtual void write_boolean(const Value& value);
-    virtual void write_empty(const Value& value);
+    virtual void write_object(const Object& object);
+    virtual void write_array(const Array& array);
+    virtual void write_string(const String& str);
+    virtual void write_number(const Number& number);
+    virtual void write_boolean(Bool value);
+    virtual void write_empty();
 
     virtual void write_number_int(Int64 value);
     virtual void write_number_uint(Uint64 value);

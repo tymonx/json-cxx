@@ -76,53 +76,67 @@ void Compact::formatting(const json::Value& value) {
 void Compact::write_value(const Value& value) {
     switch (value.get_type()) {
     case Value::Type::OBJECT:
-        write_object(value);
+        write_object(Object(value));
         break;
     case Value::Type::ARRAY:
-        write_array(value);
+        write_array(Array(value));
         break;
     case Value::Type::STRING:
         write_string(String(value));
         break;
     case Value::Type::NUMBER:
-        write_number(value);
+        write_number(Number(value));
         break;
     case Value::Type::BOOLEAN:
-        write_boolean(value);
+        write_boolean(Bool(value));
         break;
     case Value::Type::NIL:
-        write_empty(value);
+        write_empty();
         break;
     default:
         break;
     }
 }
 
-void Compact::write_object(const Value& value) {
-    std::size_t num = value.size();
+void Compact::write_object(const Object& object) {
+    Object::const_iterator it_pos = object.cbegin();
+    Object::const_iterator it_end = object.cend();
 
     m_writter->write('{');
-    for (const auto& obj : Object(value)) {
-        write_string(obj.first);
+    if (it_pos < it_end) {
+        write_string(it_pos->first);
         m_writter->write(':');
-        write_value(obj.second);
-        if (--num) { m_writter->write(','); }
+        write_value(it_pos->second);
+        ++it_pos;
+    }
+    while (it_pos < it_end) {
+        m_writter->write(',');
+        write_string(it_pos->first);
+        m_writter->write(':');
+        write_value(it_pos->second);
+        ++it_pos;
     }
     m_writter->write('}');
 }
 
-void Compact::write_array(const Value& value) {
-    std::size_t num = value.size();
+void Compact::write_array(const Array& array) {
+    Array::const_iterator it_pos = array.cbegin();
+    Array::const_iterator it_end = array.cend();
 
     m_writter->write('[');
-    for (const auto& v : Array(value)) {
-        write_value(v);
-        if (--num) { m_writter->write(','); }
+    if (it_pos < it_end) {
+        write_value(*it_pos);
+        ++it_pos;
+    }
+    while (it_pos < it_end) {
+        m_writter->write(',');
+        write_value(*it_pos);
+        ++it_pos;
     }
     m_writter->write(']');
 }
 
-void Compact::write_string(const std::string& str) {
+void Compact::write_string(const String& str) {
     std::size_t count = 0;
     std::string tmp;
 
@@ -148,16 +162,16 @@ void Compact::write_string(const std::string& str) {
     m_writter->write(tmp);
 }
 
-void Compact::write_number(const Value& value) {
-    switch (Number(value).get_type()) {
+void Compact::write_number(const Number& number) {
+    switch (number.get_type()) {
     case Number::Type::INT:
-        write_number_int(Int64(value));
+        write_number_int(Int64(number));
         break;
     case Number::Type::UINT:
-        write_number_uint(Uint64(value));
+        write_number_uint(Uint64(number));
         break;
     case Number::Type::DOUBLE:
-        write_number_double(Double(value));
+        write_number_double(Double(number));
         break;
     default:
         break;
@@ -248,8 +262,8 @@ void Compact::write_number_double(Double value) {
     m_writter->write(buffer.data(), count);
 }
 
-void Compact::write_boolean(const Value& value) {
-    if (Bool(value)) {
+void Compact::write_boolean(Bool value) {
+    if (value) {
         m_writter->write(JSON_TRUE, 4);
     }
     else {
@@ -257,6 +271,6 @@ void Compact::write_boolean(const Value& value) {
     }
 }
 
-void Compact::write_empty(const Value&) {
+void Compact::write_empty() {
     m_writter->write(JSON_NULL, 4);
 }
