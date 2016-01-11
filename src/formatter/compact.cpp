@@ -46,7 +46,6 @@
 #include <array>
 #include <cmath>
 #include <limits>
-#include <algorithm>
 
 using json::formatter::Compact;
 
@@ -132,14 +131,12 @@ void Compact::write_array(const Array& array) {
 void Compact::write_string(const String& str) {
     std::size_t count = 0;
 
-    std::for_each(str.cbegin(), str.cend(),
-        [&count] (const char& ch) {
-            if (('\\' == ch) || ('\"' == ch)) {
-                ++count;
-            }
+    for (const char& ch : str) {
+        if (('\\' == ch) || ('\"' == ch)) {
             ++count;
         }
-    );
+        ++count;
+    }
 
     m_writter->write('"');
     if (count == str.size()) {
@@ -148,14 +145,12 @@ void Compact::write_string(const String& str) {
     else {
         std::string tmp;
         tmp.reserve(count);
-        std::for_each(str.cbegin(), str.cend(),
-            [&tmp] (const char& ch) {
-                if (('\\' == ch) || ('\"' == ch)) {
-                    tmp.push_back('\\');
-                }
-                tmp.push_back(ch);
+        for (const char& ch : str) {
+            if (('\\' == ch) || ('\"' == ch)) {
+                tmp.push_back('\\');
             }
-        );
+            tmp.push_back(ch);
+        }
         m_writter->write(tmp);
     }
     m_writter->write('"');
