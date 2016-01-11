@@ -49,7 +49,7 @@
 
 using json::formatter::Compact;
 
-static constexpr std::size_t MAX_CHAR_BUFFER = 22;
+static constexpr std::size_t MAX_CHAR_BUFFER = 64;
 
 /*! JSON null  */
 static constexpr const char JSON_NULL[] = "null";
@@ -60,13 +60,17 @@ static constexpr const char JSON_TRUE[] = "true";
 /*! JSON boolean false */
 static constexpr const char JSON_FALSE[] = "false";
 
-Compact::Compact(Writter writter) :
-    Formatter(writter) { }
+static constexpr const char NUMBER_CHARS[] = "0123456789";
+
+Compact::Compact(WritterPtr writter) :
+    Formatter(std::move(writter)) { }
 
 Compact::~Compact() { }
 
 void Compact::formatting(const json::Value& value) {
-    if (m_writter) { write_value(value); }
+    if (m_writter) {
+        write_value(value);
+    }
 }
 
 void Compact::write_value(const Value& value) {
@@ -78,7 +82,7 @@ void Compact::write_value(const Value& value) {
         write_array(value);
         break;
     case Value::Type::STRING:
-        write_string(value);
+        write_string(String(value));
         break;
     case Value::Type::NUMBER:
         write_number(value);
@@ -97,36 +101,51 @@ void Compact::write_value(const Value& value) {
 void Compact::write_object(const Value& value) {
     std::size_t num = value.size();
 
-    write('{');
-    for (const auto& member : Object(value)) {
-        write_string(member.first);
-        write(':');
-        write_value(member.second);
-        if (--num) { write(','); }
-    };
-    write('}');
+    m_writter->write('{');
+    for (const auto& obj : Object(value)) {
+        write_string(obj.first);
+        m_writter->write(':');
+        write_value(obj.second);
+        if (--num) { m_writter->write(','); }
+    }
+    m_writter->write('}');
 }
 
 void Compact::write_array(const Value& value) {
     std::size_t num = value.size();
 
-    write('[');
-    for (const auto& val : Array(value)) {
-        write_value(val);
-        if (--num) { write(','); }
+    m_writter->write('[');
+    for (const auto& v : Array(value)) {
+        write_value(v);
+        if (--num) { m_writter->write(','); }
     }
-    write(']');
+    m_writter->write(']');
 }
 
-void Compact::write_string(const Value& value) {
-    write('"');
-    for (const auto& ch : String(value)) {
-        if (('\\' == ch) || ('\"' == ch)) {
-            write('\\');
-        }
-        write(ch);
+void Compact::write_string(const std::string& str) {
+    std::size_t count = 0;
+    std::string tmp;
+
+    for (const auto& ch : str) {
+        if (('\\' == ch) || ('\"' == ch)) { ++count; }
+        ++count;
     }
-    write('"');
+
+    tmp.reserve(2 + count);
+    tmp.push_back('"');
+    if (count == str.size()) {
+        tmp.append(str);
+    }
+    else {
+        for (const auto& ch : str) {
+            if (('\\' == ch) || ('\"' == ch)) {
+                tmp.push_back('\\');
+            }
+            tmp.push_back(ch);
+        }
+    }
+    tmp.push_back('"');
+    m_writter->write(tmp);
 }
 
 void Compact::write_number(const Value& value) {
@@ -146,52 +165,98 @@ void Compact::write_number(const Value& value) {
 }
 
 void Compact::write_number_int(Int64 value) {
+    std::array<char, MAX_CHAR_BUFFER> buffer;
+    std::size_t count = 0;
+    Uint64 tmp;
+
     if (value < 0) {
-        write('-');
+        buffer[0] = '-';
+        ++count;
         value = -value;
     }
-    write_number_uint(Uint64(value));
+
+    tmp = Uint64(value);
+    do {
+        ++count;
+        tmp /= 10;
+    } while (tmp);
+
+    tmp = Uint64(value);
+    char* pos = buffer.data() + count;
+    do {
+        *(--pos) = NUMBER_CHARS[tmp % 10];
+        tmp /= 10;
+    } while (tmp);
+
+    m_writter->write(buffer.data(), count);
 }
 
 void Compact::write_number_uint(Uint64 value) {
     std::array<char, MAX_CHAR_BUFFER> buffer;
-    char* pos = buffer.data();
+    std::size_t count = 0;
+    Uint64 tmp;
 
+    tmp = value;
     do {
-        *(pos++) = char('0' + (value % 10));
-        value /= 10;
-    } while (0 != value);
+        ++count;
+        tmp /= 10;
+    } while (tmp);
+
+    tmp = value;
+    char* pos = buffer.data() + count;
     do {
-        write(*(--pos));
-    } while (pos > buffer.data());
+        *(--pos) = NUMBER_CHARS[tmp % 10];
+        tmp /= 10;
+    } while (tmp);
+
+    m_writter->write(buffer.data(), count);
 }
 
 void Compact::write_number_double(Double value) {
+    std::array<char, MAX_CHAR_BUFFER> buffer;
+    std::size_t count = 0;
     double integral_part;
+    Uint64 tmp;
+
     if (std::signbit(value)) {
-        write_number_int(Int64(value));
+        buffer[0] = '-';
+        ++count;
         value = std::abs(value);
     }
-    else {
-        write_number_uint(Uint64(value));
-    }
-    write('.');
+
+    tmp = Uint64(value);
+    do {
+        ++count;
+        tmp /= 10;
+    } while (tmp);
+
+    tmp = Uint64(value);
+    char* pos = buffer.data() + count;
+    do {
+        *(--pos) = NUMBER_CHARS[tmp % 10];
+        tmp /= 10;
+    } while (tmp);
+
+    buffer[count++] = '.';
+
     value = 10 * std::modf(value, &integral_part);
     do {
-        write(char('0' + Uint64(value) % 10));
+        buffer[count++] = NUMBER_CHARS[Uint64(value) % 10];
         value = 10 * std::modf(value, &integral_part);
     } while (value >= std::numeric_limits<Double>::epsilon());
+
+    m_writter->write(buffer.data(), count);
 }
 
 void Compact::write_boolean(const Value& value) {
     if (Bool(value)) {
-        write(JSON_TRUE);
+        m_writter->write(JSON_TRUE, 4);
     }
     else {
-        write(JSON_FALSE);
+        m_writter->write(JSON_FALSE, 5);
     }
 }
 
 void Compact::write_empty(const Value&) {
-    write(JSON_NULL);
+    m_writter->write(JSON_NULL, 4);
 }

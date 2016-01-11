@@ -51,6 +51,8 @@
 #include <json/serializer.hpp>
 #include <json/deserializer.hpp>
 
+#include <json/writter/string.hpp>
+
 #include <json/formatter/compact.hpp>
 #include <json/formatter/pretty.hpp>
 

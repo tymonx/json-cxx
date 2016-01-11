@@ -56,7 +56,7 @@ namespace formatter {
  * */
 class Compact : public Formatter {
 public:
-    Compact(Writter writter = nullptr);
+    Compact(WritterPtr writter = nullptr);
 
     /*!
      * @brief Serialize JSON value
@@ -71,7 +71,7 @@ protected:
     virtual void write_value(const Value& value);
     virtual void write_object(const Value& value);
     virtual void write_array(const Value& value);
-    virtual void write_string(const Value& value);
+    virtual void write_string(const std::string& str);
     virtual void write_number(const Value& value);
     virtual void write_boolean(const Value& value);
     virtual void write_empty(const Value& value);

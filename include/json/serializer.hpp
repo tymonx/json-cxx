@@ -79,7 +79,7 @@ public:
 
     void write(const Value& value);
 
-    const std::string& read() const { return m_serialized; }
+    const std::string& read() const;
 
     /*!
      * @brief Clear serialization content
@@ -98,8 +98,7 @@ public:
 
     ~Serializer();
 private:
-    FormatterPtr m_formatter{nullptr};
-    std::string m_serialized{};
+    FormatterPtr m_formatter;
 };
 
 }

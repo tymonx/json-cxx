@@ -36,67 +36,35 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file formatter.hpp
+ * @file formatter/pretty.cpp
  *
- * @brief JSON formatter interface
+ * @brief JSON formatter implementation
  * */
 
-#ifndef JSON_CXX_FORMATTER_HPP
-#define JSON_CXX_FORMATTER_HPP
+#include "json/writter/string.hpp"
 
-#include <json/writter.hpp>
-#include <json/value.hpp>
+using json::writter::String;
 
-#include <functional>
-#include <cstdint>
-#include <memory>
+String::String() : m_string{} { }
 
-namespace json {
+String::~String() { }
 
-/*!
- * @brief Abstract class used as JSON serialization formatter
- * */
-class Formatter {
-public:
-    Formatter(WritterPtr writter = nullptr);
-
-    void set_writter(WritterPtr writter) {
-        m_writter = std::move(writter);
-    }
-
-    WritterPtr& get_writter() {
-        return m_writter;
-    }
-
-    const WritterPtr& get_writter() const {
-        return m_writter;
-    }
-
-    /*!
-     * @brief Format given JSON value
-     *
-     * @param[in]   value   JSON value
-     * */
-    virtual void formatting(const Value& value) = 0;
-
-    /*! Destructor */
-    virtual ~Formatter();
-protected:
-    WritterPtr m_writter;
-};
-
-using FormatterPtr = std::unique_ptr<Formatter>;
-
-template<typename T>
-FormatterPtr make_formatter() {
-    return FormatterPtr(static_cast<Formatter*>(new T()));
+void String::write(char ch) {
+    m_string.push_back(ch);
 }
 
-template<typename T>
-FormatterPtr make_formatter(WritterPtr writter) {
-    return FormatterPtr(static_cast<Formatter*>(new T(writter)));
+void String::write(std::size_t size, char ch) {
+    m_string.append(size, ch);
 }
 
+void String::write(const char* str) {
+    m_string.append(str);
 }
 
-#endif /* JSON_CXX_FORMATTER_HPP */
+void String::write(const char* str, std::size_t length) {
+    m_string.append(str, length);
+}
+
+void String::write(const std::string& str) {
+    m_string.append(str);
+}

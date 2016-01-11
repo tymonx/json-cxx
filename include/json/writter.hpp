@@ -36,67 +36,49 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file formatter.hpp
+ * @file writter.hpp
  *
- * @brief JSON formatter interface
+ * @brief JSON writter interface
  * */
 
-#ifndef JSON_CXX_FORMATTER_HPP
-#define JSON_CXX_FORMATTER_HPP
-
-#include <json/writter.hpp>
-#include <json/value.hpp>
+#ifndef JSON_CXX_WRITTER_HPP
+#define JSON_CXX_WRITTER_HPP
 
 #include <functional>
 #include <cstdint>
 #include <memory>
+#include <string>
 
 namespace json {
 
 /*!
  * @brief Abstract class used as JSON serialization formatter
  * */
-class Formatter {
+class Writter {
 public:
-    Formatter(WritterPtr writter = nullptr);
+    Writter();
 
-    void set_writter(WritterPtr writter) {
-        m_writter = std::move(writter);
-    }
+    virtual void write(char ch) = 0;
 
-    WritterPtr& get_writter() {
-        return m_writter;
-    }
+    virtual void write(std::size_t size, char ch) = 0;
 
-    const WritterPtr& get_writter() const {
-        return m_writter;
-    }
+    virtual void write(const char* str) = 0;
 
-    /*!
-     * @brief Format given JSON value
-     *
-     * @param[in]   value   JSON value
-     * */
-    virtual void formatting(const Value& value) = 0;
+    virtual void write(const char* str, std::size_t length) = 0;
+
+    virtual void write(const std::string& str) = 0;
 
     /*! Destructor */
-    virtual ~Formatter();
-protected:
-    WritterPtr m_writter;
+    virtual ~Writter();
 };
 
-using FormatterPtr = std::unique_ptr<Formatter>;
+using WritterPtr = std::unique_ptr<Writter>;
 
 template<typename T>
-FormatterPtr make_formatter() {
-    return FormatterPtr(static_cast<Formatter*>(new T()));
-}
-
-template<typename T>
-FormatterPtr make_formatter(WritterPtr writter) {
-    return FormatterPtr(static_cast<Formatter*>(new T(writter)));
+WritterPtr make_writter() {
+    return WritterPtr(static_cast<Writter*>(new T()));
 }
 
 }
 
-#endif /* JSON_CXX_FORMATTER_HPP */
+#endif /* JSON_CXX_WRITTER_HPP */

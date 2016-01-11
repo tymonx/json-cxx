@@ -45,31 +45,7 @@
 
 using json::Formatter;
 
-Formatter::Formatter(Writter writter) :
-    m_writter{writter} { }
+Formatter::Formatter(WritterPtr writter) :
+    m_writter(std::move(writter)) { }
 
 Formatter::~Formatter() { }
-
-void Formatter::set_writter(Writter writter) {
-    m_writter = writter;
-}
-
-const Formatter::Writter& Formatter::get_writter() const {
-    return m_writter;
-}
-
-void Formatter::write(char ch) {
-    m_writter(ch);
-}
-
-void Formatter::write(const char* str) {
-    while (*str) { m_writter(*(str++)); }
-}
-
-void Formatter::write(const std::string& str) {
-    for (const auto& ch : str) { m_writter(ch); }
-}
-
-void Formatter::write(std::size_t size, char ch) {
-    while (size--) { m_writter(ch); }
-}

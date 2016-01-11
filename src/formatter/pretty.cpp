@@ -45,63 +45,60 @@
 
 using json::formatter::Pretty;
 
-Pretty::Pretty(Writter writter) :
-    Compact(writter) { }
+Pretty::Pretty(WritterPtr writter) :
+    Compact(std::move(writter)) { }
 
 Pretty::~Pretty() { }
 
 void Pretty::write_object(const Value& value) {
     std::size_t num = value.size();
-    if (num > 0) {
-        write('{');
+    if (num) {
+        m_writter->write('{');
 
         ++m_level;
         std::size_t indent_length = m_indent * m_level;
-
-        for (const auto& member : Object(value)) {
-            write('\n');
-            write(indent_length, ' ');
-            write_string(member.first);
-            write(" : ");
-            write_value(member.second);
-            if (--num) { write(','); }
-        };
-
-        write('\n');
+        for (const auto& obj : Object(value)) {
+            m_writter->write('\n');
+            m_writter->write(indent_length, ' ');
+            write_string(obj.first);
+            m_writter->write(" : ", 3);
+            write_value(obj.second);
+            if (--num) { m_writter->write(','); }
+        }
+        m_writter->write('\n');
 
         --m_level;
 
-        write(m_indent * m_level, ' ');
-        write('}');
+        m_writter->write(m_indent * m_level, ' ');
+        m_writter->write('}');
     }
     else {
-        write("{}");
+        m_writter->write("{}", 2);
     }
 }
 
 void Pretty::write_array(const Value& value) {
     std::size_t num = value.size();
-    if (num > 0) {
-        write('[');
+    if (num) {
+        m_writter->write('[');
 
         ++m_level;
         std::size_t indent_length = m_indent * m_level;
 
-        for (const auto& val : Array(value)) {
-            write('\n');
-            write(indent_length, ' ');
-            write_value(val);
-            if (--num) { write(','); }
+        for (const auto& v : Array(value)) {
+            m_writter->write('\n');
+            m_writter->write(indent_length, ' ');
+            write_value(v);
+            if (--num) { m_writter->write(','); }
         }
-
-        write('\n');
+        m_writter->write('\n');
 
         --m_level;
 
-        write(m_indent * m_level, ' ');
-        write(']');
+        m_writter->write(m_indent * m_level, ' ');
+        m_writter->write(']');
     }
     else {
-        write("[]");
+        m_writter->write("[]", 2);
     }
 }
