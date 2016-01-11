@@ -48,8 +48,6 @@
 
 using json::Serializer;
 
-#include <iostream>
-
 Serializer::Serializer(FormatterPtr formatter) :
     m_formatter(std::move(formatter))
 {
@@ -71,6 +69,11 @@ void Serializer::write(const Value& value) {
 void Serializer::clear() {
     static_cast<writter::String*>(m_formatter->get_writter().get())
         ->get_string().clear();
+}
+
+std::string& Serializer::read() {
+    return static_cast<writter::String*>(m_formatter->get_writter().get())
+        ->get_string();
 }
 
 const std::string& Serializer::read() const {

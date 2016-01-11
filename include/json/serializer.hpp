@@ -79,6 +79,8 @@ public:
 
     void write(const Value& value);
 
+    std::string& read();
+
     const std::string& read() const;
 
     /*!
