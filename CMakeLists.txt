@@ -36,8 +36,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
-option(TESTS "Enable/disable tests" ON)
-option(EXAMPLES  "Enable/disable examples" ON)
+option(TESTS "Enable/disable tests" OFF)
+option(EXAMPLES  "Enable/disable examples" OFF)
 option(MEMORY_CHECK "Enable/disable memory check support" OFF)
 option(CODE_COVERAGE "Enable/disable code coverage support" OFF)
 
@@ -51,7 +51,7 @@ include_directories(include)
 enable_testing()
 
 add_subdirectory(src)
-add_subdirectory(tests)
-add_subdirectory(examples)
+#add_subdirectory(tests)
+#add_subdirectory(examples)
 
 install(DIRECTORY include/json DESTINATION include)

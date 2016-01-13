@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2015, Tymoteusz Blazejczyk
+ * Copyright (c) 2016, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,41 +36,25 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file formatter/pretty.cpp
+ * @file json/pair.hpp
  *
- * @brief JSON formatter implementation
+ * @brief JSON pair interface
  * */
 
-#include "json/writter/counter.hpp"
+#ifndef JSON_CXX_PAIR_HPP
+#define JSON_CXX_PAIR_HPP
 
-#include <cstring>
+#include <json/string.hpp>
+#include <json/value.hpp>
 
-using json::writter::Counter;
+namespace json {
 
-Counter::Counter() : m_counter{0} { }
+class Pair {
+public:
+    String string;
+    Value value;
+};
 
-Counter::~Counter() { }
-
-void Counter::clear() {
-    m_counter = 0;
 }
 
-void Counter::write(char) {
-    ++m_counter;
-}
-
-void Counter::write(std::size_t size, char) {
-    m_counter += size;
-}
-
-void Counter::write(const char* str) {
-    m_counter += std::strlen(str);
-}
-
-void Counter::write(const char*, std::size_t length) {
-    m_counter += length;
-}
-
-void Counter::write(const std::string& str) {
-    m_counter += str.length();
-}
+#endif /* JSON_CXX_PAIR_HPP */

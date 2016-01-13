@@ -27,35 +27,14 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-add_subdirectory(writter)
-add_subdirectory(formatter)
-
 add_library(json-cxx
-    value.cpp
-    value_error.cpp
-    number.cpp
-    iterator.cpp
-    serializer.cpp
-    deserializer.cpp
-    deserializer_error.cpp
-    parser.cpp
-    formatter.cpp
-    writter.cpp
-    $<TARGET_OBJECTS:json-cxx-writter>
-    $<TARGET_OBJECTS:json-cxx-formatter>
+    string.cpp
 )
 
-if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
-    set_source_files_properties(value.cpp serializer.cpp PROPERTIES
-        COMPILE_FLAGS "-Wno-exit-time-destructors"
-    )
-endif()
-
-if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
-    set_source_files_properties(value.cpp PROPERTIES
-        COMPILE_FLAGS "-Wno-strict-overflow"
-    )
-endif()
+add_executable(main
+    main.cpp
+)
+target_link_libraries(main json-cxx)
 
 install (TARGETS json-cxx
     RUNTIME DESTINATION bin

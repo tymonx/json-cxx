@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2015, Tymoteusz Blazejczyk
+ * Copyright (c) 2016, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,32 +36,63 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file value_error.cpp
+ * @file parser_error.hpp
  *
- * @brief JSON value error implementation
+ * @brief JSON parser error interface
  * */
 
-#include "json/value_error.hpp"
+#ifndef JSON_CXX_PARSER_ERROR_HPP
+#define JSON_CXX_PARSER_ERROR_HPP
 
-#include <array>
+#include <stdexcept>
+#include <cstdint>
 
-using json::ValueError;
+namespace json {
 
-static const std::array<const char*, 7> g_error_codes{{
-    "No error",
-    "JSON value isn't a null",
-    "JSON value isn't a string",
-    "JSON value isn't a number",
-    "JSON value isn't a boolean",
-    "JSON value isn't a array",
-    "JSON value isn't a object"
-}};
+class ParserError : public std::exception {
+public:
+    /*! Error parsing codes */
+    enum Code {
+        NONE,
+        EMPTY_DOCUMENT,
+        END_OF_FILE,
+        EXTRA_CHARACTER,
+        STACK_LIMIT_REACHED,
+        MISS_VALUE,
+        MISS_QUOTE,
+        MISS_COLON,
+        MISS_CURLY_CLOSE,
+        MISS_SQUARE_CLOSE,
+        NOT_MATCH_NULL,
+        NOT_MATCH_TRUE,
+        NOT_MATCH_FALSE,
+        INVALID_WHITESPACE,
+        INVALID_ESCAPE,
+        INVALID_UNICODE,
+        INVALID_NUMBER_INTEGER,
+        INVALID_NUMBER_FRACTION,
+        INVALID_NUMBER_EXPONENT
+    };
 
-ValueError::ValueError(Code code) :
-    m_code{code} { }
+    ParserError(Code code, std::size_t offset) :
+        m_code{code}, m_offset{offset} { }
 
-ValueError::~ValueError() { }
+    virtual const char* what() const noexcept;
 
-const char* ValueError::what() const noexcept {
-    return g_error_codes[m_code];
+    std::size_t get_offset() const {
+         return m_offset;
+    }
+
+    Code get_code() const {
+        return m_code;
+    }
+
+    virtual ~ParserError();
+private:
+    Code m_code;
+    std::size_t m_offset;
+};
+
 }
+
+#endif /* JSON_CXX_PARSER_ERROR_HPP */

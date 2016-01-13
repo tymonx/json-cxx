@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2015, Tymoteusz Blazejczyk
+ * Copyright (c) 2016, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,52 +36,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file writter/counter.hpp
+ * @file json/bool.hpp
  *
- * @brief JSON writter interface
+ * @brief JSON bool interface
  * */
 
-#ifndef JSON_CXX_WRITTER_COUNTER_HPP
-#define JSON_CXX_WRITTER_COUNTER_HPP
-
-#include <json/writter.hpp>
-
-#include <cstdint>
+#ifndef JSON_CXX_BOOL_HPP
+#define JSON_CXX_BOOL_HPP
 
 namespace json {
-namespace writter {
 
-/*!
- * @brief Compact writter
- *
- * Creates serialized compact JSON data that not include whitespace or newlines
- * */
-class Counter : public Writter {
-public:
-    Counter();
-
-    virtual void clear() override;
-
-    virtual void write(char ch) override;
-
-    virtual void write(std::size_t size, char ch) override;
-
-    virtual void write(const char* str) override;
-
-    virtual void write(const char* str, std::size_t length) override;
-
-    virtual void write(const std::string& str) override;
-
-    std::size_t read() const {
-        return m_counter;
-    }
-
-    virtual ~Counter();
-private:
-    std::size_t m_counter;
-};
+using Bool = bool;
 
 }
-}
 
-#endif /* JSON_CXX_WRITTER_COUNTER_HPP */
+#endif /* JSON_CXX_BOOL_HPP */

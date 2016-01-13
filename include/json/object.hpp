@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2015, Tymoteusz Blazejczyk
+ * Copyright (c) 2016, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,55 +36,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file deserializer_error.hpp
+ * @file json/object.hpp
  *
- * @brief JSON deserializer error interface
+ * @brief JSON object interface
  * */
 
-#ifndef JSON_CXX_VALUE_ERROR_HPP
-#define JSON_CXX_VALUE_ERROR_HPP
+#ifndef JSON_CXX_OBJECT_HPP
+#define JSON_CXX_OBJECT_HPP
 
-#include <exception>
+#include <cstdint>
 
 namespace json {
 
-/*! JSON error parsing */
-class ValueError : public std::exception {
+class Pair;
+
+class Object {
 public:
-    /*! Error parsing codes */
-    enum Code {
-        NONE,
-        NOT_NULL,
-        NOT_STRING,
-        NOT_NUMBER,
-        NOT_BOOLEAN,
-        NOT_ARRAY,
-        NOT_OBJECT
-    };
+    friend class Parser;
 
-    ValueError(Code code);
-
-    ValueError(const ValueError&) = default;
-    ValueError(ValueError&&) = default;
-    ValueError& operator=(const ValueError&) = default;
-    ValueError& operator=(ValueError&&) = default;
-
-    /*!
-     * @brief Return error explanatory string
-     *
-     * @return  When success return decoded error code as a human readable
-     *          message, otherwise return empty string ""
-     * */
-    virtual const char* what() const noexcept;
-
-    Code get_code() const { return m_code; }
-
-    virtual ~ValueError();
 private:
-    /*! Error parsing code */
-    Code m_code{NONE};
+    Pair* m_begin;
+    Pair* m_end;
 };
 
 }
 
-#endif /* JSON_CXX_VALUE_ERROR_HPP */
+#endif /* JSON_CXX_OBJECT_HPP */

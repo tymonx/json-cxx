@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2015, Tymoteusz Blazejczyk
+ * Copyright (c) 2016, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -44,47 +44,49 @@
 #ifndef JSON_CXX_PARSER_HPP
 #define JSON_CXX_PARSER_HPP
 
-#include <json/value.hpp>
-#include <json/deserializer_error.hpp>
+#include "json/json.hpp"
+#include "json/parser_error.hpp"
 
 #include <cstdint>
+#include <utility>
+#include <array>
 
 namespace json {
 
 class Parser {
 public:
-    Parser(const char* str, std::size_t length, std::size_t limit);
+    Parser(const char* begin, const char* end) :
+        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
 
     void parsing(Value& value);
-private:
-    const char* m_begin;
-    const char* m_current;
-    const char* m_end;
-    std::size_t m_limit;
 
-    void read_object(Value& value);
-    void read_object_member(Value& value, std::size_t& count);
-    void read_string(String& str);
-    void read_string_unicode(String& str);
-    void read_string_escape(String& str);
+private:
+    using ParseFunction = void(Parser::*)(Value&);
+
+    template<std::size_t N>
+    using ParseFunctions = std::array<std::pair<char, ParseFunction>, N>;
+
+    static const std::size_t NUM_PARSE_FUNCTIONS = 18;
+
+    static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
+
+    const char* m_begin;
+    const char* m_end;
+    const char* m_pos;
+
+    void read_whitespaces();
     void read_value(Value& value);
     void read_array(Value& value);
-    void read_array_element(Value& value, std::size_t& count);
-    void read_colon();
-    void read_quote();
+    void read_object(Value& value);
+    void read_string(Value& value);
+    void read_number(Value& value);
     void read_true(Value& value);
     void read_false(Value& value);
     void read_null(Value& value);
-    void read_number(Value& value);
-    void read_number_digit(Uint64& str);
-    void read_number_integer(Number& number);
-    void read_number_fractional(Number& number);
-    void read_number_exponent(Number& number);
-    void read_unicode(const char** pos, std::uint32_t& code);
-    void read_whitespaces(bool enable_error = true);
-    void count_string_chars(std::size_t& count);
+    [[noreturn]] void read_end_of_file(Value& value);
 
-    [[noreturn]] void throw_error(DeserializerError::Code code);
+    [[noreturn]]
+    void throw_error(ParserError::Code code);
 };
 
 }

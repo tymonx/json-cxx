@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2015, Tymoteusz Blazejczyk
+ * Copyright (c) 2016, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -41,22 +41,16 @@
  * @brief JSON interface
  * */
 
-#ifndef JSON_CXX_HPP
-#define JSON_CXX_HPP
+#ifndef JSON_CXX_JSON_HPP
+#define JSON_CXX_JSON_HPP
 
-#include <json/value.hpp>
+#include <json/null.hpp>
+#include <json/bool.hpp>
 #include <json/number.hpp>
-#include <json/iterator.hpp>
-#include <json/formatter.hpp>
-#include <json/serializer.hpp>
-#include <json/deserializer.hpp>
+#include <json/string.hpp>
+#include <json/value.hpp>
+#include <json/pair.hpp>
+#include <json/object.hpp>
+#include <json/array.hpp>
 
-#include <json/writter/string.hpp>
-
-#include <json/formatter/compact.hpp>
-#include <json/formatter/pretty.hpp>
-
-#include <json/value_error.hpp>
-#include <json/deserializer_error.hpp>
-
-#endif /* JSON_CXX_HPP */
+#endif /* JSON_CXX_JSON_HPP */

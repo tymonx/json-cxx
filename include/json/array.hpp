@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2015, Tymoteusz Blazejczyk
+ * Copyright (c) 2016, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,48 +36,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file formatter/compact.hpp
+ * @file json/array.hpp
  *
- * @brief JSON formatter interface
+ * @brief JSON array interface
  * */
 
-#ifndef JSON_CXX_FORMATTER_COMPACT_HPP
-#define JSON_CXX_FORMATTER_COMPACT_HPP
+#ifndef JSON_CXX_ARRAY_HPP
+#define JSON_CXX_ARRAY_HPP
 
-#include <json/formatter.hpp>
+#include <cstdint>
 
 namespace json {
-namespace formatter {
 
-/*!
- * @brief Compact formatter
- *
- * Creates serialized compact JSON data that not include whitespace or newlines
- * */
-class Compact : public Formatter {
+class Value;
+
+class Array {
 public:
-    Compact(Writter* writter = nullptr);
+    friend class Parser;
 
-    /*!
-     * @brief Serialize JSON value
-     *
-     * @param[in]   value   JSON value
-     * */
-    virtual void formatting(const Value& value) override;
-
-    /*! Destructor */
-    virtual ~Compact();
-protected:
-    virtual void write_value(const Value& value);
-    virtual void write_object(const Object& object);
-    virtual void write_array(const Array& array);
-    virtual void write_string(const String& str);
-    virtual void write_number(const Number& number);
-    virtual void write_boolean(Bool value);
-    virtual void write_empty();
+private:
+    Value* m_begin;
+    Value* m_end;
 };
 
 }
-}
 
-#endif /* JSON_CXX_FORMATTER_COMPACT_HPP */
+#endif /* JSON_CXX_ARRAY_HPP */
