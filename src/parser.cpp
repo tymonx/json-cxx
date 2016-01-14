@@ -47,14 +47,16 @@
 #include <utility>
 #include <cstring>
 
+using json::Char;
+using json::Size;
 using json::Value;
 using json::Parser;
 using json::ParserError;
 
-static constexpr const char JSON_NULL[] = "null";
-static constexpr const char JSON_TRUE[] = "true";
-static constexpr const char JSON_FALSE[] = "false";
-static constexpr const std::size_t UNICODE_LENGTH = 4;
+static constexpr const Char JSON_NULL[] = "null";
+static constexpr const Char JSON_TRUE[] = "true";
+static constexpr const Char JSON_FALSE[] = "false";
+static constexpr const Size UNICODE_LENGTH = 4;
 
 static constexpr std::uint32_t HEX_0_9 = '0' - 0x0;
 static constexpr std::uint32_t HEX_A_F = 'A' - 0xA;
@@ -64,8 +66,8 @@ static constexpr std::uint32_t HEX_a_f = 'a' - 0xA;
  * @brief   Get string length without null termination '\0'
  * @return  String length
  * */
-template<std::size_t N>
-constexpr std::size_t string_length(const char (&)[N]) { return (N - 1); }
+template<Size N>
+constexpr Size string_length(const Char (&)[N]) { return (N - 1); }
 
 const Parser::ParseFunctions<Parser::NUM_PARSE_FUNCTIONS>
 Parser::m_parse_functions{{
@@ -89,6 +91,10 @@ Parser::m_parse_functions{{
     {'\0', &Parser::read_end_of_file}
 }};
 
+static bool is_whitespace(int ch) {
+    return ((' '  == ch) || ('\n' == ch) || ('\r' == ch) || ('\t' == ch));
+}
+
 void Parser::parsing(Value& value) {
     value = nullptr;
 
@@ -108,9 +114,10 @@ void Parser::parsing(Value& value) {
 void Parser::read_value(Value& value) {
     read_whitespaces();
 
+    int ch = *m_pos;
     for (const auto& p : m_parse_functions) {
-        if (p.first == *m_pos) {
-            return (this->*(p.second))(value);
+        if (p.code == ch) {
+            return (this->*(p.parse))(value);
         }
     }
 
@@ -161,6 +168,13 @@ void Parser::read_null(Value& value) {
     m_pos += string_length(JSON_NULL);
 }
 
+void Parser::read_whitespaces() {
+    while (m_pos < m_end) {
+        if (is_whitespace(*m_pos)) { ++m_pos; }
+        else { break; }
+    }
+}
+
 [[noreturn]]
 void Parser::read_end_of_file(Value&) {
     throw_error(ParserError::END_OF_FILE);
@@ -168,5 +182,5 @@ void Parser::read_end_of_file(Value&) {
 
 [[noreturn]]
 void Parser::throw_error(ParserError::Code code) {
-    throw ParserError(code, std::size_t(m_pos - m_begin));
+    throw ParserError(code, Size(m_pos - m_begin));
 }

@@ -36,63 +36,62 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file parser.hpp
+ * @file json/array.cpp
  *
- * @brief JSON parser interface
+ * @brief JSON array interface
  * */
 
-#ifndef JSON_CXX_PARSER_HPP
-#define JSON_CXX_PARSER_HPP
+#include <json/array.hpp>
+#include <json/value.hpp>
 
-#include <json/types.hpp>
-#include <json/json.hpp>
-#include <json/parser_error.hpp>
+using json::Bool;
+using json::Size;
+using json::Array;
 
-#include <array>
+Array::Array() :
+    m_begin{nullptr},
+    m_end{nullptr}
+{ }
 
-namespace json {
+Array::Array(const Array& other) :
+    m_begin{new Value[other.size()]{}},
+    m_end{m_begin + other.size()}
+{
+    Value* dst = m_begin;
+    const Value* src = other.m_begin;
 
-class Parser {
-public:
-    Parser(const Char* begin, const Char* end) :
-        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
-
-    void parsing(Value& value);
-
-private:
-    using ParseFunction = void(Parser::*)(Value&);
-
-    struct ParseFunctionDecode {
-        int code;
-        ParseFunction parse;
-    };
-
-    template<Size N>
-    using ParseFunctions = std::array<ParseFunctionDecode, N>;
-
-    static const Size NUM_PARSE_FUNCTIONS = 18;
-
-    static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
-
-    const Char* m_begin;
-    const Char* m_end;
-    const Char* m_pos;
-
-    void read_whitespaces();
-    void read_value(Value& value);
-    void read_array(Value& value);
-    void read_object(Value& value);
-    void read_string(Value& value);
-    void read_number(Value& value);
-    void read_true(Value& value);
-    void read_false(Value& value);
-    void read_null(Value& value);
-    [[noreturn]] void read_end_of_file(Value& value);
-
-    [[noreturn]]
-    void throw_error(ParserError::Code code);
-};
-
+    while (dst < m_end) { *(dst++) = *(src++); }
 }
 
-#endif /* JSON_CXX_PARSER_HPP */
+Array::Array(Array&& other) :
+    m_begin{other.m_begin},
+    m_end{other.m_end}
+{
+    other.m_end = other.m_begin = nullptr;
+}
+
+Array& Array::operator=(const Array& other) {
+    return *this = Array(other);
+}
+
+Array& Array::operator=(Array&& other) {
+    if (this != &other) {
+        delete [] m_begin;
+        m_begin = other.m_begin;
+        m_end = other.m_end;
+        other.m_end = other.m_begin = nullptr;
+    }
+    return *this;
+}
+
+Size Array::size() const {
+    return Size(m_end - m_begin);
+}
+
+Bool Array::empty() const {
+    return m_end == m_begin;
+}
+
+Array::~Array() {
+    delete [] m_begin;
+}

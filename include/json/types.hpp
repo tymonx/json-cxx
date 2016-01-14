@@ -36,63 +36,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file parser.hpp
+ * @file json/types.hpp
  *
- * @brief JSON parser interface
+ * @brief JSON types
  * */
 
-#ifndef JSON_CXX_PARSER_HPP
-#define JSON_CXX_PARSER_HPP
+#ifndef JSON_CXX_TYPES_HPP
+#define JSON_CXX_TYPES_HPP
 
-#include <json/types.hpp>
-#include <json/json.hpp>
-#include <json/parser_error.hpp>
-
-#include <array>
+#include <cstddef>
+#include <cstdint>
 
 namespace json {
 
-class Parser {
-public:
-    Parser(const Char* begin, const Char* end) :
-        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
+using Size = std::size_t;
 
-    void parsing(Value& value);
+using Char = char;
 
-private:
-    using ParseFunction = void(Parser::*)(Value&);
+using Bool = bool;
 
-    struct ParseFunctionDecode {
-        int code;
-        ParseFunction parse;
-    };
+using Uint = unsigned int;
 
-    template<Size N>
-    using ParseFunctions = std::array<ParseFunctionDecode, N>;
+using Int = int;
 
-    static const Size NUM_PARSE_FUNCTIONS = 18;
+using Double = double;
 
-    static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
-
-    const Char* m_begin;
-    const Char* m_end;
-    const Char* m_pos;
-
-    void read_whitespaces();
-    void read_value(Value& value);
-    void read_array(Value& value);
-    void read_object(Value& value);
-    void read_string(Value& value);
-    void read_number(Value& value);
-    void read_true(Value& value);
-    void read_false(Value& value);
-    void read_null(Value& value);
-    [[noreturn]] void read_end_of_file(Value& value);
-
-    [[noreturn]]
-    void throw_error(ParserError::Code code);
-};
+using Null = std::nullptr_t;
 
 }
 
-#endif /* JSON_CXX_PARSER_HPP */
+#endif /* JSON_CXX_TYPES_HPP */

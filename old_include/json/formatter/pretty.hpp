@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2016, Tymoteusz Blazejczyk
+ * Copyright (c) 2015, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,63 +36,55 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file parser.hpp
+ * @file formatter/pretty.hpp
  *
- * @brief JSON parser interface
+ * @brief JSON formatter interface
  * */
 
-#ifndef JSON_CXX_PARSER_HPP
-#define JSON_CXX_PARSER_HPP
+#ifndef JSON_CXX_FORMATTER_PRETTY_HPP
+#define JSON_CXX_FORMATTER_PRETTY_HPP
 
-#include <json/types.hpp>
-#include <json/json.hpp>
-#include <json/parser_error.hpp>
+#include <json/formatter/compact.hpp>
 
-#include <array>
+#include <cstdint>
 
 namespace json {
+namespace formatter {
 
-class Parser {
+/*!
+ * @brief Pretty formatter
+ *
+ * Creates serialized pretty JSON data that include whitespace and newlines.
+ * Human readable
+ * */
+class Pretty : public Compact {
 public:
-    Parser(const Char* begin, const Char* end) :
-        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
+    /*! Default whitespace indent */
+    static constexpr std::size_t DEFAULT_INDENT{4};
 
-    void parsing(Value& value);
+    Pretty(Writter* writter = nullptr);
 
+    /*!
+     * @brief Set number of spaces for indentation
+     *
+     * Spaces are added after new value in JSON array or new member in
+     * JSON object
+     *
+     * @param[in]   indent  Number of spaces used for indentation
+     * */
+    void set_indent(std::size_t indent) { m_indent = indent; }
+
+    /*! Destructor */
+    virtual ~Pretty();
 private:
-    using ParseFunction = void(Parser::*)(Value&);
+    virtual void write_object(const Object& object) override;
+    virtual void write_array(const Array& array) override;
 
-    struct ParseFunctionDecode {
-        int code;
-        ParseFunction parse;
-    };
-
-    template<Size N>
-    using ParseFunctions = std::array<ParseFunctionDecode, N>;
-
-    static const Size NUM_PARSE_FUNCTIONS = 18;
-
-    static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
-
-    const Char* m_begin;
-    const Char* m_end;
-    const Char* m_pos;
-
-    void read_whitespaces();
-    void read_value(Value& value);
-    void read_array(Value& value);
-    void read_object(Value& value);
-    void read_string(Value& value);
-    void read_number(Value& value);
-    void read_true(Value& value);
-    void read_false(Value& value);
-    void read_null(Value& value);
-    [[noreturn]] void read_end_of_file(Value& value);
-
-    [[noreturn]]
-    void throw_error(ParserError::Code code);
+    std::size_t m_indent{DEFAULT_INDENT};
+    std::size_t m_level{0};
 };
 
 }
+}
 
-#endif /* JSON_CXX_PARSER_HPP */
+#endif /* JSON_CXX_FORMATTER_PRETTY_HPP */

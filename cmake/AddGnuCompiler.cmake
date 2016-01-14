@@ -89,7 +89,7 @@ function (gnu_compiler_processing)
         -Wuninitialized
         -Wunknown-pragmas
         -Wunreachable-code
-        -Wunsafe-loop-optimizations
+        -Wno-unsafe-loop-optimizations
         -Wunused
         -Wunused-function
         -Wunused-label
@@ -150,7 +150,7 @@ function (gnu_compiler_processing)
     string(REGEX REPLACE ";" " " LD_FLAGS   "${LD_FLAGS}")
 
     set(COMPILER_DEBUG      "-O0 -g3 -ggdb")
-    set(COMPILER_RELEASE    "-pg -O3 -DNDEBUG -fdata-sections -ffunction-sections -fstack-protector-strong")
+    set(COMPILER_RELEASE    "-pg -Os -DNDEBUG -fdata-sections -ffunction-sections -fstack-protector-strong")
     set(COMPILER_COVERAGE   "-O0 -g --coverage")
 
     set(LINKER_DEBUG        "")

@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2016, Tymoteusz Blazejczyk
+ * Copyright (c) 2015, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,63 +36,55 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file parser.hpp
+ * @file deserializer_error.hpp
  *
- * @brief JSON parser interface
+ * @brief JSON deserializer error interface
  * */
 
-#ifndef JSON_CXX_PARSER_HPP
-#define JSON_CXX_PARSER_HPP
+#ifndef JSON_CXX_VALUE_ERROR_HPP
+#define JSON_CXX_VALUE_ERROR_HPP
 
-#include <json/types.hpp>
-#include <json/json.hpp>
-#include <json/parser_error.hpp>
-
-#include <array>
+#include <exception>
 
 namespace json {
 
-class Parser {
+/*! JSON error parsing */
+class ValueError : public std::exception {
 public:
-    Parser(const Char* begin, const Char* end) :
-        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
-
-    void parsing(Value& value);
-
-private:
-    using ParseFunction = void(Parser::*)(Value&);
-
-    struct ParseFunctionDecode {
-        int code;
-        ParseFunction parse;
+    /*! Error parsing codes */
+    enum Code {
+        NONE,
+        NOT_NULL,
+        NOT_STRING,
+        NOT_NUMBER,
+        NOT_BOOLEAN,
+        NOT_ARRAY,
+        NOT_OBJECT
     };
 
-    template<Size N>
-    using ParseFunctions = std::array<ParseFunctionDecode, N>;
+    ValueError(Code code);
 
-    static const Size NUM_PARSE_FUNCTIONS = 18;
+    ValueError(const ValueError&) = default;
+    ValueError(ValueError&&) = default;
+    ValueError& operator=(const ValueError&) = default;
+    ValueError& operator=(ValueError&&) = default;
 
-    static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
+    /*!
+     * @brief Return error explanatory string
+     *
+     * @return  When success return decoded error code as a human readable
+     *          message, otherwise return empty string ""
+     * */
+    virtual const char* what() const noexcept;
 
-    const Char* m_begin;
-    const Char* m_end;
-    const Char* m_pos;
+    Code get_code() const { return m_code; }
 
-    void read_whitespaces();
-    void read_value(Value& value);
-    void read_array(Value& value);
-    void read_object(Value& value);
-    void read_string(Value& value);
-    void read_number(Value& value);
-    void read_true(Value& value);
-    void read_false(Value& value);
-    void read_null(Value& value);
-    [[noreturn]] void read_end_of_file(Value& value);
-
-    [[noreturn]]
-    void throw_error(ParserError::Code code);
+    virtual ~ValueError();
+private:
+    /*! Error parsing code */
+    Code m_code{NONE};
 };
 
 }
 
-#endif /* JSON_CXX_PARSER_HPP */
+#endif /* JSON_CXX_VALUE_ERROR_HPP */

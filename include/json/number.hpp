@@ -44,15 +44,9 @@
 #ifndef JSON_CXX_NUMBER_HPP
 #define JSON_CXX_NUMBER_HPP
 
-#include <cstdint>
+#include <json/types.hpp>
 
 namespace json {
-
-using Uint = unsigned int;
-
-using Int = int;
-
-using Double = double;
 
 class Number {
 public:
@@ -63,6 +57,10 @@ public:
         INT,
         DOUBLE
     };
+
+    Number();
+
+    ~Number();
 private:
     Type m_type;
 

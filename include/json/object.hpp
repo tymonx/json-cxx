@@ -44,7 +44,7 @@
 #ifndef JSON_CXX_OBJECT_HPP
 #define JSON_CXX_OBJECT_HPP
 
-#include <cstdint>
+#include <json/types.hpp>
 
 namespace json {
 
@@ -54,6 +54,21 @@ class Object {
 public:
     friend class Parser;
 
+    Object();
+
+    Object(const Object&);
+
+    Object(Object&&);
+
+    Object& operator=(const Object&);
+
+    Object& operator=(Object&&);
+
+    Size size() const;
+
+    Bool empty() const;
+
+    ~Object();
 private:
     Pair* m_begin;
     Pair* m_end;

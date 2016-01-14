@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2016, Tymoteusz Blazejczyk
+ * Copyright (c) 2015, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,20 +36,39 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/null.hpp
+ * @file formatter/pretty.cpp
  *
- * @brief JSON null interface
+ * @brief JSON formatter implementation
  * */
 
-#ifndef JSON_CXX_NULL_HPP
-#define JSON_CXX_NULL_HPP
+#include "json/writter/string.hpp"
 
-#include <cstddef>
+using json::writter::String;
 
-namespace json {
+String::String() : m_string{} { }
 
-using Null = std::nullptr_t;
+String::~String() { }
 
+void String::clear() {
+    m_string.clear();
 }
 
-#endif /* JSON_CXX_NULL_HPP */
+void String::write(char ch) {
+    m_string.push_back(ch);
+}
+
+void String::write(std::size_t size, char ch) {
+    m_string.append(size, ch);
+}
+
+void String::write(const char* str) {
+    m_string.append(str);
+}
+
+void String::write(const char* str, std::size_t length) {
+    m_string.append(str, length);
+}
+
+void String::write(const std::string& str) {
+    m_string.append(str);
+}

@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2016, Tymoteusz Blazejczyk
+ * Copyright (c) 2015, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -44,53 +44,47 @@
 #ifndef JSON_CXX_PARSER_HPP
 #define JSON_CXX_PARSER_HPP
 
-#include <json/types.hpp>
-#include <json/json.hpp>
-#include <json/parser_error.hpp>
+#include <json/value.hpp>
+#include <json/deserializer_error.hpp>
 
-#include <array>
+#include <cstdint>
 
 namespace json {
 
 class Parser {
 public:
-    Parser(const Char* begin, const Char* end) :
-        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
+    Parser(const char* str, std::size_t length, std::size_t limit);
 
     void parsing(Value& value);
-
 private:
-    using ParseFunction = void(Parser::*)(Value&);
+    const char* m_begin;
+    const char* m_current;
+    const char* m_end;
+    std::size_t m_limit;
 
-    struct ParseFunctionDecode {
-        int code;
-        ParseFunction parse;
-    };
-
-    template<Size N>
-    using ParseFunctions = std::array<ParseFunctionDecode, N>;
-
-    static const Size NUM_PARSE_FUNCTIONS = 18;
-
-    static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
-
-    const Char* m_begin;
-    const Char* m_end;
-    const Char* m_pos;
-
-    void read_whitespaces();
+    void read_object(Value& value);
+    void read_object_member(Value& value, std::size_t& count);
+    void read_string(String& str);
+    void read_string_unicode(String& str);
+    void read_string_escape(String& str);
     void read_value(Value& value);
     void read_array(Value& value);
-    void read_object(Value& value);
-    void read_string(Value& value);
-    void read_number(Value& value);
+    void read_array_element(Value& value, std::size_t& count);
+    void read_colon();
+    void read_quote();
     void read_true(Value& value);
     void read_false(Value& value);
     void read_null(Value& value);
-    [[noreturn]] void read_end_of_file(Value& value);
+    void read_number(Value& value);
+    void read_number_digit(Uint64& str);
+    void read_number_integer(Number& number);
+    void read_number_fractional(Number& number);
+    void read_number_exponent(Number& number);
+    void read_unicode(const char** pos, std::uint32_t& code);
+    void read_whitespaces(bool enable_error = true);
+    void count_string_chars(std::size_t& count);
 
-    [[noreturn]]
-    void throw_error(ParserError::Code code);
+    [[noreturn]] void throw_error(DeserializerError::Code code);
 };
 
 }

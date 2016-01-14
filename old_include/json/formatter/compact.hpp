@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2016, Tymoteusz Blazejczyk
+ * Copyright (c) 2015, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,63 +36,48 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file parser.hpp
+ * @file formatter/compact.hpp
  *
- * @brief JSON parser interface
+ * @brief JSON formatter interface
  * */
 
-#ifndef JSON_CXX_PARSER_HPP
-#define JSON_CXX_PARSER_HPP
+#ifndef JSON_CXX_FORMATTER_COMPACT_HPP
+#define JSON_CXX_FORMATTER_COMPACT_HPP
 
-#include <json/types.hpp>
-#include <json/json.hpp>
-#include <json/parser_error.hpp>
-
-#include <array>
+#include <json/formatter.hpp>
 
 namespace json {
+namespace formatter {
 
-class Parser {
+/*!
+ * @brief Compact formatter
+ *
+ * Creates serialized compact JSON data that not include whitespace or newlines
+ * */
+class Compact : public Formatter {
 public:
-    Parser(const Char* begin, const Char* end) :
-        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
+    Compact(Writter* writter = nullptr);
 
-    void parsing(Value& value);
+    /*!
+     * @brief Serialize JSON value
+     *
+     * @param[in]   value   JSON value
+     * */
+    virtual void formatting(const Value& value) override;
 
-private:
-    using ParseFunction = void(Parser::*)(Value&);
-
-    struct ParseFunctionDecode {
-        int code;
-        ParseFunction parse;
-    };
-
-    template<Size N>
-    using ParseFunctions = std::array<ParseFunctionDecode, N>;
-
-    static const Size NUM_PARSE_FUNCTIONS = 18;
-
-    static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
-
-    const Char* m_begin;
-    const Char* m_end;
-    const Char* m_pos;
-
-    void read_whitespaces();
-    void read_value(Value& value);
-    void read_array(Value& value);
-    void read_object(Value& value);
-    void read_string(Value& value);
-    void read_number(Value& value);
-    void read_true(Value& value);
-    void read_false(Value& value);
-    void read_null(Value& value);
-    [[noreturn]] void read_end_of_file(Value& value);
-
-    [[noreturn]]
-    void throw_error(ParserError::Code code);
+    /*! Destructor */
+    virtual ~Compact();
+protected:
+    virtual void write_value(const Value& value);
+    virtual void write_object(const Object& object);
+    virtual void write_array(const Array& array);
+    virtual void write_string(const String& str);
+    virtual void write_number(const Number& number);
+    virtual void write_boolean(Bool value);
+    virtual void write_empty();
 };
 
 }
+}
 
-#endif /* JSON_CXX_PARSER_HPP */
+#endif /* JSON_CXX_FORMATTER_COMPACT_HPP */

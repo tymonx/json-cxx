@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2016, Tymoteusz Blazejczyk
+ * Copyright (c) 2015, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,63 +36,70 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file parser.hpp
+ * @file deserializer_error.hpp
  *
- * @brief JSON parser interface
+ * @brief JSON deserializer error interface
  * */
 
-#ifndef JSON_CXX_PARSER_HPP
-#define JSON_CXX_PARSER_HPP
+#ifndef JSON_CXX_DESERIALIZER_ERROR_HPP
+#define JSON_CXX_DESERIALIZER_ERROR_HPP
 
-#include <json/types.hpp>
-#include <json/json.hpp>
-#include <json/parser_error.hpp>
-
-#include <array>
+#include <exception>
+#include <cstdint>
 
 namespace json {
 
-class Parser {
+/*! JSON error parsing */
+class DeserializerError : public std::exception {
 public:
-    Parser(const Char* begin, const Char* end) :
-        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
-
-    void parsing(Value& value);
-
-private:
-    using ParseFunction = void(Parser::*)(Value&);
-
-    struct ParseFunctionDecode {
-        int code;
-        ParseFunction parse;
+    /*! Error parsing codes */
+    enum Code {
+        NONE,
+        END_OF_FILE,
+        STACK_LIMIT_REACHED,
+        MISS_VALUE,
+        MISS_QUOTE,
+        MISS_COLON,
+        MISS_CURLY_CLOSE,
+        MISS_SQUARE_CLOSE,
+        NOT_MATCH_NULL,
+        NOT_MATCH_TRUE,
+        NOT_MATCH_FALSE,
+        INVALID_WHITESPACE,
+        INVALID_ESCAPE,
+        INVALID_UNICODE,
+        INVALID_NUMBER_INTEGER,
+        INVALID_NUMBER_FRACTION,
+        INVALID_NUMBER_EXPONENT
     };
 
-    template<Size N>
-    using ParseFunctions = std::array<ParseFunctionDecode, N>;
+    DeserializerError(Code code, std::size_t offset);
 
-    static const Size NUM_PARSE_FUNCTIONS = 18;
+    DeserializerError(const DeserializerError&) = default;
+    DeserializerError(DeserializerError&&) = default;
+    DeserializerError& operator=(const DeserializerError&) = default;
+    DeserializerError& operator=(DeserializerError&&) = default;
 
-    static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
+    /*!
+     * @brief Return error explanatory string
+     *
+     * @return  When success return decoded error code as a human readable
+     *          message, otherwise return empty string ""
+     * */
+    virtual const char* what() const noexcept;
 
-    const Char* m_begin;
-    const Char* m_end;
-    const Char* m_pos;
+    Code get_code() const { return m_code; }
 
-    void read_whitespaces();
-    void read_value(Value& value);
-    void read_array(Value& value);
-    void read_object(Value& value);
-    void read_string(Value& value);
-    void read_number(Value& value);
-    void read_true(Value& value);
-    void read_false(Value& value);
-    void read_null(Value& value);
-    [[noreturn]] void read_end_of_file(Value& value);
+    std::size_t get_offset() const { return m_offset; }
 
-    [[noreturn]]
-    void throw_error(ParserError::Code code);
+    virtual ~DeserializerError();
+private:
+    /*! Error parsing code */
+    Code m_code{NONE};
+    /*! Column number indicative error */
+    std::size_t m_offset{0};
 };
 
 }
 
-#endif /* JSON_CXX_PARSER_HPP */
+#endif /* JSON_CXX_DESERIALIZER_ERROR_HPP */

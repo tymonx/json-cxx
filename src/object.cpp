@@ -36,18 +36,62 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/bool.hpp
+ * @file json/object.cpp
  *
- * @brief JSON bool interface
+ * @brief JSON object interface
  * */
 
-#ifndef JSON_CXX_BOOL_HPP
-#define JSON_CXX_BOOL_HPP
+#include <json/object.hpp>
+#include <json/pair.hpp>
 
-namespace json {
+using json::Bool;
+using json::Size;
+using json::Object;
 
-using Bool = bool;
+Object::Object() :
+    m_begin{nullptr},
+    m_end{nullptr}
+{ }
 
+Object::Object(const Object& other) :
+    m_begin{new Pair[other.size()]{}},
+    m_end{m_begin + other.size()}
+{
+    Pair* dst = m_begin;
+    const Pair* src = other.m_begin;
+
+    while (dst < m_end) { *(dst++) = *(src++); }
 }
 
-#endif /* JSON_CXX_BOOL_HPP */
+Object::Object(Object&& other) :
+    m_begin{other.m_begin},
+    m_end{other.m_end}
+{
+    other.m_end = other.m_begin = nullptr;
+}
+
+Object& Object::operator=(const Object& other) {
+    return *this = Object(other);
+}
+
+Object& Object::operator=(Object&& other) {
+    if (this != &other) {
+        delete [] m_begin;
+        m_begin = other.m_begin;
+        m_end = other.m_end;
+        other.m_end = other.m_begin = nullptr;
+    }
+    return *this;
+}
+
+Size Object::size() const {
+    return Size(m_end - m_begin);
+}
+
+Bool Object::empty() const {
+    return m_end == m_begin;
+}
+
+Object::~Object() {
+    delete [] m_begin;
+}

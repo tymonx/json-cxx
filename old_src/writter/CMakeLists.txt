@@ -27,23 +27,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-add_library(json-cxx
-    array.cpp
-    number.cpp
-    object.cpp
-    parser.cpp
-    parser_error.cpp
+add_library(json-cxx-writter OBJECT
     string.cpp
-    value.cpp
-)
-
-add_executable(main
-    main.cpp
-)
-target_link_libraries(main json-cxx)
-
-install (TARGETS json-cxx
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
+    counter.cpp
 )

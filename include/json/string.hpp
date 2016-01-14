@@ -44,10 +44,9 @@
 #ifndef JSON_CXX_STRING_HPP
 #define JSON_CXX_STRING_HPP
 
-#include <cstdint>
+#include <json/types.hpp>
 
 #include <limits>
-#include <utility>
 #include <initializer_list>
 
 namespace json {
@@ -56,25 +55,25 @@ class String {
 public:
     friend class Parser;
 
-    static const constexpr std::size_t npos =
-        std::numeric_limits<std::size_t>::max();
+    static const constexpr Size npos =
+        std::numeric_limits<Size>::max();
 
     String();
 
-    String(std::size_t count, char ch);
+    String(Size count, Char ch);
 
-    String(const String& other, std::size_t pos, std::size_t count = npos);
+    String(const String& other, Size pos, Size count = npos);
 
-    String(const char* str, std::size_t count);
+    String(const Char* str, Size count);
 
-    String(const char* str);
+    String(const Char* str);
 
-    String(const char* first, const char* last);
+    String(const Char* first, const Char* last);
 
-    template<std::size_t N>
-    String(const char str[N]) : String(str, N - 1) { }
+    template<Size N>
+    String(const Char str[N]) : String(str, N - 1) { }
 
-    String(std::initializer_list<char> init);
+    String(std::initializer_list<Char> init);
 
     String(const String& other);
 
@@ -84,195 +83,161 @@ public:
 
     String& operator=(String&& other);
 
-    String& operator=(const char* s) {
-        String str(s);
-        return *this = std::move(str);
-    }
+    String& operator=(const Char* s);
 
-    String& operator=(char ch) {
-        String str(1, ch);
-        return *this = std::move(str);
-    }
+    String& operator=(Char ch);
 
-    String& operator=(std::initializer_list<char> init) {
-        String str(init);
-        return *this = std::move(str);
-    }
+    String& operator=(std::initializer_list<Char> init);
 
-    String& assign(std::size_t count, char ch) {
-        String str(count, ch);
-        return *this = std::move(str);
-    }
+    String& assign(Size count, Char ch);
 
-    String& assign(const String& other) {
-        return *this = other;
-    }
+    String& assign(const String& other);
 
-    String& assign(String&& other) {
-        return *this = std::move(other);
-    }
+    String& assign(String&& other);
 
-    String& assign(const String& other, std::size_t pos,
-            std::size_t count = npos)
-    {
-        String str(other, pos, count);
-        return *this = std::move(str);
-    }
+    String& assign(const String& other, Size pos,
+            Size count = npos);
 
-    String& assign(const char* s, std::size_t count) {
-        String str(s, count);
-        return *this = std::move(str);
-    }
+    String& assign(const Char* s, Size count);
 
-    String& assign(const char* s) {
-        String str(s);
-        return *this = std::move(str);
-    }
+    String& assign(const Char* s);
 
-    String& assign(const char* first, const char* last) {
-        String str(first, last);
-        return *this = std::move(str);
-    }
+    String& assign(const Char* first, const Char* last);
 
-    String& assign(std::initializer_list<char> init) {
-        String str(init);
-        return *this = std::move(str);
-    }
+    String& assign(std::initializer_list<Char> init);
 
     void swap(String& other);
 
-    /*! @brief Access specified character
+    /*! @brief Access specified Character
      *
      * */
-    char& at(std::size_t pos) {
+    Char& at(Size pos) {
         return m_begin[pos];
     }
 
-    /*! @brief Access specified character
+    /*! @brief Access specified Character
      *
      * */
-    const char& operator[](std::size_t pos) const {
+    const Char& operator[](Size pos) const {
         return m_begin[pos];
     }
 
     /*! @brief Access first element
      *
      * */
-    char& front() {
+    Char& front() {
         return *m_begin;
     }
 
     /*! @brief Access first element
      *
      * */
-    const char& front() const {
+    const Char& front() const {
         return *m_begin;
     }
 
     /*! @brief Access first element
      *
      * */
-    char& back() {
+    Char& back() {
         return *(m_end - 1);
     }
 
     /*! @brief Access first element
      *
      * */
-    const char& back() const {
+    const Char& back() const {
         return *(m_end - 1);
     }
 
-    /*! @brief Returns a pointer to the first character of a string
+    /*! @brief Returns a pointer to the first Character of a string
      *
      * */
-    char* data() {
+    Char* data() {
         return m_begin;
     }
 
-    /*! @brief Returns a pointer to the first character of a string
+    /*! @brief Returns a pointer to the first Character of a string
      *
      * */
-    const char* data() const {
-        return m_begin;
-    }
-
-    /*! @brief Returns an iterator to the beginning
-     *
-     * */
-    char* begin() {
+    const Char* data() const {
         return m_begin;
     }
 
     /*! @brief Returns an iterator to the beginning
      *
      * */
-    const char* begin() const {
+    Char* begin() {
         return m_begin;
     }
 
     /*! @brief Returns an iterator to the beginning
      *
      * */
-    const char* cbegin() const {
+    const Char* begin() const {
+        return m_begin;
+    }
+
+    /*! @brief Returns an iterator to the beginning
+     *
+     * */
+    const Char* cbegin() const {
         return m_begin;
     }
 
     /*! @brief Returns an iterator to the end
      *
      * */
-    char* end() {
+    Char* end() {
         return m_end;
     }
 
     /*! @brief Returns an iterator to the end
      *
      * */
-    const char* end() const {
+    const Char* end() const {
         return m_end;
     }
 
     /*! @brief Returns an iterator to the end
      *
      * */
-    const char* cend() const {
+    const Char* cend() const {
         return m_end;
     }
 
-    /*! @brief Removes all characters
+    /*! @brief Removes all Characters
      * */
     void clear();
 
     /*! @brief String size without null-terminator
      *
-     * @return Return number of characters in string
+     * @return Return number of Characters in string
      * */
-    std::size_t size() const {
-        return std::size_t(m_end - m_begin);
+    Size size() const {
+        return Size(m_end - m_begin);
     }
 
     /*! @brief String size without null-terminator
      *
-     * @return Return number of characters in string
+     * @return Return number of Characters in string
      * */
-    std::size_t length() const {
-        return std::size_t(m_end - m_begin);
+    Size length() const {
+        return Size(m_end - m_begin);
     }
 
     /*! @brief Check if string is empty
      *
      * @return true when string is empty
      * */
-    bool empty() const {
+    Bool empty() const {
         return m_end == m_begin;
     }
 
-    ~String() {
-        delete [] m_begin;
-    }
+    ~String();
 private:
-    char* m_begin;
-    char* m_end;
+    Char* m_begin;
+    Char* m_end;
 };
 
 }

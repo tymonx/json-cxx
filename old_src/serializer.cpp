@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2016, Tymoteusz Blazejczyk
+ * Copyright (c) 2015, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,63 +36,39 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file parser.hpp
+ * @file serializer.cpp
  *
- * @brief JSON parser interface
+ * @brief JSON serializer implementation
  * */
 
-#ifndef JSON_CXX_PARSER_HPP
-#define JSON_CXX_PARSER_HPP
+#include "json/serializer.hpp"
 
-#include <json/types.hpp>
-#include <json/json.hpp>
-#include <json/parser_error.hpp>
+#include "json/formatter/compact.hpp"
+#include "json/writter/string.hpp"
 
-#include <array>
+using json::Serializer;
 
-namespace json {
+Serializer::Serializer(Formatter* formatter) :
+    m_formatter(formatter),
+    m_serialized()
+{ }
 
-class Parser {
-public:
-    Parser(const Char* begin, const Char* end) :
-        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
+Serializer::~Serializer() { }
 
-    void parsing(Value& value);
+void Serializer::write(const Value& value) {
+    Formatter* formatter;
+    formatter::Compact default_formatter;
+    writter::String string;
 
-private:
-    using ParseFunction = void(Parser::*)(Value&);
+    if (nullptr != m_formatter) {
+        formatter = m_formatter;
+    }
+    else {
+        formatter = &default_formatter;
+    }
 
-    struct ParseFunctionDecode {
-        int code;
-        ParseFunction parse;
-    };
+    formatter->set_writter(&string);
+    formatter->formatting(value);
 
-    template<Size N>
-    using ParseFunctions = std::array<ParseFunctionDecode, N>;
-
-    static const Size NUM_PARSE_FUNCTIONS = 18;
-
-    static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
-
-    const Char* m_begin;
-    const Char* m_end;
-    const Char* m_pos;
-
-    void read_whitespaces();
-    void read_value(Value& value);
-    void read_array(Value& value);
-    void read_object(Value& value);
-    void read_string(Value& value);
-    void read_number(Value& value);
-    void read_true(Value& value);
-    void read_false(Value& value);
-    void read_null(Value& value);
-    [[noreturn]] void read_end_of_file(Value& value);
-
-    [[noreturn]]
-    void throw_error(ParserError::Code code);
-};
-
+    m_serialized = std::move(string.read());
 }
-
-#endif /* JSON_CXX_PARSER_HPP */

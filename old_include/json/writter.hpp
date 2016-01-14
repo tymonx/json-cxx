@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2016, Tymoteusz Blazejczyk
+ * Copyright (c) 2015, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,63 +36,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file parser.hpp
+ * @file writter.hpp
  *
- * @brief JSON parser interface
+ * @brief JSON writter interface
  * */
 
-#ifndef JSON_CXX_PARSER_HPP
-#define JSON_CXX_PARSER_HPP
+#ifndef JSON_CXX_WRITTER_HPP
+#define JSON_CXX_WRITTER_HPP
 
-#include <json/types.hpp>
-#include <json/json.hpp>
-#include <json/parser_error.hpp>
-
-#include <array>
+#include <cstdint>
+#include <string>
 
 namespace json {
 
-class Parser {
+/*!
+ * @brief Abstract class used as JSON serialization formatter
+ * */
+class Writter {
 public:
-    Parser(const Char* begin, const Char* end) :
-        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
+    Writter();
 
-    void parsing(Value& value);
+    virtual void clear() = 0;
 
-private:
-    using ParseFunction = void(Parser::*)(Value&);
+    virtual void write(char ch) = 0;
 
-    struct ParseFunctionDecode {
-        int code;
-        ParseFunction parse;
-    };
+    virtual void write(std::size_t size, char ch) = 0;
 
-    template<Size N>
-    using ParseFunctions = std::array<ParseFunctionDecode, N>;
+    virtual void write(const char* str) = 0;
 
-    static const Size NUM_PARSE_FUNCTIONS = 18;
+    virtual void write(const char* str, std::size_t length) = 0;
 
-    static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
+    virtual void write(const std::string& str) = 0;
 
-    const Char* m_begin;
-    const Char* m_end;
-    const Char* m_pos;
-
-    void read_whitespaces();
-    void read_value(Value& value);
-    void read_array(Value& value);
-    void read_object(Value& value);
-    void read_string(Value& value);
-    void read_number(Value& value);
-    void read_true(Value& value);
-    void read_false(Value& value);
-    void read_null(Value& value);
-    [[noreturn]] void read_end_of_file(Value& value);
-
-    [[noreturn]]
-    void throw_error(ParserError::Code code);
+    /*! Destructor */
+    virtual ~Writter();
 };
 
 }
 
-#endif /* JSON_CXX_PARSER_HPP */
+#endif /* JSON_CXX_WRITTER_HPP */

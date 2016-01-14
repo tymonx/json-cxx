@@ -44,24 +44,17 @@
 #ifndef JSON_CXX_VALUE_HPP
 #define JSON_CXX_VALUE_HPP
 
-#include <json/null.hpp>
-#include <json/bool.hpp>
+#include <json/types.hpp>
 #include <json/number.hpp>
 #include <json/string.hpp>
 #include <json/object.hpp>
 #include <json/array.hpp>
-
-#include <cstdint>
 
 namespace json {
 
 class Value {
 public:
     friend class Parser;
-
-    Value(Null);
-
-    Value& operator=(Null);
 
     enum Type {
         NIL,
@@ -72,13 +65,32 @@ public:
         BOOL
     };
 
+    Value();
+
+    Value(Null);
+
+    Value(Type type);
+
+    Value(const Value& other);
+
+    Value(Value&& other);
+
+    Value& operator=(const Value& other);
+
+    Value& operator=(Value&& other);
+
+    Value& operator=(Null);
+
+    Value& operator=(Type type);
+
+    ~Value();
 private:
     Type m_type;
 
     union {
         Object m_object;
         Array m_array;
-        String string;
+        String m_string;
         Number m_number;
         Bool m_bool;
     };

@@ -44,8 +44,7 @@
 #ifndef JSON_CXX_JSON_HPP
 #define JSON_CXX_JSON_HPP
 
-#include <json/null.hpp>
-#include <json/bool.hpp>
+#include <json/types.hpp>
 #include <json/number.hpp>
 #include <json/string.hpp>
 #include <json/value.hpp>

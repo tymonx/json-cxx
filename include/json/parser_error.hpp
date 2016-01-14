@@ -44,8 +44,9 @@
 #ifndef JSON_CXX_PARSER_ERROR_HPP
 #define JSON_CXX_PARSER_ERROR_HPP
 
-#include <stdexcept>
-#include <cstdint>
+#include <json/types.hpp>
+
+#include <exception>
 
 namespace json {
 
@@ -74,12 +75,11 @@ public:
         INVALID_NUMBER_EXPONENT
     };
 
-    ParserError(Code code, std::size_t offset) :
-        m_code{code}, m_offset{offset} { }
+    ParserError(Code code, Size offset);
 
-    virtual const char* what() const noexcept;
+    virtual const Char* what() const noexcept;
 
-    std::size_t get_offset() const {
+    Size get_offset() const {
          return m_offset;
     }
 
@@ -90,7 +90,7 @@ public:
     virtual ~ParserError();
 private:
     Code m_code;
-    std::size_t m_offset;
+    Size m_offset;
 };
 
 }

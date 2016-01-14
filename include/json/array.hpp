@@ -44,7 +44,7 @@
 #ifndef JSON_CXX_ARRAY_HPP
 #define JSON_CXX_ARRAY_HPP
 
-#include <cstdint>
+#include <json/types.hpp>
 
 namespace json {
 
@@ -54,6 +54,45 @@ class Array {
 public:
     friend class Parser;
 
+    Array();
+
+    Array(const Array& other);
+
+    Array(Array&& other);
+
+    Array& operator=(const Array& other);
+
+    Array& operator=(Array&& other);
+
+    Size size() const;
+
+    Bool empty() const;
+
+    Value* begin() {
+        return m_begin;
+    }
+
+    const Value* begin() const {
+        return m_begin;
+    }
+
+    const Value* cbegin() const {
+        return m_begin;
+    }
+
+    Value* end() {
+        return m_end;
+    }
+
+    const Value* end() const {
+        return m_end;
+    }
+
+    const Value* cend() const {
+        return m_end;
+    }
+
+    ~Array();
 private:
     Value* m_begin;
     Value* m_end;

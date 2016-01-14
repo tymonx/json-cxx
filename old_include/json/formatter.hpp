@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2016, Tymoteusz Blazejczyk
+ * Copyright (c) 2015, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,63 +36,54 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file parser.hpp
+ * @file formatter.hpp
  *
- * @brief JSON parser interface
+ * @brief JSON formatter interface
  * */
 
-#ifndef JSON_CXX_PARSER_HPP
-#define JSON_CXX_PARSER_HPP
+#ifndef JSON_CXX_FORMATTER_HPP
+#define JSON_CXX_FORMATTER_HPP
 
-#include <json/types.hpp>
-#include <json/json.hpp>
-#include <json/parser_error.hpp>
+#include <json/writter.hpp>
+#include <json/value.hpp>
 
-#include <array>
+#include <cstdint>
 
 namespace json {
 
-class Parser {
+/*!
+ * @brief Abstract class used as JSON serialization formatter
+ * */
+class Formatter {
 public:
-    Parser(const Char* begin, const Char* end) :
-        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
+    Formatter(Writter* writter = nullptr);
 
-    void parsing(Value& value);
+    void set_writter(Writter* writter) {
+        m_writter = writter;
+    }
 
+    const Writter* get_writter() const {
+        return m_writter;
+    }
+
+    /*!
+     * @brief Format given JSON value
+     *
+     * @param[in]   value   JSON value
+     * */
+    virtual void formatting(const Value& value) = 0;
+
+    /*! Destructor */
+    virtual ~Formatter();
+protected:
+    Writter* m_writter;
 private:
-    using ParseFunction = void(Parser::*)(Value&);
-
-    struct ParseFunctionDecode {
-        int code;
-        ParseFunction parse;
-    };
-
-    template<Size N>
-    using ParseFunctions = std::array<ParseFunctionDecode, N>;
-
-    static const Size NUM_PARSE_FUNCTIONS = 18;
-
-    static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
-
-    const Char* m_begin;
-    const Char* m_end;
-    const Char* m_pos;
-
-    void read_whitespaces();
-    void read_value(Value& value);
-    void read_array(Value& value);
-    void read_object(Value& value);
-    void read_string(Value& value);
-    void read_number(Value& value);
-    void read_true(Value& value);
-    void read_false(Value& value);
-    void read_null(Value& value);
-    [[noreturn]] void read_end_of_file(Value& value);
-
-    [[noreturn]]
-    void throw_error(ParserError::Code code);
+    Formatter(const Formatter&) = delete;
+    Formatter(Formatter&&) = delete;
+    Formatter& operator=(const Formatter&) = delete;
+    Formatter& operator=(Formatter&&) = delete;
 };
 
 }
 
-#endif /* JSON_CXX_PARSER_HPP */
+#endif /* JSON_CXX_FORMATTER_HPP */

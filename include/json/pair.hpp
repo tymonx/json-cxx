@@ -51,7 +51,7 @@ namespace json {
 
 class Pair {
 public:
-    String string;
+    String name;
     Value value;
 };
 

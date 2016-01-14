@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2016, Tymoteusz Blazejczyk
+ * Copyright (c) 2015, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,63 +36,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file parser.hpp
+ * @file deserializer.cpp
  *
- * @brief JSON parser interface
+ * @brief JSON deserializer implementation
  * */
 
-#ifndef JSON_CXX_PARSER_HPP
-#define JSON_CXX_PARSER_HPP
-
-#include <json/types.hpp>
-#include <json/json.hpp>
-#include <json/parser_error.hpp>
+#include "json/deserializer_error.hpp"
 
 #include <array>
 
-namespace json {
+using json::DeserializerError;
 
-class Parser {
-public:
-    Parser(const Char* begin, const Char* end) :
-        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
+static const std::array<const char*, 17> g_error_codes{{
+    "No error",
+    "End of file reached",
+    "Stack limit reached. Increase limit",
+    "Missing value in array/member",
+    "Missing quote '\"' for string",
+    "Missing colon ':' in member pair",
+    "Missing comma ',' or closing curly '}' for object",
+    "Missing comma ',' or closing square ']' for array",
+    "Did you mean 'null'?",
+    "Did you mean 'true'?",
+    "Did you mean 'false'?",
+    "Invalid whitespace character",
+    "Invalid escape character",
+    "Invalid unicode",
+    "Invalid number integer part",
+    "Invalid number fractional part",
+    "Invalid number exponent part"
+}};
 
-    void parsing(Value& value);
+DeserializerError::DeserializerError(Code code, std::size_t offset) :
+    m_code{code}, m_offset{offset}  { }
 
-private:
-    using ParseFunction = void(Parser::*)(Value&);
+DeserializerError::~DeserializerError() { }
 
-    struct ParseFunctionDecode {
-        int code;
-        ParseFunction parse;
-    };
-
-    template<Size N>
-    using ParseFunctions = std::array<ParseFunctionDecode, N>;
-
-    static const Size NUM_PARSE_FUNCTIONS = 18;
-
-    static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
-
-    const Char* m_begin;
-    const Char* m_end;
-    const Char* m_pos;
-
-    void read_whitespaces();
-    void read_value(Value& value);
-    void read_array(Value& value);
-    void read_object(Value& value);
-    void read_string(Value& value);
-    void read_number(Value& value);
-    void read_true(Value& value);
-    void read_false(Value& value);
-    void read_null(Value& value);
-    [[noreturn]] void read_end_of_file(Value& value);
-
-    [[noreturn]]
-    void throw_error(ParserError::Code code);
-};
-
+const char* DeserializerError::what() const noexcept {
+    return g_error_codes[m_code];
 }
-
-#endif /* JSON_CXX_PARSER_HPP */
