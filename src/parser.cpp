@@ -383,18 +383,18 @@ Char* Parser::read_string_unicode(Char* str, int& ch) {
     }
     else if (unicode < 0x800) {
         *(str++) = Char(0xC0 | (0x1F & (unicode >>  6)));
-        *(str++) = Char(0x80 | (0x3F & (unicode >>  0)));
+        *(str++) = Char(0x80 | (0x3F & unicode));
     }
     else if (unicode < 0x10000) {
         *(str++) = Char(0xE0 | (0x0F & (unicode >> 12)));
         *(str++) = Char(0x80 | (0x3F & (unicode >>  6)));
-        *(str++) = Char(0x80 | (0x3F & (unicode >>  0)));
+        *(str++) = Char(0x80 | (0x3F & unicode));
     }
     else {
         *(str++) = Char(0xF0 | (0x07 & (unicode >> 18)));
         *(str++) = Char(0x80 | (0x3F & (unicode >> 12)));
         *(str++) = Char(0x80 | (0x3F & (unicode >>  6)));
-        *(str++) = Char(0x80 | (0x3F & (unicode >>  0)));
+        *(str++) = Char(0x80 | (0x3F & unicode));
     }
 
     ch = *m_pos;
