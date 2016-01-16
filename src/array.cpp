@@ -46,9 +46,6 @@
 
 #include <algorithm>
 
-using json::Bool;
-using json::Size;
-using json::Value;
 using json::Array;
 
 Array::Array(const Array& other) {

@@ -46,9 +46,6 @@
 
 #include <algorithm>
 
-using json::Bool;
-using json::Size;
-using json::Pair;
 using json::Object;
 
 Object::Object(const Object& other) {

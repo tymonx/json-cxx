@@ -44,5 +44,3 @@
 #include <json/number.hpp>
 
 using json::Number;
-
-
