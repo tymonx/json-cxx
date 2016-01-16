@@ -108,21 +108,8 @@ private:
     };
 };
 
-inline
-Size Array::size() const {
-    return Size(m_end - m_begin);
 }
 
-inline
-Value& Array::operator[](Size index) {
-    return m_begin[index];
-}
-
-inline
-const Value& Array::operator[](Size index) const {
-    return m_begin[index];
-}
-
-}
+#include <json/pair.hpp>
 
 #endif /* JSON_CXX_VALUE_HPP */

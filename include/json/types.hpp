@@ -49,6 +49,8 @@
 
 namespace json {
 
+using Difference = std::ptrdiff_t;
+
 using Size = std::size_t;
 
 using Char = char;

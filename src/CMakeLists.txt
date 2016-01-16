@@ -40,7 +40,7 @@ add_library(json-cxx
 
 if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
     set_source_files_properties(array.cpp object.cpp PROPERTIES
-        COMPILE_FLAGS "-Wno-strict-overflow"
+        COMPILE_FLAGS "-Wno-strict-overflow -Wno-unsafe-loop-optimizations"
     )
 endif()
 

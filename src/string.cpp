@@ -73,12 +73,12 @@ String::String(const String& other, Size pos, Size count) :
 }
 
 String::~String() {
-    delete [] m_begin;
+    delete [] m_begin.base();
 }
 
 String& String::operator=(String&& other) {
     if (this != &other) {
-        delete [] m_begin;
+        delete [] m_begin.base();
         m_begin = other.m_begin;
         m_end = other.m_end;
         other.m_end = other.m_begin = nullptr;
@@ -87,8 +87,8 @@ String& String::operator=(String&& other) {
 }
 
 void String::swap(String& other) {
-    Char* tmp_begin = m_begin;
-    Char* tmp_end = m_end;
+    auto tmp_begin = m_begin;
+    auto tmp_end = m_end;
 
     m_begin = other.m_begin;
     m_end = other.m_end;
@@ -99,7 +99,7 @@ void String::swap(String& other) {
 
 void String::clear() {
     if (m_end != m_begin) {
-        delete [] m_begin;
+        delete [] m_begin.base();
         m_end = m_begin = nullptr;
         m_end = m_begin = new Char[1]{};
     }

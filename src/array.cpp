@@ -56,7 +56,7 @@ Array::Array(const Array& other) {
 
 Array& Array::operator=(Array&& other) {
     if (this != &other) {
-        delete [] m_begin;
+        delete [] m_begin.base();
         m_begin = other.m_begin;
         m_end = other.m_end;
         other.m_end = other.m_begin = nullptr;
@@ -65,5 +65,5 @@ Array& Array::operator=(Array&& other) {
 }
 
 Array::~Array() {
-    delete [] m_begin;
+    delete [] m_begin.base();
 }

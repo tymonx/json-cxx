@@ -56,7 +56,7 @@ Object::Object(const Object& other) {
 
 Object& Object::operator=(Object&& other) {
     if (this != &other) {
-        delete [] m_begin;
+        delete [] m_begin.base();
         m_begin = other.m_begin;
         m_end = other.m_end;
         other.m_end = other.m_begin = nullptr;
@@ -65,5 +65,5 @@ Object& Object::operator=(Object&& other) {
 }
 
 Object::~Object() {
-    delete [] m_begin;
+    delete [] m_begin.base();
 }
