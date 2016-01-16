@@ -83,7 +83,7 @@ public:
     ParserError& operator=(const ParserError&) = default;
     ParserError& operator=(ParserError&&) = default;
 
-    virtual const char* what() const noexcept;
+    virtual const char* what() const noexcept override;
 
     Code get_code() const {
         return m_code;

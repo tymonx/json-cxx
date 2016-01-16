@@ -40,6 +40,8 @@ option(TESTS "Enable/disable tests" OFF)
 option(EXAMPLES  "Enable/disable examples" OFF)
 option(MEMORY_CHECK "Enable/disable memory check support" OFF)
 option(CODE_COVERAGE "Enable/disable code coverage support" OFF)
+option(WARNINGS "Enable/disable compilation warnings" ON)
+option(WARNINGS_ERROR "Enable/disable compilation error after warning" OFF)
 
 include(AddGnuCompiler)
 include(AddClangCompiler)

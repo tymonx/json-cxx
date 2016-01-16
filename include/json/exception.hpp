@@ -50,7 +50,7 @@ namespace json {
 
 class Exception : public std::exception {
 public:
-    virtual const char* what() const noexcept = 0;
+    virtual const char* what() const noexcept override = 0;
 
     Exception() = default;
     Exception(const Exception&) = default;

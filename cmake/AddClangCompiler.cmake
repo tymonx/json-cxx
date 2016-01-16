@@ -36,20 +36,28 @@ function (clang_compiler_processing)
     set(CXX_FLAGS -std=c++11)
 
     set(C_WARNINGS
-        -Werror
         -Weverything
         -Wno-padded
         -Wno-covered-switch-default
     )
 
     set(CXX_WARNINGS
-        -Werror
         -Weverything
         -Wno-padded
         -Wno-c++98-compat
         -Wno-c++98-compat-pedantic
         -Wno-covered-switch-default
     )
+
+    if (NOT WARNINGS)
+        set(C_WARNINGS)
+        set(CXX_WARNINGS)
+    endif()
+
+    if (WARNINGS_ERROR)
+        set(C_WARNINGS -Werror ${C_WARNINGS})
+        set(CXX_WARNINGS -Werror ${CXX_WARNINGS})
+    endif()
 
     set(EXTRA_FLAGS
         -fPIE
@@ -82,16 +90,14 @@ function (clang_compiler_processing)
     set(CMAKE_C_FLAGS_DEBUG "${COMPILER_DEBUG} ${C_FLAGS}" PARENT_SCOPE)
     set(CMAKE_C_FLAGS_RELEASE "${COMPILER_RELEASE} ${C_FLAGS}" PARENT_SCOPE)
     set(CMAKE_C_FLAGS_COVERAGE "${COMPILER_COVERAGE} ${C_FLAGS}" PARENT_SCOPE)
-    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${LINKER_DEBUG} ${LD_FLAGS}" PARENT_SCOPE)
-    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${LINKER_RELEASE} ${LD_FLAGS}" PARENT_SCOPE)
-    set(CMAKE_EXE_LINKER_FLAGS_COVERAGE "${LINKER_COVERAGE} ${LD_FLAGS}" PARENT_SCOPE)
 
     set(CMAKE_CXX_FLAGS_DEBUG "${COMPILER_DEBUG} ${CXX_FLAGS}" PARENT_SCOPE)
     set(CMAKE_CXX_FLAGS_RELEASE "${COMPILER_RELEASE} ${CXX_FLAGS}" PARENT_SCOPE)
     set(CMAKE_CXX_FLAGS_COVERAGE "${COMPILER_COVERAGE} ${CXX_FLAGS}" PARENT_SCOPE)
+
     set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${LINKER_DEBUG} ${LD_FLAGS}" PARENT_SCOPE)
     set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${LINKER_RELEASE} ${LD_FLAGS}" PARENT_SCOPE)
-    set(CMAKE_EXE_LINKER_FLAGS_CXXOVERAGE "${LINKER_COVERAGE} ${LD_FLAGS}" PARENT_SCOPE)
+    set(CMAKE_EXE_LINKER_FLAGS_COVERAGE "${LINKER_COVERAGE} ${LD_FLAGS}" PARENT_SCOPE)
 endfunction ()
 
 clang_compiler_processing()

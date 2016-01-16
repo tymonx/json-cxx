@@ -27,7 +27,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-if (${EXAMPLES})
+if (EXAMPLES)
     add_executable(example example.cpp)
     target_link_libraries(example json-cxx)
 
