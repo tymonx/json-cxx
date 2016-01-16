@@ -135,6 +135,10 @@ public:
     Size get_limit() const {
         return m_limit;
     }
+
+    void enable_stream_mode(bool enable) {
+        m_stream_mode = enable;
+    }
 private:
     template<Size N>
     using ParseFunctions = std::array<
@@ -144,6 +148,7 @@ private:
     static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
 
     Size m_limit{DEFAULT_LIMIT_PER_OBJECT};
+    bool m_stream_mode{false};
     const Char* m_begin{nullptr};
     const Char* m_end{nullptr};
     const Char* m_pos{nullptr};
@@ -164,6 +169,12 @@ private:
     void read_quote();
 };
 
+}
+
+static inline
+json::Parser& operator>>(json::Parser& parser, json::Value& value) {
+    parser.parsing(value);
+    return parser;
 }
 
 static inline

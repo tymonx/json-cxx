@@ -187,7 +187,7 @@ void Parser::parsing(Value& value) {
     read_value(value);
     read_whitespaces();
 
-    if (m_pos < m_end) {
+    if (!m_stream_mode && (m_pos < m_end)) {
         throw Error{Error::EXTRA_CHARACTER, m_pos};
     }
 }
