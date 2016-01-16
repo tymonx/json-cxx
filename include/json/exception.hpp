@@ -36,69 +36,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file parser_error.hpp
+ * @file exception.hpp
  *
- * @brief JSON parser error interface
+ * @brief JSON exception interface
  * */
 
-#ifndef JSON_CXX_PARSER_ERROR_HPP
-#define JSON_CXX_PARSER_ERROR_HPP
+#ifndef JSON_CXX_EXCEPTION_HPP
+#define JSON_CXX_EXCEPTION_HPP
 
-#include <json/types.hpp>
-#include <json/exception.hpp>
+#include <exception>
 
 namespace json {
 
-class ParserError : public Exception {
+class Exception : public std::exception {
 public:
-    /*! Error parsing codes */
-    enum Code {
-        NONE,
-        EMPTY_DOCUMENT,
-        END_OF_FILE,
-        EXTRA_CHARACTER,
-        STACK_LIMIT_REACHED,
-        MISS_VALUE,
-        MISS_QUOTE,
-        MISS_COLON,
-        MISS_CURLY_CLOSE,
-        MISS_SQUARE_CLOSE,
-        NOT_MATCH_NULL,
-        NOT_MATCH_TRUE,
-        NOT_MATCH_FALSE,
-        INVALID_WHITESPACE,
-        INVALID_ESCAPE,
-        INVALID_UNICODE,
-        INVALID_NUMBER_INTEGER,
-        INVALID_NUMBER_FRACTION,
-        INVALID_NUMBER_EXPONENT
-    };
+    virtual const char* what() const noexcept = 0;
 
-    ParserError(Code code, const Char* position) :
-        m_code{code},
-        m_position{position} { }
+    Exception() = default;
+    Exception(const Exception&) = default;
+    Exception(Exception&&) = default;
+    Exception& operator=(const Exception&) = default;
+    Exception& operator=(Exception&&) = default;
 
-    ParserError(const ParserError&) = default;
-    ParserError(ParserError&&) = default;
-    ParserError& operator=(const ParserError&) = default;
-    ParserError& operator=(ParserError&&) = default;
-
-    virtual const char* what() const noexcept;
-
-    Code get_code() const {
-        return m_code;
-    }
-
-    const Char* get_position() const {
-         return m_position;
-    }
-
-    virtual ~ParserError();
-private:
-    Code m_code;
-    const Char* m_position;
+    virtual ~Exception();
 };
 
 }
 
-#endif /* JSON_CXX_PARSER_ERROR_HPP */
+#endif /* JSON_CXX_EXCEPTION_HPP */

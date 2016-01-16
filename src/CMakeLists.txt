@@ -29,6 +29,7 @@
 
 add_library(json-cxx
     array.cpp
+    exception.cpp
     number.cpp
     object.cpp
     parser.cpp

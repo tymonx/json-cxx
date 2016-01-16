@@ -71,6 +71,6 @@ static const std::array<const json::Char*, 19> g_error_codes{{
 
 ParserError::~ParserError() { }
 
-const json::Char* ParserError::what() const noexcept {
+const char* ParserError::what() const noexcept {
     return g_error_codes[m_code];
 }

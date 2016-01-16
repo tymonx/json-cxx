@@ -48,6 +48,7 @@
 #include <json/json.hpp>
 
 #include <array>
+#include <limits>
 #include <string>
 #include <cstring>
 #include <utility>
@@ -56,7 +57,8 @@ namespace json {
 
 class Parser {
 public:
-    static const Size DEFAULT_LIMIT_PER_OBJECT;
+    static constexpr Size DEFAULT_LIMIT_PER_OBJECT =
+        std::numeric_limits<Size>::max();
 
     Parser() { }
 

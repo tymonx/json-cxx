@@ -57,6 +57,7 @@ using Error = json::ParserError;
 
 using Uint16 = std::uint_fast16_t;
 using Uint32 = std::uint_fast32_t;
+using SurrogatePair = std::pair<Uint16, Uint16>;
 
 /*!
  * @brief   Get string length without null termination '\0'
@@ -75,14 +76,8 @@ static constexpr Size JSON_FALSE_LENGTH = string_length(JSON_FALSE);
 
 static constexpr Size UNICODE_LENGTH = 4;
 
-static constexpr Uint16 SURROGATE_HIGH_MIN = 0xD800;
-static constexpr Uint16 SURROGATE_HIGH_MAX = 0xDBFF;
-
-static constexpr Uint16 SURROGATE_LOW_MIN = 0xDC00;
-static constexpr Uint16 SURROGATE_LOW_MAX = 0xDFFF;
-
-const Size Parser::DEFAULT_LIMIT_PER_OBJECT =
-    std::numeric_limits<Size>::max();
+static constexpr SurrogatePair SURROGATE_MIN{0xD800, 0xDC00};
+static constexpr SurrogatePair SURROGATE_MAX{0xDBFF, 0xDFFF};
 
 const Parser::ParseFunctions<Parser::NUM_PARSE_FUNCTIONS>
 Parser::m_parse_functions{{
@@ -111,14 +106,15 @@ bool is_whitespace(int ch) {
 }
 
 static inline
-int is_utf16_surrogate_pair(Uint16 high, Uint16 low) {
-    return (high >= SURROGATE_HIGH_MIN) && (high <= SURROGATE_HIGH_MAX) &&
-        (low >= SURROGATE_LOW_MIN) && (low <= SURROGATE_LOW_MAX);
+int is_utf16_surrogate_pair(const SurrogatePair& pair) {
+    return (pair >= SURROGATE_MIN) && (pair <= SURROGATE_MAX);
 }
 
 static inline
-Uint32 decode_utf16_surrogate_pair(Uint32 high, Uint32 low) {
-    return 0x10000 | ((0x3F & high) << 10) | (0x3FF & low);
+Uint32 decode_utf16_surrogate_pair(const SurrogatePair& pair) {
+    return 0x10000 |
+        ((0x3F & Uint32(pair.first)) << 10) |
+        (0x3FF & Uint32(pair.second));
 }
 
 static
@@ -161,8 +157,8 @@ Size count_string_chars(const Char* pos, const Char* end) {
                     if (code < 0x800) {
                         count += 1;
                     }
-                    else if ((code < SURROGATE_HIGH_MIN) ||
-                             (code > SURROGATE_HIGH_MAX)) {
+                    else if ((code < SURROGATE_MIN.first) ||
+                             (code > SURROGATE_MAX.first)) {
                         count += 2;
                     }
                     else {
@@ -364,11 +360,9 @@ Char* Parser::read_string_unicode(Char* str, int& ch) {
     m_pos += UNICODE_LENGTH;
 
     if ((m_pos < m_end) && ('\\' == m_pos[0]) && ('u' == m_pos[1])) {
-        auto surrogate_high = unicode;
-        Uint16 surrogate_low = read_unicode(m_pos + 2, m_end);
-        if (is_utf16_surrogate_pair(surrogate_high, surrogate_low)) {
-            unicode = decode_utf16_surrogate_pair(
-                    surrogate_high, surrogate_low);
+        SurrogatePair surrogate{unicode, read_unicode(m_pos + 2, m_end)};
+        if (is_utf16_surrogate_pair(surrogate)) {
+            unicode = decode_utf16_surrogate_pair(surrogate);
             m_pos += (2 + UNICODE_LENGTH);
         }
     }

@@ -52,4 +52,7 @@
 #include <json/object.hpp>
 #include <json/array.hpp>
 
+#include <json/exception.hpp>
+#include <json/parser_error.hpp>
+
 #endif /* JSON_CXX_JSON_HPP */
