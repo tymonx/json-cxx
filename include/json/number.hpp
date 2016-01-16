@@ -62,6 +62,10 @@ public:
         m_type{Type::UINT},
         m_uint{0}
     { }
+
+    Type get_type() const {
+        return m_type;
+    }
 private:
     Type m_type;
 

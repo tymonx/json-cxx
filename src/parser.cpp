@@ -58,10 +58,22 @@ using Error = json::ParserError;
 using Uint16 = std::uint_fast16_t;
 using Uint32 = std::uint_fast32_t;
 
-static constexpr const Char JSON_NULL[] = "null";
-static constexpr const Char JSON_TRUE[] = "true";
-static constexpr const Char JSON_FALSE[] = "false";
-static constexpr const Size UNICODE_LENGTH = 4;
+/*!
+ * @brief   Get string length without null termination '\0'
+ * @return  String length
+ * */
+template<Size N>
+constexpr Size string_length(const Char (&)[N]) { return (N - 1); }
+
+static constexpr Char JSON_NULL[] = "null";
+static constexpr Char JSON_TRUE[] = "true";
+static constexpr Char JSON_FALSE[] = "false";
+
+static constexpr Size JSON_NULL_LENGTH = string_length(JSON_NULL);
+static constexpr Size JSON_TRUE_LENGTH = string_length(JSON_TRUE);
+static constexpr Size JSON_FALSE_LENGTH = string_length(JSON_FALSE);
+
+static constexpr Size UNICODE_LENGTH = 4;
 
 static constexpr Uint16 SURROGATE_HIGH_MIN = 0xD800;
 static constexpr Uint16 SURROGATE_HIGH_MAX = 0xDBFF;
@@ -71,13 +83,6 @@ static constexpr Uint16 SURROGATE_LOW_MAX = 0xDFFF;
 
 const Size Parser::DEFAULT_LIMIT_PER_OBJECT =
     std::numeric_limits<Size>::max();
-
-/*!
- * @brief   Get string length without null termination '\0'
- * @return  String length
- * */
-template<Size N>
-constexpr Size string_length(const Char (&)[N]) { return (N - 1); }
 
 const Parser::ParseFunctions<Parser::NUM_PARSE_FUNCTIONS>
 Parser::m_parse_functions{{
@@ -100,7 +105,8 @@ Parser::m_parse_functions{{
     {'9', &Parser::read_number}
 }};
 
-static bool is_whitespace(int ch) {
+static inline
+bool is_whitespace(int ch) {
     return ((' '  == ch) || ('\n' == ch) || ('\r' == ch) || ('\t' == ch));
 }
 
@@ -173,18 +179,7 @@ Size count_string_chars(const Char* pos, const Char* end) {
     return count;
 }
 
-Parser::Parser() :
-    m_limit{DEFAULT_LIMIT_PER_OBJECT},
-    m_begin{nullptr},
-    m_end{nullptr},
-    m_pos{nullptr}
-{ }
-
-void Parser::parsing(const Char* begin, const Char* end, Value& value) {
-    m_begin = begin;
-    m_end = end;
-    m_pos = begin;
-
+void Parser::parsing(Value& value) {
     value.~Value();
     value.m_type = Value::NIL;
 
@@ -401,48 +396,65 @@ Char* Parser::read_string_unicode(Char* str, int& ch) {
     return str;
 }
 
+void Parser::read_number(Value&) {
+    bool is_negative{false};
+
+    if ('-' == *m_pos) {
+        ++m_pos;
+        is_negative = true;
+        (void)is_negative;
+    }
+
+    if ('0' == *m_pos) {
+    
+    }
+    else {
+    
+    }
+}
+
 void Parser::read_true(Value& value) {
-    if (m_pos + string_length(JSON_TRUE) > m_end) {
+    if (m_pos + JSON_TRUE_LENGTH > m_end) {
         throw Error{ParserError::END_OF_FILE, m_pos};
     }
 
-    if (std::memcmp(m_pos, JSON_TRUE, string_length(JSON_TRUE))) {
+    if (std::memcmp(m_pos, JSON_TRUE, JSON_TRUE_LENGTH)) {
         throw Error{ParserError::NOT_MATCH_TRUE, m_pos};
     }
 
     value.m_type = Value::BOOL;
     value.m_bool = true;
 
-    m_pos += string_length(JSON_TRUE);
+    m_pos += JSON_TRUE_LENGTH;
 }
 
 void Parser::read_false(Value& value) {
-    if (m_pos + string_length(JSON_FALSE) > m_end) {
+    if (m_pos + JSON_FALSE_LENGTH > m_end) {
         throw Error{ParserError::END_OF_FILE, m_pos};
     }
 
-    if (std::memcmp(m_pos, JSON_FALSE, string_length(JSON_FALSE))) {
+    if (std::memcmp(m_pos, JSON_FALSE, JSON_FALSE_LENGTH)) {
         throw Error{Error::NOT_MATCH_FALSE, m_pos};
     }
 
     value.m_type = Value::BOOL;
     value.m_bool = false;
 
-    m_pos += string_length(JSON_FALSE);
+    m_pos += JSON_FALSE_LENGTH;
 }
 
 void Parser::read_null(Value& value) {
-    if (m_pos + string_length(JSON_NULL) > m_end) {
+    if (m_pos + JSON_NULL_LENGTH > m_end) {
         throw Error{ParserError::END_OF_FILE, m_pos};
     }
 
-    if (std::memcmp(m_pos, JSON_NULL, string_length(JSON_NULL))) {
+    if (std::memcmp(m_pos, JSON_NULL, JSON_NULL_LENGTH)) {
         throw Error{ParserError::NOT_MATCH_NULL, m_pos};
     }
 
     value.m_type = Value::NIL;
 
-    m_pos += string_length(JSON_NULL);
+    m_pos += JSON_NULL_LENGTH;
 }
 
 void Parser::read_whitespaces() {
