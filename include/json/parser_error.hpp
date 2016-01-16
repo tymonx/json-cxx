@@ -75,22 +75,29 @@ public:
         INVALID_NUMBER_EXPONENT
     };
 
-    ParserError(Code code, Size offset);
+    ParserError(Code code, const Char* position) :
+        m_code{code},
+        m_position{position} { }
+
+    ParserError(const ParserError&) = default;
+    ParserError(ParserError&&) = default;
+    ParserError& operator=(const ParserError&) = default;
+    ParserError& operator=(ParserError&&) = default;
 
     virtual const Char* what() const noexcept;
-
-    Size get_offset() const {
-         return m_offset;
-    }
 
     Code get_code() const {
         return m_code;
     }
 
+    const Char* get_position() const {
+         return m_position;
+    }
+
     virtual ~ParserError();
 private:
     Code m_code;
-    Size m_offset;
+    const Char* m_position;
 };
 
 }

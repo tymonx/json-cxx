@@ -1,6 +1,6 @@
 /*!
  * @copyright
- * Copyright (c) 2015, Tymoteusz Blazejczyk
+ * Copyright (c) 2016, Tymoteusz Blazejczyk
  *
  * @copyright
  * All rights reserved.
@@ -36,41 +36,41 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file parser_error.cpp
+ * @file parser_string.hpp
  *
- * @brief JSON parser error implementation
+ * @brief JSON parser interface
  * */
 
+#ifndef JSON_CXX_PARSER_STRING_HPP
+#define JSON_CXX_PARSER_STRING_HPP
+
+#include <json/types.hpp>
+#include <json/json.hpp>
 #include <json/parser_error.hpp>
 
 #include <array>
+#include <limits>
 
-using json::ParserError;
+namespace json {
 
-static const std::array<const json::Char*, 19> g_error_codes{{
-    "No error",
-    "Empty JSON document",
-    "End of file reached",
-    "Extra Character after succesful parsing",
-    "Stack limit reached. Increase limit",
-    "Missing value in array/member",
-    "Missing quote '\"' for string",
-    "Missing colon ':' in member pair",
-    "Missing comma ',' or closing curly '}' for object",
-    "Missing comma ',' or closing square ']' for array",
-    "Did you mean 'null'?",
-    "Did you mean 'true'?",
-    "Did you mean 'false'?",
-    "Invalid whitespace Character",
-    "Invalid escape Character",
-    "Invalid unicode",
-    "Invalid number integer part",
-    "Invalid number fractional part",
-    "Invalid number exponent part"
-}};
+class ParserString {
+public:
+    static constexpr Size DEFAULT_LIMIT_PER_OBJECT =
+        std::numeric_limits<Size>::max();
 
-ParserError::~ParserError() { }
+    ParserString(const Char* begin, const Char* end) :
+        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
 
-const json::Char* ParserError::what() const noexcept {
-    return g_error_codes[m_code];
+    void parsing(Value& value);
+private:
+    const Char* m_begin;
+    const Char* m_end;
+    const Char* m_pos;
+
+    [[noreturn]]
+    void throw_error(ParserError::Code code);
+};
+
 }
+
+#endif /* JSON_CXX_PARSER_STRING_HPP */

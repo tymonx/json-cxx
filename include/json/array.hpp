@@ -66,7 +66,13 @@ public:
 
     Size size() const;
 
-    Bool empty() const;
+    Bool empty() const {
+        return m_end == m_begin;
+    }
+
+    Value& operator[](Size index);
+
+    const Value& operator[](Size index) const;
 
     Value* begin() {
         return m_begin;

@@ -82,7 +82,8 @@ private:
     void read_number_exponent(Number& number);
     void read_unicode(const char** pos, std::uint32_t& code);
     void read_whitespaces(bool enable_error = true);
-    void count_string_chars(std::size_t& count);
+
+    Size count_string_chars() const;
 
     [[noreturn]] void throw_error(DeserializerError::Code code);
 };

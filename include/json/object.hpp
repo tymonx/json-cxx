@@ -64,6 +64,10 @@ public:
 
     Object& operator=(Object&&);
 
+    Pair& operator[] (Size index);
+
+    const Pair& operator[] (Size index) const;
+
     Size size() const;
 
     Bool empty() const;

@@ -46,6 +46,7 @@
 
 using json::Bool;
 using json::Size;
+using json::Value;
 using json::Array;
 
 Array::Array() :
@@ -88,8 +89,12 @@ Size Array::size() const {
     return Size(m_end - m_begin);
 }
 
-Bool Array::empty() const {
-    return m_end == m_begin;
+Value& Array::operator[](Size index) {
+    return m_begin[index];
+}
+
+const Value& Array::operator[](Size index) const {
+    return m_begin[index];
 }
 
 Array::~Array() {

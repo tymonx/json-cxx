@@ -58,9 +58,10 @@ public:
         DOUBLE
     };
 
-    Number();
-
-    ~Number();
+    Number() :
+        m_type{Type::UINT},
+        m_uint{0}
+    { }
 private:
     Type m_type;
 

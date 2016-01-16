@@ -46,6 +46,7 @@
 
 using json::Bool;
 using json::Size;
+using json::Pair;
 using json::Object;
 
 Object::Object() :
@@ -90,6 +91,14 @@ Size Object::size() const {
 
 Bool Object::empty() const {
     return m_end == m_begin;
+}
+
+Pair& Object::operator[](Size index) {
+    return m_begin[index];
+}
+
+const Pair& Object::operator[](Size index) const {
+    return m_begin[index];
 }
 
 Object::~Object() {

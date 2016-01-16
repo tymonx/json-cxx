@@ -46,34 +46,31 @@
 
 #include <json/types.hpp>
 #include <json/json.hpp>
-#include <json/parser_error.hpp>
 
 #include <array>
+#include <utility>
 
 namespace json {
 
 class Parser {
 public:
-    Parser(const Char* begin, const Char* end) :
-        m_begin{begin}, m_end{end}, m_pos{m_begin} { }
+    static const Size DEFAULT_LIMIT_PER_OBJECT;
 
-    void parsing(Value& value);
+    Parser();
 
+    Parser(const Char* begin, const Char* end, Value& value) :
+        Parser() { parsing(begin, end, value); }
+
+    void parsing(const Char* begin, const Char* end, Value& value);
 private:
-    using ParseFunction = void(Parser::*)(Value&);
-
-    struct ParseFunctionDecode {
-        int code;
-        ParseFunction parse;
-    };
-
     template<Size N>
-    using ParseFunctions = std::array<ParseFunctionDecode, N>;
+    using ParseFunctions = std::array<
+        std::pair<int, void(Parser::*)(Value&)>, N>;
 
-    static const Size NUM_PARSE_FUNCTIONS = 18;
-
+    static constexpr Size NUM_PARSE_FUNCTIONS = 17;
     static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
 
+    Size m_limit;
     const Char* m_begin;
     const Char* m_end;
     const Char* m_pos;
@@ -81,16 +78,17 @@ private:
     void read_whitespaces();
     void read_value(Value& value);
     void read_array(Value& value);
+    void read_array_element(Value& value, Size& count);
     void read_object(Value& value);
+    void read_object_member(Value& value, Size& count);
     void read_string(Value& value);
+    Char* read_string_unicode(Char* str, int& ch);
     void read_number(Value& value);
     void read_true(Value& value);
     void read_false(Value& value);
     void read_null(Value& value);
-    [[noreturn]] void read_end_of_file(Value& value);
-
-    [[noreturn]]
-    void throw_error(ParserError::Code code);
+    void read_colon();
+    void read_quote();
 };
 
 }

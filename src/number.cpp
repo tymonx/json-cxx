@@ -45,9 +45,4 @@
 
 using json::Number;
 
-Number::Number() :
-    m_type{Type::UINT},
-    m_uint{0}
-{ }
 
-Number::~Number() { }

@@ -134,8 +134,6 @@ Value::~Value() {
         m_string.~String();
         break;
     case Type::NUMBER:
-        m_number.~Number();
-        break;
     case Type::BOOL:
     case Type::NIL:
     default:

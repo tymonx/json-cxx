@@ -51,8 +51,8 @@ namespace json {
 
 class Pair {
 public:
-    String name;
-    Value value;
+    String name = "";
+    Value value = Value::NIL;
 };
 
 }
