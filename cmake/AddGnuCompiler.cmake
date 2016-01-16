@@ -89,7 +89,7 @@ function (gnu_compiler_processing)
         -Wuninitialized
         -Wunknown-pragmas
         -Wunreachable-code
-        -Wno-unsafe-loop-optimizations
+        -Wunsafe-loop-optimizations
         -Wunused
         -Wunused-function
         -Wunused-label
@@ -130,7 +130,7 @@ function (gnu_compiler_processing)
         -Wzero-as-null-pointer-constant
         -Wstack-protector
         -fstack-protector-all
-        -Wno-missing-field-initializers
+        -Wmissing-field-initializers
     )
 
     set(EXTRA_FLAGS

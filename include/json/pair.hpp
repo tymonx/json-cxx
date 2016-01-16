@@ -51,9 +51,29 @@ namespace json {
 
 class Pair {
 public:
-    String name = "";
-    Value value = Value::NIL;
+    String name{};
+    Value value = nullptr;
 };
+
+inline
+Size Object::size() const {
+    return Size(m_end - m_begin);
+}
+
+inline
+Bool Object::empty() const {
+    return m_end == m_begin;
+}
+
+inline
+Pair& Object::operator[](Size index) {
+    return m_begin[index];
+}
+
+inline
+const Pair& Object::operator[](Size index) const {
+    return m_begin[index];
+}
 
 }
 

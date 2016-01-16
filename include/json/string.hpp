@@ -46,7 +46,9 @@
 
 #include <json/types.hpp>
 
+#include <cstring>
 #include <limits>
+#include <utility>
 #include <initializer_list>
 
 namespace json {
@@ -66,45 +68,81 @@ public:
 
     String(const Char* str, Size count);
 
-    String(const Char* str);
+    String(const Char* str) :
+        String(str, std::strlen(str))
+    { }
 
-    String(const Char* first, const Char* last);
+    String(const Char* first, const Char* last) :
+        String(first, Size(last - first))
+    { }
 
     template<Size N>
     String(const Char str[N]) : String(str, N - 1) { }
 
-    String(std::initializer_list<Char> init);
+    String(std::initializer_list<Char> init) :
+        String(init.begin(), init.size())
+    { }
 
-    String(const String& other);
+    String(const String& other) :
+        String(other.data(), other.size())
+    { }
 
-    String(String&& other);
-
-    String& operator=(const String& other);
+    String(String&& other) :
+        m_begin{other.m_begin},
+        m_end{other.m_end}
+    {
+        other.m_end = other.m_begin = nullptr;
+    }
 
     String& operator=(String&& other);
 
-    String& operator=(const Char* s);
+    String& operator=(const String& other) {
+        return *this = String(other.data(), other.size());
+    }
 
-    String& operator=(Char ch);
+    String& operator=(const Char* s) {
+        return *this = String(s);
+    }
 
-    String& operator=(std::initializer_list<Char> init);
+    String& operator=(Char ch) {
+        return *this = String(1, ch);
+    }
 
-    String& assign(Size count, Char ch);
+    String& operator=(std::initializer_list<Char> init) {
+        return *this = String(init);
+    }
 
-    String& assign(const String& other);
+    String& assign(Size count, Char ch) {
+        return *this = String(count, ch);
+    }
 
-    String& assign(String&& other);
+    String& assign(const String& other) {
+        return *this = other;
+    }
 
-    String& assign(const String& other, Size pos,
-            Size count = npos);
+    String& assign(String&& other) {
+        return *this = std::move(other);
+    }
 
-    String& assign(const Char* s, Size count);
+    String& assign(const String& other, Size pos, Size count) {
+        return *this = String(other, pos, count);
+    }
 
-    String& assign(const Char* s);
+    String& assign(const Char* s, Size count) {
+        return *this = String(s, count);
+    }
 
-    String& assign(const Char* first, const Char* last);
+    String& assign(const Char* s) {
+        return *this = String(s);
+    }
 
-    String& assign(std::initializer_list<Char> init);
+    String& assign(const Char* first, const Char* last) {
+        return *this = String(first, last);
+    }
+
+    String& assign(std::initializer_list<Char> init) {
+        return *this = String(init);
+    }
 
     void swap(String& other);
 
@@ -236,8 +274,8 @@ public:
 
     ~String();
 private:
-    Char* m_begin;
-    Char* m_end;
+    Char* m_begin{nullptr};
+    Char* m_end{nullptr};
 };
 
 }

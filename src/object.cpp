@@ -44,35 +44,17 @@
 #include <json/object.hpp>
 #include <json/pair.hpp>
 
+#include <algorithm>
+
 using json::Bool;
 using json::Size;
 using json::Pair;
 using json::Object;
 
-Object::Object() :
-    m_begin{nullptr},
-    m_end{nullptr}
-{ }
-
-Object::Object(const Object& other) :
-    m_begin{new Pair[other.size()]{}},
-    m_end{m_begin + other.size()}
-{
-    Pair* dst = m_begin;
-    const Pair* src = other.m_begin;
-
-    while (dst < m_end) { *(dst++) = *(src++); }
-}
-
-Object::Object(Object&& other) :
-    m_begin{other.m_begin},
-    m_end{other.m_end}
-{
-    other.m_end = other.m_begin = nullptr;
-}
-
-Object& Object::operator=(const Object& other) {
-    return *this = Object(other);
+Object::Object(const Object& other) {
+    m_begin = new Pair[other.size()]{};
+    m_end = m_begin + other.size();
+    std::copy(other.m_begin, other.m_end, m_begin);
 }
 
 Object& Object::operator=(Object&& other) {
@@ -83,22 +65,6 @@ Object& Object::operator=(Object&& other) {
         other.m_end = other.m_begin = nullptr;
     }
     return *this;
-}
-
-Size Object::size() const {
-    return Size(m_end - m_begin);
-}
-
-Bool Object::empty() const {
-    return m_end == m_begin;
-}
-
-Pair& Object::operator[](Size index) {
-    return m_begin[index];
-}
-
-const Pair& Object::operator[](Size index) const {
-    return m_begin[index];
 }
 
 Object::~Object() {

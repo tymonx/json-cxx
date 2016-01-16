@@ -65,9 +65,13 @@ public:
         BOOL
     };
 
-    Value();
+    Value() :
+        m_type{Type::NIL}
+    { }
 
-    Value(Null);
+    Value(Null) :
+        m_type{Type::NIL}
+    { }
 
     Value(Type type);
 
@@ -75,13 +79,21 @@ public:
 
     Value(Value&& other);
 
-    Value& operator=(const Value& other);
+    Value& operator=(const Value& other) {
+        return *this = Value(other);
+    }
 
     Value& operator=(Value&& other);
 
-    Value& operator=(Null);
+    Value& operator=(Null) {
+        this->~Value();
+        m_type = Type::NIL;
+        return *this;
+    }
 
-    Value& operator=(Type type);
+    Value& operator=(Type type) {
+        return *this = Value(type);
+    }
 
     ~Value();
 private:
@@ -95,6 +107,21 @@ private:
         Bool m_bool;
     };
 };
+
+inline
+Size Array::size() const {
+    return Size(m_end - m_begin);
+}
+
+inline
+Value& Array::operator[](Size index) {
+    return m_begin[index];
+}
+
+inline
+const Value& Array::operator[](Size index) const {
+    return m_begin[index];
+}
 
 }
 

@@ -48,10 +48,6 @@
 
 using json::Value;
 
-Value::Value() : m_type{Type::NIL} { }
-
-Value::Value(Null) : m_type{Type::NIL} { }
-
 Value::Value(Type type) : m_type{type} {
     switch (m_type) {
     case Type::OBJECT:
@@ -141,10 +137,6 @@ Value::~Value() {
     }
 }
 
-Value& Value::operator=(const Value& other) {
-    return *this = Value(other);
-}
-
 Value& Value::operator=(Value&& other) {
     if (this != &other) {
         this->~Value();
@@ -172,14 +164,4 @@ Value& Value::operator=(Value&& other) {
         other.m_type = Type::NIL;
     }
     return *this;
-}
-
-Value& Value::operator=(Null) {
-    this->~Value();
-    m_type = Type::NIL;
-    return *this;
-}
-
-Value& Value::operator=(Type type) {
-    return *this = Value(type);
 }

@@ -38,6 +38,12 @@ add_library(json-cxx
     value.cpp
 )
 
+if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
+    set_source_files_properties(array.cpp object.cpp PROPERTIES
+        COMPILE_FLAGS "-Wno-strict-overflow"
+    )
+endif()
+
 add_executable(main
     main.cpp
 )

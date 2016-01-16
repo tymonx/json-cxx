@@ -54,13 +54,24 @@ class Object {
 public:
     friend class Parser;
 
-    Object();
+
+
+
+
+    Object() { }
 
     Object(const Object&);
 
-    Object(Object&&);
+    Object(Object&& other) :
+        m_begin{other.m_begin},
+        m_end{other.m_end}
+    {
+        other.m_end = other.m_begin = nullptr;
+    }
 
-    Object& operator=(const Object&);
+    Object& operator=(const Object& other) {
+        return *this = Object(other);
+    }
 
     Object& operator=(Object&&);
 
@@ -74,8 +85,8 @@ public:
 
     ~Object();
 private:
-    Pair* m_begin;
-    Pair* m_end;
+    Pair* m_begin{nullptr};
+    Pair* m_end{nullptr};
 };
 
 }

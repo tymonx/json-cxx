@@ -44,35 +44,17 @@
 #include <json/array.hpp>
 #include <json/value.hpp>
 
+#include <algorithm>
+
 using json::Bool;
 using json::Size;
 using json::Value;
 using json::Array;
 
-Array::Array() :
-    m_begin{nullptr},
-    m_end{nullptr}
-{ }
-
-Array::Array(const Array& other) :
-    m_begin{new Value[other.size()]{}},
-    m_end{m_begin + other.size()}
-{
-    Value* dst = m_begin;
-    const Value* src = other.m_begin;
-
-    while (dst < m_end) { *(dst++) = *(src++); }
-}
-
-Array::Array(Array&& other) :
-    m_begin{other.m_begin},
-    m_end{other.m_end}
-{
-    other.m_end = other.m_begin = nullptr;
-}
-
-Array& Array::operator=(const Array& other) {
-    return *this = Array(other);
+Array::Array(const Array& other) {
+    m_begin = new Value[other.size()]{};
+    m_end = m_begin + other.size();
+    std::copy(other.m_begin, other.m_end, m_begin);
 }
 
 Array& Array::operator=(Array&& other) {
@@ -83,18 +65,6 @@ Array& Array::operator=(Array&& other) {
         other.m_end = other.m_begin = nullptr;
     }
     return *this;
-}
-
-Size Array::size() const {
-    return Size(m_end - m_begin);
-}
-
-Value& Array::operator[](Size index) {
-    return m_begin[index];
-}
-
-const Value& Array::operator[](Size index) const {
-    return m_begin[index];
 }
 
 Array::~Array() {

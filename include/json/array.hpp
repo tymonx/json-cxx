@@ -54,21 +54,28 @@ class Array {
 public:
     friend class Parser;
 
-    Array();
+    Array() { }
 
     Array(const Array& other);
 
-    Array(Array&& other);
+    Array(Array&& other) :
+        m_begin{other.m_begin},
+        m_end{other.m_end}
+    {
+        other.m_end = other.m_begin = nullptr;
+    }
 
-    Array& operator=(const Array& other);
+    Array& operator=(const Array& other) {
+        return *this = Array(other);
+    }
 
     Array& operator=(Array&& other);
-
-    Size size() const;
 
     Bool empty() const {
         return m_end == m_begin;
     }
+
+    Size size() const;
 
     Value& operator[](Size index);
 
@@ -100,8 +107,8 @@ public:
 
     ~Array();
 private:
-    Value* m_begin;
-    Value* m_end;
+    Value* m_begin{nullptr};
+    Value* m_end{nullptr};
 };
 
 }
