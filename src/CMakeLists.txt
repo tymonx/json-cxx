@@ -32,14 +32,16 @@ add_library(json-cxx
     exception.cpp
     number.cpp
     object.cpp
+    pair.cpp
     parser.cpp
     parser_error.cpp
+    parser_number.cpp
     string.cpp
     value.cpp
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
-    set_source_files_properties(array.cpp object.cpp PROPERTIES
+    set_source_files_properties(array.cpp object.cpp  parser.cpp PROPERTIES
         COMPILE_FLAGS "-Wno-strict-overflow -Wno-unsafe-loop-optimizations"
     )
 endif()

@@ -44,15 +44,22 @@
 #include <json/parser.hpp>
 #include <json/parser_error.hpp>
 
+#include "parser_number.hpp"
+
 #include <array>
+#include <cmath>
 #include <limits>
 #include <utility>
 #include <cstring>
+
+#include <iostream>
+using namespace std;
 
 using json::Char;
 using json::Size;
 using json::Value;
 using json::Parser;
+using json::ParserNumber;
 using Error = json::ParserError;
 
 using Uint16 = std::uint_fast16_t;
@@ -201,6 +208,7 @@ void Parser::read_value(Value& value) {
     int ch = *m_pos;
     for (const auto& p : m_parse_functions) {
         if (p.first == ch) {
+            cout << "Execute: " << Char(ch) << endl;
             return (this->*(p.second))(value);
         }
     }
@@ -304,7 +312,7 @@ void Parser::read_object_member(Value& value, Size& count) {
         throw Error{Error::MISS_CURLY_CLOSE, m_pos};
     }
     --count;
-    std::memcpy(&value.m_object[--count].name, &key->m_string, sizeof(String));
+    std::memcpy(&value.m_object[--count].key, &key->m_string, sizeof(String));
     std::memcpy(&value.m_object[count].value, tmp, sizeof(Value));
 }
 
@@ -390,21 +398,13 @@ Char* Parser::read_string_unicode(Char* str, int& ch) {
     return str;
 }
 
-void Parser::read_number(Value&) {
-    bool is_negative{false};
+void Parser::read_number(Value& value) {
+    cout << "Read number" << endl;
 
-    if ('-' == *m_pos) {
-        ++m_pos;
-        is_negative = true;
-        (void)is_negative;
-    }
-
-    if ('0' == *m_pos) {
-    
-    }
-    else {
-    
-    }
+    ParserNumber parse_number(m_pos, m_end);
+    parse_number.parsing(value.m_number);
+    m_pos = parse_number.get_position();
+    value.m_type = Value::NUMBER;
 }
 
 void Parser::read_true(Value& value) {

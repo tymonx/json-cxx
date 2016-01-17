@@ -36,27 +36,53 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/pair.hpp
+ * @file parser_number.hpp
  *
- * @brief JSON pair interface
+ * @brief JSON parser number interface
  * */
 
-#ifndef JSON_CXX_PAIR_HPP
-#define JSON_CXX_PAIR_HPP
+#ifndef JSON_CXX_PARSER_NUMBER_HPP
+#define JSON_CXX_PARSER_NUMBER_HPP
 
-#include <json/string.hpp>
-#include <json/value.hpp>
+#include <json/types.hpp>
+#include <json/number.hpp>
 
 namespace json {
 
-class Pair {
+class ParserNumber {
 public:
-    Pair();
+    ParserNumber(const Char* pos, const Char* end) :
+        m_pos{pos}, m_end{end} { }
 
-    String key;
-    Value value;
+    void parsing(Number& number);
+
+    const Char* get_position() const { return m_pos; }
+private:
+    bool m_negative{false};
+    bool m_overflow{false};
+    Difference m_exponent{0};
+    Difference m_length{0};
+    const Char* m_point{nullptr};
+    const Char* m_nonzero_begin{nullptr};
+    const Char* m_nonzero_end{nullptr};
+    const Char* m_pos{nullptr};
+    const Char* m_end{nullptr};
+
+    ParserNumber(const ParserNumber&) = delete;
+    ParserNumber(ParserNumber&&) = delete;
+    ParserNumber& operator=(const ParserNumber&) = delete;
+    ParserNumber& operator=(ParserNumber&&) = delete;
+
+    void read_integral_part();
+    void read_fractional_part();
+    void read_exponent_part();
+    void read_exponent_number();
+    void read_digits();
+    void write_number(Number& number);
+    void write_number_integer(Number& number);
+    void write_number_double(Number& number);
 };
 
 }
 
-#endif /* JSON_CXX_PAIR_HPP */
+#endif /* JSON_CXX_PARSER_NUMBER_HPP */

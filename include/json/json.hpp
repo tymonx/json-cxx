@@ -45,14 +45,15 @@
 #define JSON_CXX_JSON_HPP
 
 #include <json/types.hpp>
+#include <json/exception.hpp>
 #include <json/number.hpp>
 #include <json/string.hpp>
-#include <json/value.hpp>
-#include <json/pair.hpp>
 #include <json/object.hpp>
 #include <json/array.hpp>
+#include <json/value.hpp>
+#include <json/pair.hpp>
 
-#include <json/exception.hpp>
+#include <json/parser.hpp>
 #include <json/parser_error.hpp>
 
 #endif /* JSON_CXX_JSON_HPP */

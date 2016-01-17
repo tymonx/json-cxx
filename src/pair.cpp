@@ -36,27 +36,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/pair.hpp
+ * @file json/pair.cpp
  *
  * @brief JSON pair interface
  * */
 
-#ifndef JSON_CXX_PAIR_HPP
-#define JSON_CXX_PAIR_HPP
+#include <json/pair.hpp>
 
-#include <json/string.hpp>
-#include <json/value.hpp>
+using json::Pair;
 
-namespace json {
-
-class Pair {
-public:
-    Pair();
-
-    String key;
-    Value value;
-};
+Pair::Pair() :
+    key{}, value(nullptr)
+{
 
 }
-
-#endif /* JSON_CXX_PAIR_HPP */

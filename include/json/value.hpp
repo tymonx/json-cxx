@@ -95,6 +95,113 @@ public:
         return *this = Value(type);
     }
 
+    /*!
+     * @brief Get JSON type
+     * */
+    Type get_type() const { return m_type; }
+
+    /*!
+     * @brief Check if JSON value is a string
+     * @return true when is otherwise false
+     * */
+    bool is_string() const { return Type::STRING == m_type; }
+
+    /*!
+     * @brief Check if JSON value is a object
+     * @return true when is otherwise false
+     * */
+    bool is_object() const { return Type::OBJECT == m_type; }
+
+    /*!
+     * @brief Check if JSON value is a array
+     * @return true when is otherwise false
+     * */
+    bool is_array() const { return Type::ARRAY == m_type; }
+
+    /*!
+     * @brief Check if JSON value is a number
+     * @return true when is otherwise false
+     * */
+    bool is_number() const { return Type::NUMBER == m_type; }
+
+    /*!
+     * @brief Check if JSON value is a boolean
+     * @return true when is otherwise false
+     * */
+    bool is_bool() const { return Type::BOOL == m_type; }
+
+    /*!
+     * @brief Check if JSON value is a null
+     * @return true when is otherwise false
+     * */
+    bool is_null() const { return Type::NIL == m_type; }
+
+    /*!
+     * @brief Check if JSON value is a signed integer
+     * @return true when is otherwise false
+     * */
+    bool is_int() const {
+        return is_number() ? m_number.is_int() : false;
+    }
+
+    /*!
+     * @brief Check if JSON value is a unsigned integer
+     * @return true when is otherwise false
+     * */
+    bool is_uint() const {
+        return is_number() ? m_number.is_uint() : false;
+    }
+
+    /*!
+     * @brief Check if JSON value is a double
+     * @return true when is otherwise false
+     * */
+    bool is_double() const {
+        return is_number() ? m_number.is_double() : false;
+    }
+
+    /*! Equivalent to is_null() */
+    bool operator!() const { return is_null(); }
+
+    /*! Convert JSON value to string */
+    explicit operator String&() { return m_string; }
+
+    /*! Convert JSON value to string */
+    explicit operator const String&() const { return m_string; }
+
+    /*! Convert JSON value to string */
+    explicit operator const char*() const { return m_string.data(); }
+
+    /*! Convert JSON value to boolean */
+    explicit operator Bool() const { return m_bool; }
+
+    /*! Convert JSON value to null */
+    explicit operator Null() const { return nullptr; }
+
+    /*! Convert JSON value to signed integer */
+    explicit operator Int() const { return Int(m_number); }
+
+    /*! Convert JSON value to unsigned integer */
+    explicit operator Uint() const { return Uint(m_number); }
+
+    /*! Convert JSON value to double */
+    explicit operator Double() const { return Double(m_number); }
+
+    /*! Convert JSON value to array */
+    explicit operator Array&() { return m_array; }
+
+    /*! Convert JSON value to number */
+    explicit operator Number&() { return m_number; }
+
+    /*! Convert JSON value to array */
+    explicit operator const Array&() const { return m_array; }
+
+    /*! Convert JSON value to object */
+    explicit operator const Object&() const { return m_object; }
+
+    /*! Convert JSON value to number */
+    explicit operator const Number&() const { return m_number; }
+
     ~Value();
 private:
     Type m_type;
