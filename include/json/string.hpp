@@ -299,9 +299,9 @@ public:
         return m_end == m_begin;
     }
 
-    operator const char*() const {
-        return m_begin.base();
-    }
+    operator char*() { return m_begin.base(); }
+
+    operator char*() const { return m_begin.base(); }
 
     ~String();
 
@@ -394,6 +394,10 @@ public:
         pointer base() const { return m_ptr; }
 
         bool operator!() const { return nullptr == m_ptr; }
+
+        operator pointer() { return m_ptr; }
+
+        operator pointer() const { return m_ptr; }
 
         void swap(base_iterator& other) {
             base_iterator tmp(*this);
