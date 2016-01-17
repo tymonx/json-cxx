@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <string>
 #include <limits>
 
 using namespace std;
@@ -19,6 +20,25 @@ int main() {
     cout << "Int: "       << Int(value) << endl;
     cout << "Uint: "      << Uint(value) << endl;
     cout << "Double: "    << Double(value) << endl;
+
+    R"( " 01asafaf12.oe \u2708 \u263A \uD83D\uDE02"  )" >> value;
+
+    cout << "Is string: " << value.is_string() << endl;
+    cout << "String: '" << String(value) << "'" << endl;
+
+    R"( true  )" >> value;
+
+    cout << "Is bool: " << value.is_bool() << endl;
+    cout << "Bool: '" << Bool(value) << "'" << endl;
+
+    R"( false  )" >> value;
+
+    cout << "Is bool: " << value.is_bool() << endl;
+    cout << "Bool: '" << Bool(value) << "'" << endl;
+
+    R"( null  )" >> value;
+
+    cout << "Is null: " << value.is_null() << endl;
 
     cout << endl;
     cout << "Null size: " << sizeof(Null) << endl;

@@ -51,6 +51,7 @@
 #include <utility>
 #include <iterator>
 #include <initializer_list>
+#include <type_traits>
 
 namespace json {
 
@@ -294,9 +295,7 @@ public:
      *
      * @return Return number of Characters in string
      * */
-    Size length() const {
-        return Size(m_end - m_begin);
-    }
+    Size length() const { return size(); }
 
     /*! @brief Check if string is empty
      *
@@ -304,6 +303,10 @@ public:
      * */
     Bool empty() const {
         return m_end == m_begin;
+    }
+
+    operator const char*() const {
+        return m_begin.base();
     }
 
     ~String();
@@ -322,12 +325,20 @@ public:
 
         using iterator_category = std::random_access_iterator_tag;
 
+        using removed_const = typename std::remove_const<T>::type;
+
+        static constexpr bool is_const = std::is_const<T>::value;
+
         base_iterator() { }
         base_iterator(pointer p) : m_ptr{p} { }
         base_iterator(const base_iterator&) = default;
         base_iterator(base_iterator&&) = default;
         base_iterator& operator=(const base_iterator&) = default;
         base_iterator& operator=(base_iterator&&) = default;
+
+        template<typename = typename std::enable_if<is_const>>
+        base_iterator(const base_iterator<removed_const>& other) :
+            m_ptr{other.base()} { }
 
         template<typename K>
         reference operator[](const K& pos) const {
@@ -356,12 +367,8 @@ public:
             return pointer(m_ptr - pos);
         }
 
-        base_iterator operator+(const base_iterator& other) const {
-            return pointer(m_ptr + other.m_ptr);
-        }
-
-        base_iterator operator-(const base_iterator& other) const {
-            return pointer(m_ptr - other.m_ptr);
+        difference_type operator-(const base_iterator& other) const {
+            return difference_type(m_ptr - other.m_ptr);
         }
 
         base_iterator& operator++() {
@@ -392,7 +399,7 @@ public:
 
         pointer base() const { return m_ptr; }
 
-        operator bool() const { return nullptr != m_ptr; }
+        bool operator!() const { return nullptr == m_ptr; }
 
         void swap(base_iterator& other) {
             base_iterator tmp(*this);

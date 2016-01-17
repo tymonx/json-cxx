@@ -129,7 +129,6 @@ void ParserString::parsing(Char* str) {
                 ch = '\f';
                 break;
             case 'u':
-                ++m_pos;
                 ch = read_string_unicode();
                 continue;
             default:
