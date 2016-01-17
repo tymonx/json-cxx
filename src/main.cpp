@@ -40,6 +40,14 @@ int main() {
 
     cout << "Is null: " << value.is_null() << endl;
 
+    R"( {"abc": 5, "bvc": 7}  )" >> value;
+
+    cout << "Is object: " << value.is_object() << endl;
+
+    R"( [0, 1, 2, 3]  )" >> value;
+
+    cout << "Is array: " << value.is_array() << endl;
+
     cout << endl;
     cout << "Null size: " << sizeof(Null) << endl;
     cout << "Value size: " << sizeof(Value) << endl;
@@ -47,6 +55,7 @@ int main() {
     cout << "Object size: " << sizeof(Object) << endl;
     cout << "String size: " << sizeof(String) << endl;
     cout << "Number size: " << sizeof(Number) << endl;
+    cout << "Pair size: " << sizeof(Pair) << endl;
 
     cout << "-----------------------------------------------" << endl;
     cout << "" << numeric_limits<ptrdiff_t>::max() << endl;

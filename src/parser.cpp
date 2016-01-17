@@ -145,6 +145,8 @@ void Parser::read_array(Value& value) {
     }
 }
 
+#include <iostream>
+
 void Parser::read_array_element(Value& value, Size& count)  {
     if (0 == m_limit--) { throw Error{Error::STACK_LIMIT_REACHED, m_pos}; }
 
@@ -162,7 +164,8 @@ void Parser::read_array_element(Value& value, Size& count)  {
     else if (']' == *m_pos) {
         ++m_pos;
         value.m_array.m_begin = new Value[count];
-        value.m_array.m_end = value.m_array.m_end + count;
+        value.m_array.m_end = value.m_array.m_begin + count;
+        value.m_type = Value::ARRAY;
     }
     else {
         throw Error{Error::MISS_SQUARE_CLOSE, m_pos};
@@ -212,12 +215,12 @@ void Parser::read_object_member(Value& value, Size& count) {
     else if ('}' == *m_pos) {
         ++m_pos;
         value.m_object.m_begin = new Pair[count];
-        value.m_object.m_end = value.m_object.m_begin + count;;
+        value.m_object.m_end = value.m_object.m_begin + count;
+        value.m_type = Value::OBJECT;
     }
     else {
         throw Error{Error::MISS_CURLY_CLOSE, m_pos};
     }
-    --count;
     std::memcpy(&value.m_object[--count].key, &key->m_string, sizeof(String));
     std::memcpy(&value.m_object[count].value, tmp, sizeof(Value));
 }
