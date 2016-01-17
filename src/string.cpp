@@ -43,11 +43,17 @@
 
 #include <json/string.hpp>
 
+#include <cstring>
+
 using json::String;
 
 String::String () {
     m_end = m_begin = new Char[1]{};
 }
+
+String::String(const Char* str) :
+    String(str, std::strlen(str))
+{ }
 
 String::String(const Char* str, Size count) {
     m_begin = static_cast<Char*>(std::memcpy(new Char[count + 1], str, count));

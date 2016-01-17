@@ -48,6 +48,7 @@
 #include "parser_string.hpp"
 
 #include <memory>
+#include <cstring>
 
 using json::Char;
 using json::Size;
@@ -65,8 +66,7 @@ static constexpr Size JSON_NULL_LENGTH = 4;
 static constexpr Size JSON_TRUE_LENGTH = 4;
 static constexpr Size JSON_FALSE_LENGTH = 5;
 
-const Parser::ParseFunctions<Parser::NUM_PARSE_FUNCTIONS>
-Parser::m_parse_functions{{
+const Parser::ParseFunction Parser::m_parse_functions[]{
     {'{', &Parser::read_object},
     {'[', &Parser::read_array},
     {'"', &Parser::read_string},
@@ -83,12 +83,20 @@ Parser::m_parse_functions{{
     {'6', &Parser::read_number},
     {'7', &Parser::read_number},
     {'8', &Parser::read_number},
-    {'9', &Parser::read_number}
-}};
+    {'9', &Parser::read_number},
+    {-1, nullptr}
+};
 
 static inline
 bool is_whitespace(int ch) {
     return ((' '  == ch) || ('\n' == ch) || ('\r' == ch) || ('\t' == ch));
+}
+
+Parser::Parser(const Char* str) :
+    Parser(str, str + std::strlen(str)) { }
+
+void Parser::parsing(const Char* str, Value& value) {
+    parsing(str, str + std::strlen(str), value);
 }
 
 void Parser::parsing(Value& value) {
@@ -96,34 +104,32 @@ void Parser::parsing(Value& value) {
     value.m_type = Value::NIL;
 
     read_whitespaces();
-    if (m_pos >= m_end) {
-        throw Error{Error::EMPTY_DOCUMENT, m_pos};
-    }
+    if (m_pos < m_end) {
+        read_value(value);
+        read_whitespaces();
 
-    read_value(value);
-    read_whitespaces();
-
-    if (!m_stream_mode && (m_pos < m_end)) {
-        throw Error{Error::EXTRA_CHARACTER, m_pos};
+        if ((m_pos < m_end) && !m_stream_mode) {
+            throw Error{Error::EXTRA_CHARACTER, m_pos};
+        }
     }
+    else { throw Error{Error::EMPTY_DOCUMENT, m_pos}; }
 }
 
 void Parser::read_value(Value& value) {
     std::memset(&value, 0, sizeof(0));
 
     read_whitespaces();
-    if (m_pos >= m_end) {
-        throw Error{Error::END_OF_FILE, m_end};
-    }
+    if (m_pos < m_end) {
+        int ch = *m_pos;
+        const auto* p = m_parse_functions;
+        while ((p->code != ch) && (p->parse != nullptr)) { ++p; }
 
-    int ch = *m_pos;
-    for (const auto& p : m_parse_functions) {
-        if (p.first == ch) {
-            return (this->*(p.second))(value);
+        if (nullptr != p->parse) {
+            (this->*(p->parse))(value);
         }
+        else { throw Error{Error::MISS_VALUE, m_pos}; }
     }
-
-    throw Error{Error::MISS_VALUE, m_pos};
+    else { throw Error{Error::END_OF_FILE, m_end}; }
 }
 
 void Parser::read_array(Value& value) {
@@ -140,15 +146,11 @@ void Parser::read_array(Value& value) {
             read_array_element(value, count);
         }
     }
-    else {
-        throw Error{Error::END_OF_FILE, m_end};
-    }
+    else { throw Error{Error::END_OF_FILE, m_end}; }
 }
 
-#include <iostream>
-
 void Parser::read_array_element(Value& value, Size& count)  {
-    if (0 == m_limit--) { throw Error{Error::STACK_LIMIT_REACHED, m_pos}; }
+    if (m_limit) { stack_guard(); }
 
     char tmp_buffer[sizeof(Value)];
     Value* tmp = new (tmp_buffer) Value;
@@ -167,9 +169,8 @@ void Parser::read_array_element(Value& value, Size& count)  {
         value.m_array.m_end = value.m_array.m_begin + count;
         value.m_type = Value::ARRAY;
     }
-    else {
-        throw Error{Error::MISS_SQUARE_CLOSE, m_pos};
-    }
+    else { throw Error{Error::MISS_SQUARE_CLOSE, m_pos}; }
+
     std::memcpy(&value.m_array[--count], tmp, sizeof(Value));
 }
 
@@ -187,13 +188,11 @@ void Parser::read_object(Value& value) {
             read_object_member(value, count);
         }
     }
-    else {
-        throw Error{Error::END_OF_FILE, m_end};
-    }
+    else { throw Error{Error::END_OF_FILE, m_end}; }
 }
 
 void Parser::read_object_member(Value& value, Size& count) {
-    if (0 == m_limit--) { throw Error{Error::STACK_LIMIT_REACHED, m_pos}; }
+    if (m_limit) { stack_guard(); }
 
     char key_buffer[sizeof(Value)];
     char tmp_buffer[sizeof(Value)];
@@ -218,9 +217,8 @@ void Parser::read_object_member(Value& value, Size& count) {
         value.m_object.m_end = value.m_object.m_begin + count;
         value.m_type = Value::OBJECT;
     }
-    else {
-        throw Error{Error::MISS_CURLY_CLOSE, m_pos};
-    }
+    else { throw Error{Error::MISS_CURLY_CLOSE, m_pos}; }
+
     std::memcpy(&value.m_object[--count].key, &key->m_string, sizeof(String));
     std::memcpy(&value.m_object[count].value, tmp, sizeof(Value));
 }
@@ -248,47 +246,38 @@ void Parser::read_number(Value& value) {
 }
 
 void Parser::read_true(Value& value) {
-    if (m_pos + JSON_TRUE_LENGTH > m_end) {
-        throw Error{ParserError::END_OF_FILE, m_end};
+    if (m_pos + JSON_TRUE_LENGTH <= m_end) {
+        if (!std::memcmp(m_pos, JSON_TRUE, JSON_TRUE_LENGTH)) {
+            value.m_type = Value::BOOL;
+            value.m_bool = true;
+            m_pos += JSON_TRUE_LENGTH;
+        }
+        else { throw Error{ParserError::NOT_MATCH_TRUE, m_pos}; }
     }
-
-    if (std::memcmp(m_pos, JSON_TRUE, JSON_TRUE_LENGTH)) {
-        throw Error{ParserError::NOT_MATCH_TRUE, m_pos};
-    }
-
-    value.m_type = Value::BOOL;
-    value.m_bool = true;
-
-    m_pos += JSON_TRUE_LENGTH;
+    else { throw Error{ParserError::END_OF_FILE, m_end}; }
 }
 
 void Parser::read_false(Value& value) {
-    if (m_pos + JSON_FALSE_LENGTH > m_end) {
-        throw Error{ParserError::END_OF_FILE, m_end};
+    if (m_pos + JSON_FALSE_LENGTH <= m_end) {
+        if (!std::memcmp(m_pos, JSON_FALSE, JSON_FALSE_LENGTH)) {
+            value.m_type = Value::BOOL;
+            value.m_bool = false;
+            m_pos += JSON_FALSE_LENGTH;
+        }
+        else { throw Error{Error::NOT_MATCH_FALSE, m_pos}; }
     }
-
-    if (std::memcmp(m_pos, JSON_FALSE, JSON_FALSE_LENGTH)) {
-        throw Error{Error::NOT_MATCH_FALSE, m_pos};
-    }
-
-    value.m_type = Value::BOOL;
-    value.m_bool = false;
-
-    m_pos += JSON_FALSE_LENGTH;
+    else { throw Error{ParserError::END_OF_FILE, m_end}; }
 }
 
 void Parser::read_null(Value& value) {
-    if (m_pos + JSON_NULL_LENGTH > m_end) {
-        throw Error{ParserError::END_OF_FILE, m_end};
+    if (m_pos + JSON_NULL_LENGTH <= m_end) {
+        if (!std::memcmp(m_pos, JSON_NULL, JSON_NULL_LENGTH)) {
+            value.m_type = Value::NIL;
+            m_pos += JSON_NULL_LENGTH;
+        }
+        else { throw Error{ParserError::NOT_MATCH_NULL, m_pos}; }
     }
-
-    if (std::memcmp(m_pos, JSON_NULL, JSON_NULL_LENGTH)) {
-        throw Error{ParserError::NOT_MATCH_NULL, m_pos};
-    }
-
-    value.m_type = Value::NIL;
-
-    m_pos += JSON_NULL_LENGTH;
+    else { throw Error{ParserError::END_OF_FILE, m_end}; }
 }
 
 void Parser::read_whitespaces() {
@@ -314,4 +303,8 @@ void Parser::read_quote() {
         else { throw Error{ParserError::MISS_QUOTE, m_pos}; }
     }
     else { throw Error{Error::END_OF_FILE, m_end}; }
+}
+
+void Parser::stack_guard() {
+    if (0 == --m_limit) { throw Error{Error::STACK_LIMIT_REACHED, m_pos}; }
 }

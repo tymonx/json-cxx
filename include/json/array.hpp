@@ -139,7 +139,7 @@ public:
     public:
         using value_type = T;
 
-        using difference_type = std::ptrdiff_t;
+        using difference_type = Difference;
 
         using pointer = value_type*;
 

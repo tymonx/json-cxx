@@ -47,18 +47,11 @@
 #include <json/types.hpp>
 #include <json/json.hpp>
 
-#include <array>
-#include <limits>
-#include <string>
-#include <cstring>
-#include <utility>
-
 namespace json {
 
 class Parser {
 public:
-    static constexpr Size DEFAULT_LIMIT_PER_OBJECT =
-        std::numeric_limits<Size>::max();
+    static constexpr Size DEFAULT_LIMIT_PER_OBJECT{0};
 
     Parser() { }
 
@@ -71,11 +64,10 @@ public:
     Parser(const Char* begin, const Char* end, Value& value) :
         Parser(begin, end) { parsing(value); }
 
-    Parser(const Char* str) :
-        Parser(str, str + std::strlen(str)) { }
+    Parser(const Char* str);
 
-    Parser(const Char* str, Value& value) :
-        Parser(str, str + std::strlen(str)) { parsing(value); }
+    Parser(const Char* str, Value& value) : Parser(str)
+        { parsing(value); }
 
     Parser(const Char* str, Size size) :
         Parser(str, str + size) { }
@@ -91,12 +83,6 @@ public:
     Parser(const Char str[N], Value& value) :
         Parser(str, str + N - 1) { parsing(value); }
 
-    Parser(const std::string& str) :
-        Parser(str.data(), str.data() + str.length()) { }
-
-    Parser(const std::string& str, Value& value) :
-        Parser(str.data(), str.data() + str.length()) { parsing(value); }
-
     void parsing(Value& value);
 
     void parsing(const Char* begin, const Char* end, Value& value) {
@@ -105,9 +91,7 @@ public:
         parsing(value);
     }
 
-    void parsing(const Char* str, Value& value) {
-        parsing(str, str + std::strlen(str), value);
-    }
+    void parsing(const Char* str, Value& value);
 
     void parsing(const Char* str, Size size, Value& value) {
         parsing(str, str + size, value);
@@ -116,16 +100,6 @@ public:
     template<Size N>
     void parsing(const Char str[N], Value& value) {
         parsing(str, str + N - 1, value);
-    }
-
-    void parsing(const std::string& str, Value& value) {
-        parsing(str.data(), str.data() + str.length(), value);
-    }
-
-    Value parsing() {
-        Value value;
-        parsing(value);
-        return value;
     }
 
     void set_limit(Size limit = DEFAULT_LIMIT_PER_OBJECT) {
@@ -140,12 +114,12 @@ public:
         m_stream_mode = enable;
     }
 private:
-    template<Size N>
-    using ParseFunctions = std::array<
-        std::pair<int, void(Parser::*)(Value&)>, N>;
+    struct ParseFunction {
+        int code;
+        void (Parser::*parse)(Value&);
+    };
 
-    static constexpr Size NUM_PARSE_FUNCTIONS = 17;
-    static const ParseFunctions<NUM_PARSE_FUNCTIONS> m_parse_functions;
+    static const ParseFunction m_parse_functions[];
 
     Size m_limit{DEFAULT_LIMIT_PER_OBJECT};
     bool m_stream_mode{false};
@@ -166,6 +140,8 @@ private:
     void read_null(Value& value);
     void read_colon();
     void read_quote();
+
+    void stack_guard();
 };
 
 }
@@ -177,18 +153,13 @@ json::Parser& operator>>(json::Parser& parser, json::Value& value) {
 }
 
 static inline
-json::Parser operator>>(const json::Char* str, json::Value& value) {
-    return json::Parser(str, str + std::strlen(str), value);
+json::Parser operator>>(const char* str, json::Value& value) {
+    return json::Parser(str, value);
 }
 
 template<json::Size N>
-json::Parser operator>>(const json::Char str[N], json::Value& value) {
+json::Parser operator>>(const char str[N], json::Value& value) {
     return json::Parser(str, str + N - 1, value);
-}
-
-static inline
-json::Parser operator>>(const std::string& str, json::Value& value) {
-    return json::Parser(str.data(), str.data() + str.length(), value);
 }
 
 #endif /* JSON_CXX_PARSER_HPP */

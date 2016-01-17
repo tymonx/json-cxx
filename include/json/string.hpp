@@ -46,12 +46,9 @@
 
 #include <json/types.hpp>
 
-#include <limits>
-#include <cstring>
-#include <utility>
 #include <iterator>
-#include <initializer_list>
 #include <type_traits>
+#include <initializer_list>
 
 namespace json {
 
@@ -74,8 +71,7 @@ public:
 
     using size_type = Size;
 
-    static const constexpr Size npos =
-        std::numeric_limits<Size>::max();
+    static const constexpr Size npos{Size(-1)};
 
     String();
 
@@ -85,9 +81,7 @@ public:
 
     String(const Char* str, Size count);
 
-    String(const Char* str) :
-        String(str, std::strlen(str))
-    { }
+    String(const Char* str);
 
     String(const_iterator first, const_iterator last) :
         String(first.base(), Size(last - first))
@@ -138,7 +132,7 @@ public:
     }
 
     String& assign(String&& other) {
-        return *this = std::move(other);
+        return *this = other;
     }
 
     String& assign(const String& other, Size pos, Size count) {
@@ -317,7 +311,7 @@ public:
     public:
         using value_type = T;
 
-        using difference_type = std::ptrdiff_t;
+        using difference_type = Difference;
 
         using pointer = value_type*;
 

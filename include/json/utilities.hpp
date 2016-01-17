@@ -36,15 +36,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/utility.hpp
+ * @file json/utilities.hpp
  *
- * @brief JSON types
+ * @brief JSON utilities
  * */
 
-#ifndef JSON_CXX_UTILITY_HPP
-#define JSON_CXX_UTILITY_HPP
+#ifndef JSON_CXX_UTILITIES_HPP
+#define JSON_CXX_UTILITIES_HPP
 
-#include <json/value.hpp>
+#include <json/json.hpp>
 
 #include <string>
 
@@ -55,6 +55,11 @@ std::string to_string(const Value& value) {
     return std::string(String(value).cbegin(), String(value).cend());
 }
 
+static inline
+json::Parser operator>>(const std::string& str, json::Value& value) {
+    return json::Parser(str.data(), str.data() + str.length(), value);
 }
 
-#endif /* JSON_CXX_UTILITY_HPP */
+}
+
+#endif /* JSON_CXX_UTILITIES_HPP */
