@@ -65,7 +65,7 @@ Number::operator Uint() const {
         break;
     }
 
-    return Uint(value);
+    return value;
 }
 
 Number::operator Int() const {
@@ -85,7 +85,7 @@ Number::operator Int() const {
         break;
     }
 
-    return Int(value);
+    return value;
 }
 
 Number::operator Double() const {
