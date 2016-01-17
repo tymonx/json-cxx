@@ -36,6 +36,7 @@ add_library(json-cxx
     parser.cpp
     parser_error.cpp
     parser_number.cpp
+    parser_string.cpp
     string.cpp
     value.cpp
 )

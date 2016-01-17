@@ -160,7 +160,6 @@ private:
     void read_object(Value& value);
     void read_object_member(Value& value, Size& count);
     void read_string(Value& value);
-    Char* read_string_unicode(Char* str, int& ch);
     void read_number(Value& value);
     void read_true(Value& value);
     void read_false(Value& value);

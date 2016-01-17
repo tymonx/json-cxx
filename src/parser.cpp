@@ -45,46 +45,25 @@
 #include <json/parser_error.hpp>
 
 #include "parser_number.hpp"
+#include "parser_string.hpp"
 
-#include <array>
-#include <cmath>
-#include <limits>
-#include <utility>
-#include <cstring>
-
-#include <iostream>
-using namespace std;
+#include <memory>
 
 using json::Char;
 using json::Size;
 using json::Value;
 using json::Parser;
 using json::ParserNumber;
+using json::ParserString;
 using Error = json::ParserError;
-
-using Uint16 = std::uint_fast16_t;
-using Uint32 = std::uint_fast32_t;
-using SurrogatePair = std::pair<Uint16, Uint16>;
-
-/*!
- * @brief   Get string length without null termination '\0'
- * @return  String length
- * */
-template<Size N>
-constexpr Size string_length(const Char (&)[N]) { return (N - 1); }
 
 static constexpr Char JSON_NULL[] = "null";
 static constexpr Char JSON_TRUE[] = "true";
 static constexpr Char JSON_FALSE[] = "false";
 
-static constexpr Size JSON_NULL_LENGTH = string_length(JSON_NULL);
-static constexpr Size JSON_TRUE_LENGTH = string_length(JSON_TRUE);
-static constexpr Size JSON_FALSE_LENGTH = string_length(JSON_FALSE);
-
-static constexpr Size UNICODE_LENGTH = 4;
-
-static constexpr SurrogatePair SURROGATE_MIN{0xD800, 0xDC00};
-static constexpr SurrogatePair SURROGATE_MAX{0xDBFF, 0xDFFF};
+static constexpr Size JSON_NULL_LENGTH = 4;
+static constexpr Size JSON_TRUE_LENGTH = 4;
+static constexpr Size JSON_FALSE_LENGTH = 5;
 
 const Parser::ParseFunctions<Parser::NUM_PARSE_FUNCTIONS>
 Parser::m_parse_functions{{
@@ -112,76 +91,6 @@ bool is_whitespace(int ch) {
     return ((' '  == ch) || ('\n' == ch) || ('\r' == ch) || ('\t' == ch));
 }
 
-static inline
-int is_utf16_surrogate_pair(const SurrogatePair& pair) {
-    return (pair >= SURROGATE_MIN) && (pair <= SURROGATE_MAX);
-}
-
-static inline
-Uint32 decode_utf16_surrogate_pair(const SurrogatePair& pair) {
-    return 0x10000 |
-        ((0x3F & Uint32(pair.first)) << 10) |
-        (0x3FF & Uint32(pair.second));
-}
-
-static
-Uint16 read_unicode(const Char* pos, const Char* end) {
-    if (pos + UNICODE_LENGTH > end) { throw Error{Error::END_OF_FILE, pos}; }
-
-    end = pos + UNICODE_LENGTH;
-    Uint16 code{0};
-
-    while (pos < end) {
-        Uint16 ch = Uint16(*pos);
-        if ((ch >= '0') && (ch <= '9')) {
-            ch = ch - '0';
-        }
-        else if ((ch >= 'A') && (ch <= 'F')) {
-            ch = (ch + 0xA - 'A');
-        }
-        else if ((ch >= 'a') && (ch <= 'f')) {
-            ch = (ch + 0xA - 'a');
-        }
-        else {
-            throw Error{Error::INVALID_UNICODE, pos};
-        }
-        code = (code << 4) | ch;
-        ++pos;
-    }
-
-    return code;
-}
-
-static
-Size count_string_chars(const Char* pos, const Char* end) {
-    Size count{0};
-
-    for (; (pos < end) && ('"' != *pos); ++pos, ++count) {
-        if ('\\' == *pos) {
-            if ('u' == *(++pos)) {
-                Uint16 code = read_unicode(++pos, end);
-                if (code >= 0x80) {
-                    if (code < 0x800) {
-                        count += 1;
-                    }
-                    else if ((code < SURROGATE_MIN.first) ||
-                             (code > SURROGATE_MAX.first)) {
-                        count += 2;
-                    }
-                    else {
-                        count += 3;
-                    }
-                }
-                pos += 3;
-            }
-        }
-    }
-
-    if (pos >= end) { throw Error{Error::END_OF_FILE, pos}; }
-
-    return count;
-}
-
 void Parser::parsing(Value& value) {
     value.~Value();
     value.m_type = Value::NIL;
@@ -200,15 +109,16 @@ void Parser::parsing(Value& value) {
 }
 
 void Parser::read_value(Value& value) {
+    std::memset(&value, 0, sizeof(0));
+
     read_whitespaces();
     if (m_pos >= m_end) {
-        throw Error{Error::END_OF_FILE, m_pos};
+        throw Error{Error::END_OF_FILE, m_end};
     }
 
     int ch = *m_pos;
     for (const auto& p : m_parse_functions) {
         if (p.first == ch) {
-            cout << "Execute: " << Char(ch) << endl;
             return (this->*(p.second))(value);
         }
     }
@@ -220,12 +130,10 @@ void Parser::read_array(Value& value) {
     ++m_pos;
     read_whitespaces();
 
-    value.m_type = Value::ARRAY;
-    std::memset(&value.m_array, 0, sizeof(Array));
-
     if (m_pos < m_end) {
         if (']' == *m_pos) {
             ++m_pos;
+            value.m_type = Value::ARRAY;
         }
         else {
             Size count = 0;
@@ -233,7 +141,7 @@ void Parser::read_array(Value& value) {
         }
     }
     else {
-        throw Error{Error::END_OF_FILE, m_pos};
+        throw Error{Error::END_OF_FILE, m_end};
     }
 }
 
@@ -266,12 +174,10 @@ void Parser::read_object(Value& value) {
     ++m_pos;
     read_whitespaces();
 
-    value.m_type = Value::OBJECT;
-    std::memset(&value.m_object, 0, sizeof(Object));
-
     if (m_pos < m_end) {
         if ('}' == *m_pos) {
             ++m_pos;
+            value.m_type = Value::OBJECT;
         }
         else {
             Size count = 0;
@@ -279,7 +185,7 @@ void Parser::read_object(Value& value) {
         }
     }
     else {
-        throw Error{Error::END_OF_FILE, m_pos};
+        throw Error{Error::END_OF_FILE, m_end};
     }
 }
 
@@ -317,99 +223,30 @@ void Parser::read_object_member(Value& value, Size& count) {
 }
 
 void Parser::read_string(Value& value) {
-    Size count = count_string_chars(++m_pos, m_end);
-
-    Char* str = new Char[count + 1];
+    Size count = ParserString::count_string_chars(++m_pos, m_end);
+    std::unique_ptr<Char []> str{new Char[count + 1]};
     str[count] = '\0';
 
+    ParserString parser(m_pos, m_end);
+    parser.parsing(str.get());
+    m_pos = parser.get_position();
+
     value.m_type = Value::STRING;
-    value.m_string.m_begin = str;
-    value.m_string.m_end = str + count;
-
-    int ch = *(m_pos++);
-    while ('"' != ch) {
-        if ('\\' == ch) {
-            ch = *(m_pos++);
-            switch (ch) {
-            case '"':
-            case '\\':
-            case '/':
-                break;
-            case 'n':
-                ch = '\n';
-                break;
-            case 'r':
-                ch = '\r';
-                break;
-            case 't':
-                ch = '\t';
-                break;
-            case 'b':
-                ch = '\b';
-                break;
-            case 'f':
-                ch = '\f';
-                break;
-            case 'u':
-                ++m_pos;
-                str = read_string_unicode(str, ch);
-                continue;
-            default:
-                throw Error{Error::INVALID_ESCAPE, m_pos};
-            }
-        }
-        *(str++) = Char(ch);
-        ch = *(m_pos++);
-    }
-}
-
-Char* Parser::read_string_unicode(Char* str, int& ch) {
-    Uint32 unicode = read_unicode(m_pos, m_end);
-    m_pos += UNICODE_LENGTH;
-
-    if ((m_pos < m_end) && ('\\' == m_pos[0]) && ('u' == m_pos[1])) {
-        SurrogatePair surrogate{unicode, read_unicode(m_pos + 2, m_end)};
-        if (is_utf16_surrogate_pair(surrogate)) {
-            unicode = decode_utf16_surrogate_pair(surrogate);
-            m_pos += (2 + UNICODE_LENGTH);
-        }
-    }
-
-    if (unicode < 0x80) {
-        *(str++) = Char(unicode);
-    }
-    else if (unicode < 0x800) {
-        *(str++) = Char(0xC0 | (0x1F & (unicode >>  6)));
-        *(str++) = Char(0x80 | (0x3F & unicode));
-    }
-    else if (unicode < 0x10000) {
-        *(str++) = Char(0xE0 | (0x0F & (unicode >> 12)));
-        *(str++) = Char(0x80 | (0x3F & (unicode >>  6)));
-        *(str++) = Char(0x80 | (0x3F & unicode));
-    }
-    else {
-        *(str++) = Char(0xF0 | (0x07 & (unicode >> 18)));
-        *(str++) = Char(0x80 | (0x3F & (unicode >> 12)));
-        *(str++) = Char(0x80 | (0x3F & (unicode >>  6)));
-        *(str++) = Char(0x80 | (0x3F & unicode));
-    }
-
-    ch = *m_pos;
-    return str;
+    value.m_string.m_begin = str.release();
+    value.m_string.m_end = value.m_string.m_begin + count;
 }
 
 void Parser::read_number(Value& value) {
-    cout << "Read number" << endl;
+    ParserNumber parser(m_pos, m_end);
+    parser.parsing(value.m_number);
+    m_pos = parser.get_position();
 
-    ParserNumber parse_number(m_pos, m_end);
-    parse_number.parsing(value.m_number);
-    m_pos = parse_number.get_position();
     value.m_type = Value::NUMBER;
 }
 
 void Parser::read_true(Value& value) {
     if (m_pos + JSON_TRUE_LENGTH > m_end) {
-        throw Error{ParserError::END_OF_FILE, m_pos};
+        throw Error{ParserError::END_OF_FILE, m_end};
     }
 
     if (std::memcmp(m_pos, JSON_TRUE, JSON_TRUE_LENGTH)) {
@@ -424,7 +261,7 @@ void Parser::read_true(Value& value) {
 
 void Parser::read_false(Value& value) {
     if (m_pos + JSON_FALSE_LENGTH > m_end) {
-        throw Error{ParserError::END_OF_FILE, m_pos};
+        throw Error{ParserError::END_OF_FILE, m_end};
     }
 
     if (std::memcmp(m_pos, JSON_FALSE, JSON_FALSE_LENGTH)) {
@@ -439,7 +276,7 @@ void Parser::read_false(Value& value) {
 
 void Parser::read_null(Value& value) {
     if (m_pos + JSON_NULL_LENGTH > m_end) {
-        throw Error{ParserError::END_OF_FILE, m_pos};
+        throw Error{ParserError::END_OF_FILE, m_end};
     }
 
     if (std::memcmp(m_pos, JSON_NULL, JSON_NULL_LENGTH)) {
@@ -464,7 +301,7 @@ void Parser::read_colon() {
         if (':' == *m_pos) { ++m_pos; }
         else { throw Error{ParserError::MISS_COLON, m_pos}; }
     }
-    else { throw Error{Error::END_OF_FILE, m_pos}; }
+    else { throw Error{Error::END_OF_FILE, m_end}; }
 }
 
 void Parser::read_quote() {
@@ -473,5 +310,5 @@ void Parser::read_quote() {
         if ('"' == *m_pos) { ++m_pos; }
         else { throw Error{ParserError::MISS_QUOTE, m_pos}; }
     }
-    else { throw Error{Error::END_OF_FILE, m_pos}; }
+    else { throw Error{Error::END_OF_FILE, m_end}; }
 }
