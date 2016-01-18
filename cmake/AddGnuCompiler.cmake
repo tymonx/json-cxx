@@ -38,7 +38,7 @@ function (gnu_compiler_processing)
     set(COMMON_WARNINGS
         -Wabi
         -Waddress
-        -Waggregate-return
+        -Wno-aggregate-return
         -Waggressive-loop-optimizations
         -Wall
         -Warray-bounds
