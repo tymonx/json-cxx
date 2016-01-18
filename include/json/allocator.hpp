@@ -36,46 +36,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/object.cpp
+ * @file json/allocator.hpp
  *
- * @brief JSON object interface
+ * @brief JSON allocator interface
  * */
 
-#include <json/object.hpp>
-#include <json/pair.hpp>
+#ifndef JSON_CXX_ALLOCATOR_HPP
+#define JSON_CXX_ALLOCATOR_HPP
 
-#include <algorithm>
+#include <json/types.hpp>
 
-using json::Object;
+namespace json {
 
-Object::Object(Size size, Allocator* allocator) :
-    m_allocator{allocator}
-{
-    void* p = m_allocator->allocate(size * sizeof(Pair));
-    m_begin = new (p) Pair[size]();
-    m_end = m_begin + size;
+class Allocator {
+public:
+    virtual void* allocate(Size n) = 0;
+
+    virtual void deallocate(void* ptr, Size n) noexcept = 0;
+
+    virtual ~Allocator();
+};
+
+Allocator* get_default_allocator();
+
 }
 
-Object::Object(const Object& other, Allocator* allocator) :
-    m_allocator{allocator}
-{
-    void* p = m_allocator->allocate(other.size() * sizeof(Pair));
-    m_begin = new (p) Pair[other.size()]();
-    m_end = m_begin + other.size();
-    std::copy(other.m_begin, other.m_end, m_begin);
-}
-
-Object& Object::operator=(Object&& other) {
-    if (this != &other) {
-        this->~Object();
-        m_begin = other.m_begin;
-        m_end = other.m_end;
-        other.m_end = other.m_begin = nullptr;
-    }
-    return *this;
-}
-
-Object::~Object() {
-    std::for_each(m_begin, m_end, [](Pair& pair) { pair.~Pair(); });
-    m_allocator->deallocate(m_begin.base(), size() * sizeof(Pair));
-}
+#endif /* JSON_CXX_ALLOCATOR_HPP */

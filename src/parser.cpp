@@ -116,7 +116,7 @@ void Parser::parsing(Value& value) {
 }
 
 void Parser::read_value(Value& value) {
-    std::memset(&value, 0, sizeof(0));
+    value.m_type = Value::NIL;
 
     read_whitespaces();
     if (m_pos < m_end) {
@@ -139,6 +139,9 @@ void Parser::read_array(Value& value) {
     if (m_pos < m_end) {
         if (']' == *m_pos) {
             ++m_pos;
+            value.m_array.m_begin = nullptr;
+            value.m_array.m_end = nullptr;
+            value.m_array.m_allocator = m_allocator;
             value.m_type = Value::ARRAY;
         }
         else {
@@ -153,7 +156,7 @@ void Parser::read_array_element(Value& value, Size& count)  {
     if (m_limit) { stack_guard(); }
 
     char tmp_buffer[sizeof(Value)];
-    Value* tmp = new (tmp_buffer) Value;
+    Value* tmp = static_cast<Value*>(static_cast<void*>(tmp_buffer));
 
     read_value(*tmp);
     read_whitespaces();
@@ -165,13 +168,16 @@ void Parser::read_array_element(Value& value, Size& count)  {
     }
     else if (']' == *m_pos) {
         ++m_pos;
-        value.m_array.m_begin = new Value[count];
-        value.m_array.m_end = value.m_array.m_begin + count;
+        auto* p = m_allocator->allocate(count * sizeof(Value));
+        value.m_array.m_begin = static_cast<Value*>(p);
+        value.m_array.m_end = static_cast<Value*>(p) + count;
+        value.m_array.m_allocator = m_allocator;
         value.m_type = Value::ARRAY;
     }
     else { throw Error{Error::MISS_SQUARE_CLOSE, m_pos}; }
 
-    std::memcpy(&value.m_array[--count], tmp, sizeof(Value));
+    --count;
+    std::memcpy(&value.m_array[count], tmp, sizeof(Value));
 }
 
 void Parser::read_object(Value& value) {
@@ -181,6 +187,9 @@ void Parser::read_object(Value& value) {
     if (m_pos < m_end) {
         if ('}' == *m_pos) {
             ++m_pos;
+            value.m_object.m_begin = nullptr;
+            value.m_object.m_end = nullptr;
+            value.m_object.m_allocator = m_allocator;
             value.m_type = Value::OBJECT;
         }
         else {
@@ -197,8 +206,10 @@ void Parser::read_object_member(Value& value, Size& count) {
     char key_buffer[sizeof(Value)];
     char tmp_buffer[sizeof(Value)];
 
-    Value* key = new (key_buffer) Value;
-    Value* tmp = new (tmp_buffer) Value;
+    Value* key = static_cast<Value*>(static_cast<void*>(key_buffer));
+    Value* tmp = static_cast<Value*>(static_cast<void*>(tmp_buffer));
+
+    key->m_type = Value::NIL;
 
     read_quote();
     read_string(*key);
@@ -213,28 +224,33 @@ void Parser::read_object_member(Value& value, Size& count) {
     }
     else if ('}' == *m_pos) {
         ++m_pos;
-        value.m_object.m_begin = new Pair[count];
-        value.m_object.m_end = value.m_object.m_begin + count;
+        auto* p = m_allocator->allocate(count * sizeof(Pair));
+        value.m_object.m_begin = static_cast<Pair*>(p);
+        value.m_object.m_end = static_cast<Pair*>(p) + count;
+        value.m_object.m_allocator = m_allocator;
         value.m_type = Value::OBJECT;
     }
     else { throw Error{Error::MISS_CURLY_CLOSE, m_pos}; }
 
-    std::memcpy(&value.m_object[--count].key, &key->m_string, sizeof(String));
+    --count;
+    std::memcpy(&value.m_object[count].key, &key->m_string, sizeof(String));
     std::memcpy(&value.m_object[count].value, tmp, sizeof(Value));
 }
 
 void Parser::read_string(Value& value) {
     Size count = ParserString::count_string_chars(++m_pos, m_end);
-    std::unique_ptr<Char []> str{new Char[count + 1]};
+
+    Char* str = static_cast<Char*>(m_allocator->allocate(count + 1));
+
+    value.m_string.m_begin = str;
+    value.m_string.m_end = str + count;
+    value.m_string.m_allocator = m_allocator;
+    value.m_type = Value::STRING;
     str[count] = '\0';
 
     ParserString parser(m_pos, m_end);
-    parser.parsing(str.get());
+    parser.parsing(str);
     m_pos = parser.get_position();
-
-    value.m_type = Value::STRING;
-    value.m_string.m_begin = str.release();
-    value.m_string.m_end = value.m_string.m_begin + count;
 }
 
 void Parser::read_number(Value& value) {
@@ -248,8 +264,8 @@ void Parser::read_number(Value& value) {
 void Parser::read_true(Value& value) {
     if (m_pos + JSON_TRUE_LENGTH <= m_end) {
         if (!std::memcmp(m_pos, JSON_TRUE, JSON_TRUE_LENGTH)) {
-            value.m_type = Value::BOOL;
             value.m_bool = true;
+            value.m_type = Value::BOOL;
             m_pos += JSON_TRUE_LENGTH;
         }
         else { throw Error{ParserError::NOT_MATCH_TRUE, m_pos}; }
@@ -260,8 +276,8 @@ void Parser::read_true(Value& value) {
 void Parser::read_false(Value& value) {
     if (m_pos + JSON_FALSE_LENGTH <= m_end) {
         if (!std::memcmp(m_pos, JSON_FALSE, JSON_FALSE_LENGTH)) {
-            value.m_type = Value::BOOL;
             value.m_bool = false;
+            value.m_type = Value::BOOL;
             m_pos += JSON_FALSE_LENGTH;
         }
         else { throw Error{Error::NOT_MATCH_FALSE, m_pos}; }
@@ -269,10 +285,9 @@ void Parser::read_false(Value& value) {
     else { throw Error{ParserError::END_OF_FILE, m_end}; }
 }
 
-void Parser::read_null(Value& value) {
+void Parser::read_null(Value&) {
     if (m_pos + JSON_NULL_LENGTH <= m_end) {
         if (!std::memcmp(m_pos, JSON_NULL, JSON_NULL_LENGTH)) {
-            value.m_type = Value::NIL;
             m_pos += JSON_NULL_LENGTH;
         }
         else { throw Error{ParserError::NOT_MATCH_NULL, m_pos}; }

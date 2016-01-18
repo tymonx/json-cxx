@@ -46,6 +46,7 @@
 
 #include <json/types.hpp>
 #include <json/json.hpp>
+#include <json/allocator.hpp>
 
 namespace json {
 
@@ -123,6 +124,7 @@ private:
 
     Size m_limit{DEFAULT_LIMIT_PER_OBJECT};
     bool m_stream_mode{false};
+    Allocator* m_allocator{get_default_allocator()};
     const Char* m_begin{nullptr};
     const Char* m_end{nullptr};
     const Char* m_pos{nullptr};

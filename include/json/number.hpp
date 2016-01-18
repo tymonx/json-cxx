@@ -50,8 +50,6 @@ namespace json {
 
 class Number {
 public:
-    friend class Parser;
-
     enum Type {
         UINT,
         INT,
@@ -86,6 +84,11 @@ public:
      * @param[in]  value    Value initialization
      * */
     Number(Double value) : m_type(Type::DOUBLE), m_double(value) { }
+
+    Number(const Number&) = default;
+    Number(Number&&) = default;
+    Number& operator=(const Number&) = default;
+    Number& operator=(Number&&) = default;
 
     /*!
      * @brief Add value
@@ -182,6 +185,8 @@ public:
     bool operator>=(const json::Number& other) const {
         return !(*this < other);
     }
+
+    ~Number() { }
 private:
     Type m_type;
 

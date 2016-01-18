@@ -65,15 +65,21 @@ public:
         BOOL
     };
 
-    Value() :
+    Value(Null = nullptr) :
         m_type{Type::NIL}
     { }
 
-    Value(Null) :
-        m_type{Type::NIL}
+    Value(Bool value) :
+        m_type{Type::BOOL},
+        m_bool{value}
     { }
 
-    Value(Type type);
+    Value(Type type, Size count = 0);
+
+    Value(const Number& number) :
+        m_type{Value::NUMBER},
+        m_number{number}
+    { }
 
     Value(const Value& other);
 
@@ -193,14 +199,14 @@ public:
     /*! Convert JSON value to number */
     explicit operator Number&() { return m_number; }
 
+    /*! Convert JSON value to number */
+    explicit operator const Number&() const { return m_number; }
+
     /*! Convert JSON value to array */
     explicit operator const Array&() const { return m_array; }
 
     /*! Convert JSON value to object */
     explicit operator const Object&() const { return m_object; }
-
-    /*! Convert JSON value to number */
-    explicit operator const Number&() const { return m_number; }
 
     ~Value();
 private:

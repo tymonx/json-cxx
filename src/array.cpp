@@ -48,15 +48,26 @@
 
 using json::Array;
 
-Array::Array(const Array& other) {
-    m_begin = new Value[other.size()]{};
+Array::Array(Size size, Allocator* allocator) :
+    m_allocator{allocator}
+{
+    void* p = m_allocator->allocate(size * sizeof(Value));
+    m_begin = new (p) Value[size]();
+    m_end = m_begin + size;
+}
+
+Array::Array(const Array& other, Allocator* allocator) :
+    m_allocator{allocator}
+{
+    void* p = m_allocator->allocate(other.size() * sizeof(Value));
+    m_begin = new (p) Value[other.size()]();
     m_end = m_begin + other.size();
     std::copy(other.m_begin, other.m_end, m_begin);
 }
 
 Array& Array::operator=(Array&& other) {
     if (this != &other) {
-        delete [] m_begin.base();
+        this->~Array();
         m_begin = other.m_begin;
         m_end = other.m_end;
         other.m_end = other.m_begin = nullptr;
@@ -65,5 +76,6 @@ Array& Array::operator=(Array&& other) {
 }
 
 Array::~Array() {
-    delete [] m_begin.base();
+    std::for_each(m_begin, m_end, [](Value& value) { value.~Value(); });
+    m_allocator->deallocate(m_begin.base(), size() * sizeof(Value));
 }

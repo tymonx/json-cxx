@@ -50,16 +50,11 @@
 
 namespace json {
 
-static inline
-std::string to_string(const Value& value) {
-    return std::string(String(value).cbegin(), String(value).cend());
 }
 
 static inline
 json::Parser operator>>(const std::string& str, json::Value& value) {
     return json::Parser(str.data(), str.data() + str.length(), value);
-}
-
 }
 
 #endif /* JSON_CXX_UTILITIES_HPP */

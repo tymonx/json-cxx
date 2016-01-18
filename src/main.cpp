@@ -6,12 +6,17 @@
 #include <string>
 #include <limits>
 
-using namespace std;
 using namespace json;
+using std::cout;
+using std::endl;
+using std::numeric_limits;
 
+//int main() { }
+
+# if 1
 int main() {
-    Value value;
-    R"(-0.00000000001e+20)" >> value;
+    json::Value value;
+    //R"(-0.00000000001e+20)" >> value;
 
     cout << "Is number: " << value.is_number() << endl;
     cout << "Is double: " << value.is_double() << endl;
@@ -23,10 +28,13 @@ int main() {
 
     R"( " 01asafaf12.oe \u2708 \u263A \uD83D\uDE02"  )" >> value;
 
-    cout << "Is string: " << value.is_string() << endl;
-    cout << "String: '" << String(value) << "'" << endl;
+    //cout << "Is string: " << value.is_string() << endl;
+    //cout << "String: '" << String(value) << "'" << endl;
 
+
+    cout << "A>" << endl;
     R"( true  )" >> value;
+    cout << "<A" << endl;
 
     cout << "Is bool: " << value.is_bool() << endl;
     cout << "Bool: '" << Bool(value) << "'" << endl;
@@ -40,22 +48,27 @@ int main() {
 
     cout << "Is null: " << value.is_null() << endl;
 
+    cout << "B>" << endl;
     R"( {"abc": 5, "bvc": 7}  )" >> value;
+    cout << "<B" << endl;
 
     cout << "Is object: " << value.is_object() << endl;
 
-    R"( [0, 1, 2, 3]  )" >> value;
+    cout << "C>" << endl;
+    R"( [0, 1, 2, {"aa": 2, "123": [0, 1]}]  )" >> value;
+    cout << "<C" << endl;
 
     cout << "Is array: " << value.is_array() << endl;
 
     cout << endl;
-    cout << "Null size: " << sizeof(Null) << endl;
-    cout << "Value size: " << sizeof(Value) << endl;
-    cout << "Array size: " << sizeof(Array) << endl;
-    cout << "Object size: " << sizeof(Object) << endl;
-    cout << "String size: " << sizeof(String) << endl;
-    cout << "Number size: " << sizeof(Number) << endl;
-    cout << "Pair size: " << sizeof(Pair) << endl;
+    cout << "Null size: " << sizeof(json::Null) << endl;
+    cout << "Value size: " << sizeof(json::Value) << endl;
+    cout << "Array size: " << sizeof(json::Array) << endl;
+    cout << "Object size: " << sizeof(json::Object) << endl;
+    cout << "String size: " << sizeof(json::String) << endl;
+    cout << "String size: " << sizeof(std::string) << endl;
+    cout << "Number size: " << sizeof(json::Number) << endl;
+    cout << "Pair size: " << sizeof(json::Pair) << endl;
 
     cout << "-----------------------------------------------" << endl;
     cout << "" << numeric_limits<ptrdiff_t>::max() << endl;
@@ -112,3 +125,4 @@ int main() {
 
 
 }
+#endif

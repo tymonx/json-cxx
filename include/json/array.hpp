@@ -45,6 +45,7 @@
 #define JSON_CXX_ARRAY_HPP
 
 #include <json/types.hpp>
+#include <json/allocator.hpp>
 
 #include <iterator>
 #include <type_traits>
@@ -72,13 +73,18 @@ public:
 
     using size_type = Size;
 
-    Array() { }
+    Array(Allocator* allocator = get_default_allocator()) :
+        m_allocator{allocator}
+    { }
 
-    Array(const Array& other);
+    Array(Size size, Allocator* allocator = get_default_allocator());
 
-    Array(Array&& other) :
+    Array(const Array& other, Allocator* allocator = get_default_allocator());
+
+    Array(Array&& other, Allocator* allocator = get_default_allocator()) :
         m_begin{other.m_begin},
-        m_end{other.m_end}
+        m_end{other.m_end},
+        m_allocator{allocator}
     {
         other.m_end = other.m_begin = nullptr;
     }
@@ -258,6 +264,7 @@ public:
 private:
     iterator m_begin{nullptr};
     iterator m_end{nullptr};
+    Allocator* m_allocator{get_default_allocator()};
 };
 
 }

@@ -47,44 +47,55 @@
 
 using json::String;
 
-String::String () {
-    m_end = m_begin = new Char[1]{};
+String::String (Allocator* allocator) :
+    m_allocator{allocator}
+{
+    m_end = m_begin = static_cast<Char*>(m_allocator->allocate(1));
+    *m_begin = '\0';
 }
 
-String::String(const Char* str) :
-    String(str, std::strlen(str))
+String::String(const Char* str, Allocator* allocator) :
+    String(str, std::strlen(str), allocator)
 { }
 
-String::String(const Char* str, Size count) {
-    m_begin = static_cast<Char*>(std::memcpy(new Char[count + 1], str, count));
+String::String(const Char* str, Size count, Allocator* allocator) :
+    m_allocator{allocator}
+{
+    m_begin = static_cast<Char*>(
+        std::memcpy(m_allocator->allocate(count + 1), str, count));
     m_end = m_begin + count;
     *m_end = '\0';
 }
 
-String::String(Size count, Char ch) {
-    m_begin = static_cast<Char*>(std::memset(new Char[count + 1], ch, count));
+String::String(Size count, Char ch, Allocator* allocator) :
+    m_allocator{allocator}
+{
+    m_begin = static_cast<Char*>(
+        std::memset(m_allocator->allocate(count + 1), ch, count));
     m_end = m_begin + count;
     *m_end = '\0';
 }
 
-String::String(const String& other, Size pos, Size count) :
+String::String(const String& other, Size pos, Size count,
+        Allocator* allocator) :
     m_begin{other.m_begin + pos},
-    m_end{m_begin + count}
+    m_end{m_begin + count},
+    m_allocator{allocator}
 {
     m_begin = (m_begin < other.m_end) ? m_begin : other.m_end;
     m_end = (m_end < other.m_end) ? m_end : other.m_end;
     m_end = (m_begin < m_end) ? m_end : m_begin;
 
-    *this = String(m_begin, m_end);
+    *this = String(m_begin, m_end, allocator);
 }
 
 String::~String() {
-    delete [] m_begin.base();
+    m_allocator->deallocate(m_begin, size() + 1);
 }
 
 String& String::operator=(String&& other) {
     if (this != &other) {
-        delete [] m_begin.base();
+        this->~String();
         m_begin = other.m_begin;
         m_end = other.m_end;
         other.m_end = other.m_begin = nullptr;
@@ -105,8 +116,9 @@ void String::swap(String& other) {
 
 void String::clear() {
     if (m_end != m_begin) {
-        delete [] m_begin.base();
+        this->~String();
         m_end = m_begin = nullptr;
-        m_end = m_begin = new Char[1]{};
+        m_end = m_begin = static_cast<Char*>(m_allocator->allocate(1));
+        *m_begin = '\0';
     }
 }

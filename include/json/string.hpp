@@ -45,6 +45,7 @@
 #define JSON_CXX_STRING_HPP
 
 #include <json/types.hpp>
+#include <json/allocator.hpp>
 
 #include <iterator>
 #include <type_traits>
@@ -73,34 +74,41 @@ public:
 
     static const constexpr Size npos{Size(-1)};
 
-    String();
+    String(Allocator* allocator = get_default_allocator());
 
-    String(Size count, Char ch);
+    String(Size count, Char ch, Allocator* allocator = get_default_allocator());
 
-    String(const String& other, Size pos, Size count = npos);
+    String(const String& other, Size pos, Size count = npos,
+            Allocator* allocator = get_default_allocator());
 
-    String(const Char* str, Size count);
+    String(const Char* str, Size count,
+            Allocator* allocator = get_default_allocator());
 
-    String(const Char* str);
+    String(const Char* str, Allocator* allocator = get_default_allocator());
 
-    String(const_iterator first, const_iterator last) :
-        String(first.base(), Size(last - first))
+    String(const_iterator first, const_iterator last,
+            Allocator* allocator = get_default_allocator()) :
+        String(first.base(), Size(last - first), allocator)
     { }
 
     template<Size N>
-    String(const Char str[N]) : String(str, N - 1) { }
-
-    String(std::initializer_list<Char> init) :
-        String(init.begin(), init.size())
+    String(const Char str[N], Allocator* allocator = get_default_allocator()) :
+        String(str, N - 1, allocator)
     { }
 
-    String(const String& other) :
-        String(other.data(), other.size())
+    String(std::initializer_list<Char> init,
+            Allocator* allocator = get_default_allocator()) :
+        String(init.begin(), init.size(), allocator)
     { }
 
-    String(String&& other) :
+    String(const String& other, Allocator* allocator = get_default_allocator()) :
+        String(other.data(), other.size(), allocator)
+    { }
+
+    String(String&& other, Allocator* allocator = get_default_allocator()) :
         m_begin{other.m_begin},
-        m_end{other.m_end}
+        m_end{other.m_end},
+        m_allocator{allocator}
     {
         other.m_end = other.m_begin = nullptr;
     }
@@ -303,6 +311,10 @@ public:
 
     operator char*() const { return m_begin.base(); }
 
+    Allocator* get_allocator() {
+        return m_allocator;
+    }
+
     ~String();
 
     template<typename T>
@@ -431,10 +443,10 @@ public:
     private:
         pointer m_ptr{nullptr};
     };
-
 private:
     iterator m_begin{nullptr};
     iterator m_end{nullptr};
+    Allocator* m_allocator{get_default_allocator()};
 };
 
 }

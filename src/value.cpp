@@ -48,16 +48,16 @@
 
 using json::Value;
 
-Value::Value(Type type) : m_type{type} {
+Value::Value(Type type, Size count) : m_type{type} {
     switch (m_type) {
     case Type::OBJECT:
-        new (&m_object) Object();
+        new (&m_object) Object(count);
         break;
     case Type::ARRAY:
-        new (&m_array) Array();
+        new (&m_array) Array(count);
         break;
     case Type::STRING:
-        new (&m_string) String();
+        new (&m_string) String(count, '\0');
         break;
     case Type::NUMBER:
         new (&m_number) Number();
