@@ -76,11 +76,13 @@ function (clang_compiler_processing)
     string(REGEX REPLACE ";" " " LD_FLAGS   "${LD_FLAGS}")
 
     set(COMPILER_DEBUG      "-O0 -g3 -ggdb")
-    set(COMPILER_RELEASE    "-O3 -DNDEBUG -fdata-sections -ffunction-sections -fstack-protector-strong")
+    #set(COMPILER_RELEASE    "-O3 -DNDEBUG -fdata-sections -ffunction-sections -fstack-protector-strong")
+    set(COMPILER_RELEASE    "-O2 -DNDEBUG -fdata-sections -ffunction-sections")
     set(COMPILER_COVERAGE   "-O0 -g --coverage")
 
     set(LINKER_DEBUG        "")
-    set(LINKER_RELEASE      "-Wl,--gc-sections -z noexecstack -z relro -z now")
+    #set(LINKER_RELEASE      "-Wl,--gc-sections -z noexecstack -z relro -z now")
+    set(LINKER_RELEASE      "-Wl,--gc-sections")
     set(LINKER_COVERAGE     "--coverage")
 
     if(NOT CMAKE_BUILD_TYPE)

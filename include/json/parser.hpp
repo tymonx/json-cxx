@@ -146,19 +146,11 @@ private:
     bool m_stream_mode{false};
     Size m_limit{DEFAULT_LIMIT_PER_OBJECT};
 
-    Allocator* m_allocator{get_default_allocator()};
+    Allocator* m_allocator{nullptr};
     const Char* m_pos{nullptr};
     const Char* m_end{nullptr};
 
-    /* Number processing members */
-    bool m_negative{false};
-    Difference m_exponent{0};
-    Difference m_length{0};
-    const Char* m_point{nullptr};
-    const Char* m_nonzero_begin{nullptr};
-    const Char* m_nonzero_end{nullptr};
-
-    void read_whitespaces();
+    /* Parser processing members */
     void read_value(Value& value);
     void read_array(Value& value);
     void read_array_element(Value& value, Size& count);
@@ -169,25 +161,27 @@ private:
     void read_true(Value& value);
     void read_false(Value& value);
     void read_null(Value& value);
-    void read_colon();
-    void read_quote();
+
+    inline void read_whitespaces();
+    inline void read_colon();
+    inline void read_quote();
 
     /* Number processing methods */
-    void read_integral_part();
-    void read_fractional_part();
-    void read_exponent_part();
-    void read_exponent_number();
-    void read_digits();
-    void write_number(Number& number);
-    bool write_number_integer(Number& number);
-    void write_number_double(Number& number);
+    struct NumberInfo;
+
+    inline void read_number_integral(NumberInfo&);
+    inline void read_number_fractional(NumberInfo&);
+    inline void read_number_exponent(NumberInfo&);
+    inline void read_number_digits(NumberInfo&);
+    inline bool write_number_integer(const NumberInfo&, Number& number);
+    inline void write_number_double(const NumberInfo&, Number& number);
 
     /* String processing */
-    Char* read_string_unicode(Char* str, int& ch);
-    unsigned read_unicode();
-    Size count_string_chars();
+    inline Char* read_string_unicode(Char* str, int& ch);
+    inline unsigned read_string_unicode();
+    inline Size read_string_count();
 
-    void stack_guard();
+    inline void stack_guard();
 
     [[noreturn]]
     void throw_error(ParserError::Code code);

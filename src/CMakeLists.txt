@@ -48,6 +48,9 @@ if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
     set_source_files_properties(allocator.cpp PROPERTIES
         COMPILE_FLAGS "-Wno-suggest-attribute=const"
     )
+    set_source_files_properties(parser.cpp PROPERTIES
+        COMPILE_FLAGS "-Wno-inline"
+    )
 endif()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES Clang)

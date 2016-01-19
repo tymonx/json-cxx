@@ -43,12 +43,14 @@
 
 #include <json/parser_error.hpp>
 
-#include <array>
-
 using json::ParserError;
 
-static const std::array<const json::Char*, 19> g_error_codes{{
+template<typename T, json::Size N> static constexpr
+json::Size array_length(T(&)[N]) { return N; }
+
+static const char* g_error_codes[]{
     "No error",
+    "Bad allocation",
     "Empty JSON document",
     "End of file reached",
     "Extra Character after succesful parsing",
@@ -67,10 +69,11 @@ static const std::array<const json::Char*, 19> g_error_codes{{
     "Invalid number integer part",
     "Invalid number fractional part",
     "Invalid number exponent part"
-}};
+};
 
 ParserError::~ParserError() { }
 
 const char* ParserError::what() const noexcept {
-    return g_error_codes[m_code];
+    return (m_code < array_length(g_error_codes)) ?
+        g_error_codes[m_code] : "Unknown error";
 }

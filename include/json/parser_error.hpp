@@ -54,6 +54,7 @@ public:
     /*! Error parsing codes */
     enum Code {
         NONE,
+        BAD_ALLOCATION,
         EMPTY_DOCUMENT,
         END_OF_FILE,
         EXTRA_CHARACTER,

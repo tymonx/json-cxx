@@ -43,6 +43,8 @@
 
 #include "default_allocator.hpp"
 
+#include <cstdlib>
+
 using json::DefaultAllocator;
 
 json::Allocator* json::get_default_allocator() {
@@ -51,11 +53,11 @@ json::Allocator* json::get_default_allocator() {
 }
 
 void* DefaultAllocator::allocate(Size n) {
-    return new char[n];
+    return (0 != n) ? std::malloc(n) : nullptr;
 }
 
 void DefaultAllocator::deallocate(void* ptr, Size) noexcept {
-    delete [] static_cast<char*>(ptr);
+    std::free(ptr);
 }
 
 DefaultAllocator::~DefaultAllocator() { }
