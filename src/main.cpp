@@ -16,7 +16,7 @@ using std::numeric_limits;
 # if 1
 int main() {
     json::Value value;
-    //R"(-0.00000000001e+20)" >> value;
+    R"(-0.00000000001e+20)" >> value;
 
     cout << "Is number: " << value.is_number() << endl;
     cout << "Is double: " << value.is_double() << endl;
@@ -28,9 +28,8 @@ int main() {
 
     R"( " 01asafaf12.oe \u2708 \u263A \uD83D\uDE02"  )" >> value;
 
-    //cout << "Is string: " << value.is_string() << endl;
-    //cout << "String: '" << String(value) << "'" << endl;
-
+    cout << "Is string: " << value.is_string() << endl;
+    cout << "String: '" << String(value) << "'" << endl;
 
     cout << "A>" << endl;
     R"( true  )" >> value;

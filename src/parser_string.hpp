@@ -45,6 +45,9 @@
 #define JSON_CXX_PARSER_STRING_HPP
 
 #include <json/types.hpp>
+#include <json/parser_error.hpp>
+
+#include <csetjmp>
 
 namespace json {
 
@@ -55,11 +58,23 @@ public:
 
     void parsing(Char* str);
 
-    const Char* get_position() const { return m_pos; }
+    const Char* get_position() const {
+        return m_pos;
+    }
 
-    static
-    Size count_string_chars(const Char* pos, const Char* end);
+    Size count_string_chars();
+
+    ParserError& error() {
+        return m_error;
+    }
+
+    const ParserError& error() const {
+        return m_error;
+    }
 private:
+    std::jmp_buf m_jump_buffer{};
+    ParserError m_error{};
+
     Char* m_str{nullptr};
     const Char* m_pos{nullptr};
     const Char* m_end{nullptr};
@@ -70,6 +85,10 @@ private:
     ParserString& operator=(ParserString&&) = delete;
 
     int read_string_unicode();
+    unsigned read_unicode();
+
+    [[noreturn]]
+    void throw_error(ParserError::Code code);
 };
 
 }

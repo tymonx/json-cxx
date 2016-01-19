@@ -36,6 +36,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
+#add_definitions(-D__NO_SYSTEM_INIT)
+
 option(TESTS "Enable/disable tests" OFF)
 option(EXAMPLES  "Enable/disable examples" OFF)
 option(MEMORY_CHECK "Enable/disable memory check support" OFF)

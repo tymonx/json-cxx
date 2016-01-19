@@ -88,22 +88,24 @@ constexpr Uint get_max_mod_10<Int>() noexcept {
 }
 
 void ParserNumber::parsing(Number& number) {
-    if ('-' == *m_pos) {
-        ++m_pos;
-        m_negative = true;
+    if (!setjmp(m_jump_buffer)) {
+        if ('-' == *m_pos) {
+            ++m_pos;
+            m_negative = true;
+        }
+
+        read_integral_part();
+
+        if ((m_pos < m_end) && ('.' == *m_pos)) {
+            read_fractional_part();
+        }
+
+        if ((m_pos < m_end) && (('e' == *m_pos) || ('E' == *m_pos))) {
+            read_exponent_part();
+        }
+
+        write_number(number);
     }
-
-    read_integral_part();
-
-    if ((m_pos < m_end) && ('.' == *m_pos)) {
-        read_fractional_part();
-    }
-
-    if ((m_pos < m_end) && (('e' == *m_pos) || ('E' == *m_pos))) {
-        read_exponent_part();
-    }
-
-    write_number(number);
 }
 
 void ParserNumber::read_integral_part() {
@@ -117,9 +119,9 @@ void ParserNumber::read_integral_part() {
             }
             m_point = m_pos;
         }
-        else { throw Error{Error::INVALID_NUMBER_INTEGER, m_pos}; }
+        else { throw_error(Error::INVALID_NUMBER_INTEGER); }
     }
-    else { throw Error{Error::END_OF_FILE, m_end}; }
+    else { throw_error(Error::END_OF_FILE); }
 }
 
 void ParserNumber::read_fractional_part() {
@@ -128,9 +130,9 @@ void ParserNumber::read_fractional_part() {
         if (std::isdigit(*m_pos)) {
             read_digits();
         }
-        else { throw Error{Error::INVALID_NUMBER_FRACTION, m_pos}; }
+        else { throw_error(Error::INVALID_NUMBER_FRACTION); }
     }
-    else { throw Error{Error::END_OF_FILE, m_end}; }
+    else { throw_error(Error::END_OF_FILE); }
 }
 
 void ParserNumber::read_exponent_part() {
@@ -148,9 +150,9 @@ void ParserNumber::read_exponent_part() {
             read_exponent_number();
             m_exponent = -m_exponent;
         }
-        else { throw Error{Error::INVALID_NUMBER_EXPONENT, m_pos}; }
+        else { throw_error(Error::INVALID_NUMBER_EXPONENT); }
     }
-    else { throw Error{Error::END_OF_FILE, m_end}; }
+    else { throw_error(Error::END_OF_FILE); }
 }
 
 void ParserNumber::read_exponent_number() {
@@ -159,7 +161,7 @@ void ParserNumber::read_exponent_number() {
             m_exponent = (10 * m_exponent) + (*(m_pos++) - '0');
         }
     }
-    else { throw Error{Error::END_OF_FILE, m_end}; }
+    else { throw_error(Error::END_OF_FILE); }
 }
 
 void ParserNumber::read_digits() {
@@ -291,4 +293,9 @@ void ParserNumber::write_number_double(Number& number) {
     else {
         new (&number) Number(value);
     }
+}
+
+void ParserNumber::throw_error(ParserError::Code code) {
+    m_error = {code, (Error::END_OF_FILE == code) ? m_end : m_pos};
+    std::longjmp(m_jump_buffer, code);
 }

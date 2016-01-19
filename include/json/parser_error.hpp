@@ -74,9 +74,15 @@ public:
         INVALID_NUMBER_EXPONENT
     };
 
+    ParserError() :
+        m_code{Code::NONE},
+        m_position{nullptr}
+    { }
+
     ParserError(Code code, const Char* position) :
         m_code{code},
-        m_position{position} { }
+        m_position{position}
+    { }
 
     ParserError(const ParserError&) = default;
     ParserError(ParserError&&) = default;
@@ -85,12 +91,24 @@ public:
 
     virtual const char* what() const noexcept override;
 
-    Code get_code() const {
+    Code code() const {
         return m_code;
     }
 
-    const Char* get_position() const {
-         return m_position;
+    const Char* position() const {
+        return m_position;
+    }
+
+    bool operator!() const {
+        return Code::NONE == m_code;
+    }
+
+    operator bool() const {
+        return Code::NONE != m_code;
+    }
+
+    void clear() {
+        m_code = Code::NONE;
     }
 
     virtual ~ParserError();

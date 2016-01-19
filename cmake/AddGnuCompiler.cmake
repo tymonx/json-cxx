@@ -236,6 +236,7 @@ function (gnu_compiler_processing)
 
     set(C_FLAGS     ${C_FLAGS}   ${COMMON_WARNINGS} ${C_WARNINGS}   ${EXTRA_FLAGS})
     set(CXX_FLAGS   ${CXX_FLAGS} ${COMMON_WARNINGS} ${CXX_WARNINGS} ${EXTRA_FLAGS})
+    #set(CXX_FLAGS   ${CXX_FLAGS})
 
     set(C_FLAGS     ${C_FLAGS}   ${CMAKE_C_FLAGS})
     set(CXX_FLAGS   ${CXX_FLAGS} ${CMAKE_CXX_FLAGS})
@@ -247,10 +248,12 @@ function (gnu_compiler_processing)
 
     set(COMPILER_DEBUG      "-O0 -g3 -ggdb")
     set(COMPILER_RELEASE    "-O3 -DNDEBUG -pg -fdata-sections -ffunction-sections -fstack-protector-strong")
+    #set(COMPILER_RELEASE    "-Os -DNDEBUG -fdata-sections -ffunction-sections")
     set(COMPILER_COVERAGE   "-O0 -g --coverage")
 
     set(LINKER_DEBUG        "")
     set(LINKER_RELEASE      "-Wl,--gc-sections -z noexecstack -z relro -z now")
+    #set(LINKER_RELEASE      "-Wl,--gc-sections")
     set(LINKER_COVERAGE     "--coverage")
 
     if(NOT CMAKE_BUILD_TYPE)

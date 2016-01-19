@@ -47,6 +47,9 @@
 #include <json/types.hpp>
 #include <json/json.hpp>
 #include <json/allocator.hpp>
+#include <json/parser_error.hpp>
+
+#include <csetjmp>
 
 namespace json {
 
@@ -57,9 +60,8 @@ public:
     Parser() { }
 
     Parser(const Char* begin, const Char* end) :
-        m_begin{begin},
-        m_end{end},
-        m_pos{begin}
+        m_pos{begin},
+        m_end{end}
     { }
 
     Parser(const Char* begin, const Char* end, Value& value) :
@@ -84,10 +86,15 @@ public:
     Parser(const Char str[N], Value& value) :
         Parser(str, str + N - 1) { parsing(value); }
 
+    Parser(const Parser&) = default;
+    Parser(Parser&&) = default;
+    Parser& operator=(const Parser&) = default;
+    Parser& operator=(Parser&&) = default;
+
     void parsing(Value& value);
 
     void parsing(const Char* begin, const Char* end, Value& value) {
-        m_pos = m_begin = begin;
+        m_pos = begin;
         m_end = end;
         parsing(value);
     }
@@ -114,6 +121,14 @@ public:
     void enable_stream_mode(bool enable) {
         m_stream_mode = enable;
     }
+
+    bool is_error() const {
+        return ParserError::NONE != m_error_code;
+    }
+
+    ParserError get_error() const {
+        return {m_error_code, const_cast<const Char*>(m_error_position)};
+    }
 private:
     struct ParseFunction {
         int code;
@@ -122,12 +137,26 @@ private:
 
     static const ParseFunction m_parse_functions[];
 
-    Size m_limit{DEFAULT_LIMIT_PER_OBJECT};
+    /* Modified locals in setjmp scope must be volatile */
+    std::jmp_buf m_jump_buffer{};
+    volatile const Char* m_error_position{};
+    volatile ParserError::Code m_error_code{};
+
+    /* Parser configuration */
     bool m_stream_mode{false};
+    Size m_limit{DEFAULT_LIMIT_PER_OBJECT};
+
     Allocator* m_allocator{get_default_allocator()};
-    const Char* m_begin{nullptr};
-    const Char* m_end{nullptr};
     const Char* m_pos{nullptr};
+    const Char* m_end{nullptr};
+
+    /* Number processing members */
+    bool m_negative{false};
+    Difference m_exponent{0};
+    Difference m_length{0};
+    const Char* m_point{nullptr};
+    const Char* m_nonzero_begin{nullptr};
+    const Char* m_nonzero_end{nullptr};
 
     void read_whitespaces();
     void read_value(Value& value);
@@ -143,7 +172,25 @@ private:
     void read_colon();
     void read_quote();
 
+    /* Number processing methods */
+    void read_integral_part();
+    void read_fractional_part();
+    void read_exponent_part();
+    void read_exponent_number();
+    void read_digits();
+    void write_number(Number& number);
+    bool write_number_integer(Number& number);
+    void write_number_double(Number& number);
+
+    /* String processing */
+    Char* read_string_unicode(Char* str, int& ch);
+    unsigned read_unicode();
+    Size count_string_chars();
+
     void stack_guard();
+
+    [[noreturn]]
+    void throw_error(ParserError::Code code);
 };
 
 }

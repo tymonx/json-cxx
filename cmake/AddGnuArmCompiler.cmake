@@ -27,43 +27,30 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-add_library(json-cxx
-    array.cpp
-    allocator.cpp
-    default_allocator.cpp
-    exception.cpp
-    number.cpp
-    object.cpp
-    pair.cpp
-    parser.cpp
-    parser_error.cpp
-    string.cpp
-    value.cpp
+#if (NOT CMAKE_CXX_COMPILER_ID MATCHES GNU)
+#    return()
+#endif ()
+
+include(CMakeForceCompiler)
+
+set(CMAKE_SYSTEM_NAME System)
+set(CMAKE_C_COMPILER /home/tymon/workspace/arm/gcc-arm-none-eabi-5_2-2015q4/bin/arm-none-eabi-gcc)
+set(CMAKE_CXX_COMPILER /home/tymon/workspace/arm/gcc-arm-none-eabi-5_2-2015q4/bin/arm-none-eabi-g++)
+
+# specify the cross compiler
+CMAKE_FORCE_C_COMPILER(${CMAKE_C_COMPILER} GNU)
+CMAKE_FORCE_CXX_COMPILER(${CMAKE_CXX_COMPILER} GNU)
+
+set(CMAKE_FIND_ROOT_PATH
+    /home/tymon/workspace/arm/gcc-arm-none-eabi-5_2-2015q4/arm-none-eabi
+    /home/tymon/workspace/arm/gcc-arm-none-eabi-5_2-2015q4
 )
 
-if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
-    set_source_files_properties(array.cpp object.cpp  parser.cpp PROPERTIES
-        COMPILE_FLAGS "-Wno-strict-overflow -Wno-unsafe-loop-optimizations"
-    )
-    set_source_files_properties(allocator.cpp PROPERTIES
-        COMPILE_FLAGS "-Wno-suggest-attribute=const"
-    )
-endif()
+# search for programs in the build host directories
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+# for libraries and headers in the target directories
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
-if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
-    set_source_files_properties(default_allocator.cpp  parser.cpp PROPERTIES
-        COMPILE_FLAGS "-Wno-exit-time-destructors"
-    )
-endif()
-
-add_executable(main
-    #/home/tymon/workspace/arm/gcc-arm-none-eabi-5_2-2015q4/share/gcc-arm-none-eabi/samples/startup/startup_ARMCM0.S
-    main.cpp
-)
-target_link_libraries(main json-cxx)
-
-install (TARGETS json-cxx
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-)
+set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS}
+    -T/home/tymon/workspace/arm/gcc-arm-none-eabi-5_2-2015q4/share/gcc-arm-none-eabi/samples/ldscripts/gcc.ld)

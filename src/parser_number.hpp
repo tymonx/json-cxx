@@ -46,6 +46,9 @@
 
 #include <json/types.hpp>
 #include <json/number.hpp>
+#include <json/parser_error.hpp>
+
+#include <csetjmp>
 
 namespace json {
 
@@ -56,8 +59,21 @@ public:
 
     void parsing(Number& number);
 
-    const Char* get_position() const { return m_pos; }
+    const Char* get_position() const {
+        return m_pos;
+    }
+
+    ParserError& error() {
+        return m_error;
+    }
+
+    const ParserError& error() const {
+        return m_error;
+    }
 private:
+    std::jmp_buf m_jump_buffer{};
+    ParserError m_error{};
+
     bool m_negative{false};
     bool m_overflow{false};
     Difference m_exponent{0};
@@ -81,6 +97,9 @@ private:
     void write_number(Number& number);
     void write_number_integer(Number& number);
     void write_number_double(Number& number);
+
+    [[noreturn]]
+    void throw_error(ParserError::Code code);
 };
 
 }

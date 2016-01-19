@@ -47,6 +47,12 @@
 
 #include <utility>
 
+#ifdef __EXCEPTIONS
+#define THROW_ERROR(_e)     do { throw _e; } while(0)
+#else
+#define THROW_ERROR(_e)     do { } while(0)
+#endif
+
 using json::Size;
 using json::Char;
 using json::ParserString;
@@ -73,82 +79,96 @@ Uint32 decode_utf16_surrogate_pair(const SurrogatePair& pair) {
         (0x3FF & Uint32(pair.second));
 }
 
-static
-Uint16 read_unicode(const Char* pos, const Char* end) {
-    if (pos + UNICODE_LENGTH > end) { throw Error{Error::END_OF_FILE, end}; }
+void ParserString::parsing(Char* str) {
+    if (!setjmp(m_jump_buffer)) {
+        m_str = str;
 
-    end = pos + UNICODE_LENGTH;
-    Uint16 code{0};
-
-    while (pos < end) {
-        Uint16 ch = Uint16(*pos);
-        if ((ch >= '0') && (ch <= '9')) {
-            ch = ch - '0';
+        int ch = *(m_pos++);
+        while ('"' != ch) {
+            if ('\\' == ch) {
+                ch = *(m_pos++);
+                switch (ch) {
+                case '"':
+                case '\\':
+                case '/':
+                    break;
+                case 'n':
+                    ch = '\n';
+                    break;
+                case 'r':
+                    ch = '\r';
+                    break;
+                case 't':
+                    ch = '\t';
+                    break;
+                case 'b':
+                    ch = '\b';
+                    break;
+                case 'f':
+                    ch = '\f';
+                    break;
+                case 'u':
+                    ch = read_string_unicode();
+                    continue;
+                default:
+                    throw_error(Error::INVALID_ESCAPE);
+                }
+            }
+            *(m_str++) = Char(ch);
+            ch = *(m_pos++);
         }
-        else if ((ch >= 'A') && (ch <= 'F')) {
-            ch = (ch + 0xA - 'A');
-        }
-        else if ((ch >= 'a') && (ch <= 'f')) {
-            ch = (ch + 0xA - 'a');
-        }
-        else {
-            throw Error{Error::INVALID_UNICODE, pos};
-        }
-        code = (code << 4) | ch;
-        ++pos;
     }
-
-    return code;
+    else {
+        THROW_ERROR(m_error);
+    }
 }
 
-void ParserString::parsing(Char* str) {
-    m_str = str;
+Size ParserString::count_string_chars() {
+    if (!setjmp(m_jump_buffer)) {
+        Size count{0};
 
-    int ch = *(m_pos++);
-    while ('"' != ch) {
-        if ('\\' == ch) {
-            ch = *(m_pos++);
-            switch (ch) {
-            case '"':
-            case '\\':
-            case '/':
-                break;
-            case 'n':
-                ch = '\n';
-                break;
-            case 'r':
-                ch = '\r';
-                break;
-            case 't':
-                ch = '\t';
-                break;
-            case 'b':
-                ch = '\b';
-                break;
-            case 'f':
-                ch = '\f';
-                break;
-            case 'u':
-                ch = read_string_unicode();
-                continue;
-            default:
-                throw Error{Error::INVALID_ESCAPE, m_pos};
+        for (; (m_pos < m_end) && ('"' != *m_pos); ++m_pos, ++count) {
+            if ('\\' == *m_pos) {
+                if ('u' == *(++m_pos)) {
+                    ++m_pos;
+                    Uint16 code = read_unicode();
+                    if (code >= 0x80) {
+                        if (code < 0x800) {
+                            count += 1;
+                        }
+                        else if ((code < SURROGATE_MIN.first) ||
+                                 (code > SURROGATE_MAX.first)) {
+                            count += 2;
+                        }
+                        else {
+                            count += 3;
+                        }
+                    }
+                }
             }
         }
-        *(m_str++) = Char(ch);
-        ch = *(m_pos++);
+        if (m_pos >= m_end) { throw_error(Error::END_OF_FILE); }
+
+        return count;
     }
+    else {
+        THROW_ERROR(m_error);
+    }
+
+    return 0;
 }
 
 int ParserString::read_string_unicode() {
-    Uint32 unicode = read_unicode(m_pos, m_end);
-    m_pos += UNICODE_LENGTH;
+    Uint32 unicode = read_unicode();
 
     if ((m_pos < m_end) && ('\\' == m_pos[0]) && ('u' == m_pos[1])) {
-        SurrogatePair surrogate{unicode, read_unicode(m_pos + 2, m_end)};
+        m_pos += 2;
+        SurrogatePair surrogate{unicode, read_unicode()};
         if (is_utf16_surrogate_pair(surrogate)) {
             unicode = decode_utf16_surrogate_pair(surrogate);
-            m_pos += (2 + UNICODE_LENGTH);
+        }
+        else {
+            m_pos -= (2 + UNICODE_LENGTH);
         }
     }
 
@@ -174,31 +194,34 @@ int ParserString::read_string_unicode() {
     return *(m_pos++);
 }
 
-Size ParserString::count_string_chars(const Char* pos, const Char* end) {
-    Size count{0};
+unsigned ParserString::read_unicode() {
+    unsigned code{0};
 
-    for (; (pos < end) && ('"' != *pos); ++pos, ++count) {
-        if ('\\' == *pos) {
-            if ('u' == *(++pos)) {
-                Uint16 code = read_unicode(++pos, end);
-                if (code >= 0x80) {
-                    if (code < 0x800) {
-                        count += 1;
-                    }
-                    else if ((code < SURROGATE_MIN.first) ||
-                             (code > SURROGATE_MAX.first)) {
-                        count += 2;
-                    }
-                    else {
-                        count += 3;
-                    }
-                }
-                pos += 3;
+    if (m_pos + UNICODE_LENGTH <= m_end) {
+        const Char* end = m_pos + UNICODE_LENGTH;
+
+        while (m_pos < end) {
+            unsigned ch = unsigned(*m_pos);
+            if ((ch >= '0') && (ch <= '9')) {
+                ch = ch - '0';
             }
+            else if ((ch >= 'A') && (ch <= 'F')) {
+                ch = (ch + 0xA - 'A');
+            }
+            else if ((ch >= 'a') && (ch <= 'f')) {
+                ch = (ch + 0xA - 'a');
+            }
+            else { throw_error(Error::INVALID_UNICODE); }
+            code = (code << 4) | ch;
+            ++m_pos;
         }
     }
+    else { throw_error(Error::END_OF_FILE); }
 
-    if (pos >= end) { throw Error{Error::END_OF_FILE, end}; }
+    return code;
+}
 
-    return count;
+void ParserString::throw_error(ParserError::Code code) {
+    m_error = {code, (Error::END_OF_FILE == code) ? m_end : m_pos};
+    std::longjmp(m_jump_buffer, code);
 }
