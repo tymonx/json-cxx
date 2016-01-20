@@ -77,7 +77,7 @@ function (clang_compiler_processing)
 
     set(COMPILER_DEBUG      "-O0 -g3 -ggdb")
     #set(COMPILER_RELEASE    "-O3 -DNDEBUG -fdata-sections -ffunction-sections -fstack-protector-strong")
-    set(COMPILER_RELEASE    "-O2 -DNDEBUG -fdata-sections -ffunction-sections")
+    set(COMPILER_RELEASE    "-O3 -DNDEBUG -fdata-sections -ffunction-sections")
     set(COMPILER_COVERAGE   "-O0 -g --coverage")
 
     set(LINKER_DEBUG        "")

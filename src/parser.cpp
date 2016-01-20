@@ -68,11 +68,6 @@ using Uint32 = std::uint_fast32_t;
 static constexpr Char JSON_NULL[] = "null";
 static constexpr Char JSON_TRUE[] = "true";
 static constexpr Char JSON_FALSE[] = "false";
-
-static constexpr Size JSON_NULL_LENGTH = 4;
-static constexpr Size JSON_TRUE_LENGTH = 4;
-static constexpr Size JSON_FALSE_LENGTH = 5;
-
 static constexpr Size UNICODE_LENGTH = 4;
 
 struct json::Parser::NumberInfo {
@@ -97,8 +92,23 @@ struct SurrogatePair {
     }
 };
 
+struct Integer {
+    Uint div10;
+    Uint mod10;
+
+    bool operator>(const Integer& other) const {
+        return (div10 > other.div10) ||
+            ((div10 == other.div10) && (mod10 > other.mod10));
+    }
+};
+
 static constexpr SurrogatePair SURROGATE_MIN{0xD800, 0xDC00};
 static constexpr SurrogatePair SURROGATE_MAX{0xDBFF, 0xDFFF};
+
+template<Size N>
+static constexpr Size length(const Char(&)[N]) noexcept {
+    return N - 1;
+}
 
 template<typename T>
 static constexpr T get_digits_max() noexcept {
@@ -106,29 +116,22 @@ static constexpr T get_digits_max() noexcept {
 }
 
 template<typename T>
-static constexpr Uint get_max_by_10() noexcept;
-
-template<typename T>
-static constexpr Uint get_max_mod_10() noexcept;
+static constexpr Integer integer_max() noexcept;
 
 template<>
-constexpr Uint get_max_by_10<Uint>() noexcept {
-    return std::numeric_limits<Uint>::max() / 10;
+constexpr Integer integer_max<Uint>() noexcept {
+    return Integer{
+        std::numeric_limits<Uint>::max() / 10,
+        std::numeric_limits<Uint>::max() % 10
+    };
 }
 
 template<>
-constexpr Uint get_max_mod_10<Uint>() noexcept {
-    return std::numeric_limits<Uint>::max() % 10;
-}
-
-template<>
-constexpr Uint get_max_by_10<Int>() noexcept {
-    return Uint(-std::numeric_limits<Int>::min()) / 10;
-}
-
-template<>
-constexpr Uint get_max_mod_10<Int>() noexcept {
-    return Uint(-std::numeric_limits<Int>::min()) % 10;
+constexpr Integer integer_max<Int>() noexcept {
+    return Integer{
+        Uint(-std::numeric_limits<Int>::min()) / 10,
+        Uint(-std::numeric_limits<Int>::min()) % 10
+    };
 }
 
 const Parser::ParseFunction Parser::m_parse_functions[]{
@@ -331,11 +334,11 @@ void Parser::read_object_member(Value& value, Size& count) {
 }
 
 void Parser::read_true(Value& value) {
-    if (m_pos + JSON_TRUE_LENGTH <= m_end) {
-        if (!std::memcmp(m_pos, JSON_TRUE, JSON_TRUE_LENGTH)) {
+    if (m_pos + length(JSON_TRUE) <= m_end) {
+        if (!std::memcmp(m_pos, JSON_TRUE, length(JSON_TRUE))) {
             value.m_bool = true;
             value.m_type = Value::BOOL;
-            m_pos += JSON_TRUE_LENGTH;
+            m_pos += length(JSON_TRUE);
         }
         else { throw_error(Error::NOT_MATCH_TRUE); }
     }
@@ -343,11 +346,11 @@ void Parser::read_true(Value& value) {
 }
 
 void Parser::read_false(Value& value) {
-    if (m_pos + JSON_FALSE_LENGTH <= m_end) {
-        if (!std::memcmp(m_pos, JSON_FALSE, JSON_FALSE_LENGTH)) {
+    if (m_pos + length(JSON_FALSE) <= m_end) {
+        if (!std::memcmp(m_pos, JSON_FALSE, length(JSON_FALSE))) {
             value.m_bool = false;
             value.m_type = Value::BOOL;
-            m_pos += JSON_FALSE_LENGTH;
+            m_pos += length(JSON_FALSE);
         }
         else { throw_error(Error::NOT_MATCH_FALSE); }
     }
@@ -355,10 +358,10 @@ void Parser::read_false(Value& value) {
 }
 
 void Parser::read_null(Value& value) {
-    if (m_pos + JSON_NULL_LENGTH <= m_end) {
-        if (!std::memcmp(m_pos, JSON_NULL, JSON_NULL_LENGTH)) {
+    if (m_pos + length(JSON_NULL) <= m_end) {
+        if (!std::memcmp(m_pos, JSON_NULL, length(JSON_NULL))) {
             value.m_type = Value::NIL;
-            m_pos += JSON_NULL_LENGTH;
+            m_pos += length(JSON_NULL);
         }
         else { throw_error(Error::NOT_MATCH_NULL); }
     }
@@ -422,8 +425,18 @@ void Parser::read_number(Value& value) {
         ++info.exponent;
     }
 
-    if (write_number_integer(info, value.m_number)) {
-        write_number_double(info, value.m_number);
+    if (info.nonzero_length) {
+        if (!write_number_integer(info, value.m_number)) {
+            write_number_double(info, value.m_number);
+        }
+    }
+    else {
+        if (info.negative) {
+            new (&value.m_number) Number(0);
+        }
+        else {
+            new (&value.m_number) Number(Uint(0));
+        }
     }
 
     value.m_type = Value::NUMBER;
@@ -498,73 +511,53 @@ void Parser::read_number_digits(NumberInfo& info) {
 }
 
 bool Parser::write_number_integer(const NumberInfo& info, Number& number) {
-    bool overflow{false};
-    Difference digits;
-    Difference digits_max;
+    Difference digits{info.exponent};
 
     if (info.negative) {
-        digits_max = get_digits_max<Int>();
+        digits = (digits <= get_digits_max<Int>()) ? digits : 0;
     }
     else {
-        digits_max = get_digits_max<Uint>();
+        digits = (digits <= get_digits_max<Uint>()) ? digits : 0;
     }
 
-    if (0 == info.nonzero_length) {
-        digits = 0;
-    }
-    else if (info.exponent >= info.nonzero_length) {
-        digits = info.exponent;
-    }
-    else {
-        digits = -1;
-    }
-
-    if ((digits >= 0) && (digits <= digits_max)) {
-        Uint max_value;
-        Uint max_mod10;
-        Uint value{0};
-        const Char* pos{info.nonzero_begin};
+    if (digits >= info.nonzero_length) {
+        Integer value_max;
+        Integer value{};
 
         if (info.negative) {
-            max_value = get_max_by_10<Int>();
-            max_mod10 = get_max_mod_10<Int>();
+            value_max = integer_max<Int>();
         }
         else {
-            max_value = get_max_by_10<Uint>();
-            max_mod10 = get_max_mod_10<Uint>();
+            value_max = integer_max<Uint>();
         }
 
-        while (pos < info.nonzero_end) {
+        for (const Char* pos{info.nonzero_begin};
+                pos < info.nonzero_end; ++pos) {
             if ('.' != *pos) {
-                Uint mod10 = Uint(*pos - '0');
-                if (value >= max_value) {
-                    overflow = (value > max_value) ||
-                        ((value == max_value) && (mod10 > max_mod10));
-                }
-                value = (10 * value) + mod10;
+                value.mod10 = Uint(*pos - '0');
+                if (value > value_max) { return false; }
+                value.div10 = (10 * value.div10) + value.mod10;
                 --digits;
             }
-            ++pos;
         }
 
         while (digits) {
-            if (value > max_value) { overflow = true; }
-            value *= 10;
+            if (value > value_max) { return false; }
+            value.div10 *= 10;
             --digits;
         }
 
         if (info.negative) {
-            new (&number) Number(-Int(value));
+            new (&number) Number(-Int(value.div10));
         }
         else {
-            new (&number) Number(value);
+            new (&number) Number(value.div10);
         }
-    }
-    else {
-        overflow = true;
+
+        return true;
     }
 
-    return overflow;
+    return false;
 }
 
 void Parser::write_number_double(const NumberInfo& info, Number& number) {
