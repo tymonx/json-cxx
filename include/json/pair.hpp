@@ -46,12 +46,17 @@
 
 #include <json/string.hpp>
 #include <json/value.hpp>
+#include <json/allocator.hpp>
 
 namespace json {
 
 class Pair {
 public:
-    Pair();
+    Pair(Allocator* allocator = get_default_allocator());
+    Pair(const Pair&, Allocator* allocator = get_default_allocator());
+    Pair(Pair&&, Allocator* allocator = get_default_allocator());
+    //Pair& operator=(const Pair&);
+    //Pair& operator=(Pair&&);
 
     String key;
     Value value;

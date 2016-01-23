@@ -182,7 +182,7 @@ void Parser::parsing(const Char* str, Value& value) {
 void Parser::parsing(Value& value) {
     if (!setjmp(m_jump_buffer)) {
         m_error_code = Error::NONE;
-        m_allocator = get_default_allocator();
+        m_allocator = value.m_allocator;
 
         value.~Value();
         value.m_type = Value::NIL;

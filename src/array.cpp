@@ -51,18 +51,34 @@ using json::Array;
 Array::Array(Size size, Allocator* allocator) :
     m_allocator{allocator}
 {
-    void* p = m_allocator->allocate(size * sizeof(Value));
-    m_begin = new (p) Value[size]();
-    m_end = m_begin + size;
+    m_begin = static_cast<Value*>(
+        m_allocator->allocate(size * sizeof(Value))
+    );
+    if (m_begin != nullptr) {
+        m_end = m_begin + size;
+        std::for_each(m_begin, m_end,
+            [this] (Value& value)  {
+                new (&value) Value(m_allocator);
+            }
+        );
+    }
 }
 
 Array::Array(const Array& other, Allocator* allocator) :
     m_allocator{allocator}
 {
-    void* p = m_allocator->allocate(other.size() * sizeof(Value));
-    m_begin = new (p) Value[other.size()]();
-    m_end = m_begin + other.size();
-    std::copy(other.m_begin, other.m_end, m_begin);
+    m_begin = static_cast<Value*>(
+        m_allocator->allocate(other.size() * sizeof(Value))
+    );
+    if (m_begin != nullptr) {
+        m_end = m_begin + other.size();
+        auto it = other.cbegin();
+        std::for_each(m_begin, m_end,
+            [this, &it] (Value& value)  {
+                new (&value) Value(*(it++), m_allocator);
+            }
+        );
+    }
 }
 
 Array& Array::operator=(Array&& other) {
@@ -76,6 +92,10 @@ Array& Array::operator=(Array&& other) {
 }
 
 Array::~Array() {
-    std::for_each(m_begin, m_end, [](Value& value) { value.~Value(); });
+    std::for_each(m_begin, m_end,
+        [](Value& value) {
+            value.~Value();
+        }
+    );
     m_allocator->deallocate(m_begin.base(), size() * sizeof(Value));
 }

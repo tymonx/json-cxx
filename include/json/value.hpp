@@ -49,6 +49,7 @@
 #include <json/string.hpp>
 #include <json/object.hpp>
 #include <json/array.hpp>
+#include <json/allocator.hpp>
 
 namespace json {
 
@@ -65,28 +66,38 @@ public:
         BOOL
     };
 
-    Value(Null = nullptr) :
-        m_type{Type::NIL}
+    Value(Allocator* allocator = get_default_allocator()) :
+        m_type{Type::NIL},
+        m_allocator{allocator}
     { }
 
-    Value(Bool value) :
+    Value(Null, Allocator* allocator = get_default_allocator()) :
+        m_type{Type::NIL},
+        m_allocator{allocator}
+    { }
+
+    Value(Bool value, Allocator* allocator = get_default_allocator()) :
         m_type{Type::BOOL},
-        m_bool{value}
+        m_bool{value},
+        m_allocator{allocator}
     { }
 
-    Value(Type type, Size count = 0);
+    Value(Type type, Size count = 0,
+            Allocator* allocator = get_default_allocator());
 
-    Value(const Number& number) :
+    Value(const Number& number,
+            Allocator* allocator = get_default_allocator()) :
         m_type{Value::NUMBER},
-        m_number{number}
+        m_number{number},
+        m_allocator{allocator}
     { }
 
-    Value(const Value& other);
+    Value(const Value& other, Allocator* allocator = get_default_allocator());
 
-    Value(Value&& other);
+    Value(Value&& other, Allocator* allocator = get_default_allocator());
 
     Value& operator=(const Value& other) {
-        return *this = Value(other);
+        return *this = Value(other, other.m_allocator);
     }
 
     Value& operator=(Value&& other);
@@ -100,6 +111,8 @@ public:
     Value& operator=(Type type) {
         return *this = Value(type);
     }
+
+    Value& operator[](const char* key);
 
     /*!
      * @brief Get JSON type
@@ -210,7 +223,7 @@ public:
 
     ~Value();
 private:
-    Type m_type;
+    Type m_type{Type::NIL};
 
     union {
         Object m_object;
@@ -219,6 +232,8 @@ private:
         Number m_number;
         Bool m_bool;
     };
+
+    Allocator* m_allocator{get_default_allocator()};
 };
 
 }

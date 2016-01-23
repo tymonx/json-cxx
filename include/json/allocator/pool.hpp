@@ -47,19 +47,17 @@
 #include <json/types.hpp>
 #include <json/allocator.hpp>
 
-#include <memory>
-#include <functional>
-
 namespace json {
 namespace allocator {
 
 class Pool : public Allocator {
 public:
-    using MemoryDeleter = std::function<void(*)>;
+    Pool(void* memory, Size max_size);
 
-    using MemoryPtr = std::unique_ptr<void, MemoryDeleter>;
-
-    Pool(MemoryPtr memory, Size max_size);
+    template<typename T>
+    Pool(T* memory, Size max_size) :
+        Pool(static_cast<void*>(memory), max_size)
+    { }
 
     virtual void lock() noexcept;
 
@@ -71,9 +69,15 @@ public:
 
     virtual ~Pool();
 private:
-    MemoryPtr m_memory{nullptr};
-    char* m_begin{nullptr};
-    char* m_end{nullptr};
+    Pool(const Pool&) = delete;
+    Pool(Pool&&) = delete;
+    Pool& operator=(const Pool&) = delete;
+    Pool& operator=(Pool&&) = delete;
+
+    void* m_memory{nullptr};
+    void* m_begin{nullptr};
+    void* m_end{nullptr};
+    void* m_last{nullptr};
 };
 
 }

@@ -1,21 +1,28 @@
 
 #include <json/json.hpp>
+#include <json/allocator/pool.hpp>
 
 #include <cstdint>
 #include <iostream>
 #include <string>
 #include <limits>
+#include <array>
 
 using namespace json;
 using std::cout;
 using std::endl;
 using std::numeric_limits;
 
+
+static std::array<char, 1 * 1024> g_pool{};
+
 //int main() { }
 
 # if 1
 int main() {
-    json::Value value;
+    json::allocator::Pool pool(g_pool.data(), g_pool.size());
+
+    json::Value value(&pool);
     R"(-0.00000000001e+20)" >> value;
 
     cout << "Is number: " << value.is_number() << endl;
@@ -28,6 +35,7 @@ int main() {
 
     R"( " 01asafaf12.oe \u2708 \u263A \uD83D\uDE02"  )" >> value;
 
+#if 1
     cout << "Is string: " << value.is_string() << endl;
     cout << "String: '" << String(value) << "'" << endl;
 
@@ -53,12 +61,13 @@ int main() {
 
     cout << "Is object: " << value.is_object() << endl;
 
+    R"([0, 2, 4])" >> value;
     cout << "C>" << endl;
     R"( [0, 1, 2, {"aa": 2, "123": [0, 1]}]  )" >> value;
     cout << "<C" << endl;
 
     cout << "Is array: " << value.is_array() << endl;
-
+#endif
     cout << endl;
     cout << "Null size: " << sizeof(json::Null) << endl;
     cout << "Value size: " << sizeof(json::Value) << endl;

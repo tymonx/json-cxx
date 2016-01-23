@@ -48,16 +48,19 @@
 
 using json::Value;
 
-Value::Value(Type type, Size count) : m_type{type} {
+Value::Value(Type type, Size count, Allocator* allocator) :
+    m_type{type},
+    m_allocator{allocator}
+{
     switch (m_type) {
     case Type::OBJECT:
-        new (&m_object) Object(count);
+        new (&m_object) Object(count, m_allocator);
         break;
     case Type::ARRAY:
-        new (&m_array) Array(count);
+        new (&m_array) Array(count, m_allocator);
         break;
     case Type::STRING:
-        new (&m_string) String(count, '\0');
+        new (&m_string) String(count, '\0', m_allocator);
         break;
     case Type::NUMBER:
         new (&m_number) Number();
@@ -71,16 +74,19 @@ Value::Value(Type type, Size count) : m_type{type} {
     }
 }
 
-Value::Value(const Value& other) : m_type{other.m_type} {
+Value::Value(const Value& other, Allocator* allocator) :
+    m_type{other.m_type},
+    m_allocator{allocator}
+{
     switch (m_type) {
     case Type::OBJECT:
-        new (&m_object) Object(other.m_object);
+        new (&m_object) Object(other.m_object, m_allocator);
         break;
     case Type::ARRAY:
-        new (&m_array) Array(other.m_array);
+        new (&m_array) Array(other.m_array, m_allocator);
         break;
     case Type::STRING:
-        new (&m_string) String(other.m_string);
+        new (&m_string) String(other.m_string, m_allocator);
         break;
     case Type::NUMBER:
         new (&m_number) Number(other.m_number);
@@ -94,16 +100,19 @@ Value::Value(const Value& other) : m_type{other.m_type} {
     }
 }
 
-Value::Value(Value&& other) : m_type{other.m_type} {
+Value::Value(Value&& other, Allocator* allocator) :
+    m_type{other.m_type},
+    m_allocator{allocator}
+{
     switch (m_type) {
     case Type::OBJECT:
-        new (&m_object) Object(std::move(other.m_object));
+        new (&m_object) Object(std::move(other.m_object), m_allocator);
         break;
     case Type::ARRAY:
-        new (&m_array) Array(std::move(other.m_array));
+        new (&m_array) Array(std::move(other.m_array), m_allocator);
         break;
     case Type::STRING:
-        new (&m_string) String(std::move(other.m_string));
+        new (&m_string) String(std::move(other.m_string), m_allocator);
         break;
     case Type::NUMBER:
         new (&m_number) Number(std::move(other.m_number));

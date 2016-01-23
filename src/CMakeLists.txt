@@ -39,6 +39,7 @@ add_library(json-cxx
     parser_error.cpp
     string.cpp
     value.cpp
+    allocator/pool.cpp
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES GNU)

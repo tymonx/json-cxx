@@ -51,18 +51,34 @@ using json::Object;
 Object::Object(Size size, Allocator* allocator) :
     m_allocator{allocator}
 {
-    void* p = m_allocator->allocate(size * sizeof(Pair));
-    m_begin = new (p) Pair[size]();
-    m_end = m_begin + size;
+    m_begin = static_cast<Pair*>(
+        m_allocator->allocate(size * sizeof(Pair))
+    );
+    if (m_begin != nullptr) {
+        m_end = m_begin + size;
+        std::for_each(m_begin, m_end,
+            [this] (Pair& pair)  {
+                new (&pair) Value(m_allocator);
+            }
+        );
+    }
 }
 
 Object::Object(const Object& other, Allocator* allocator) :
     m_allocator{allocator}
 {
-    void* p = m_allocator->allocate(other.size() * sizeof(Pair));
-    m_begin = new (p) Pair[other.size()]();
-    m_end = m_begin + other.size();
-    std::copy(other.m_begin, other.m_end, m_begin);
+    m_begin = static_cast<Pair*>(
+        m_allocator->allocate(other.size() * sizeof(Pair))
+    );
+    if (m_begin != nullptr) {
+        m_end = m_begin + other.size();
+        auto it = other.cbegin();
+        std::for_each(m_begin, m_end,
+            [this, &it] (Pair& pair)  {
+                new (&pair) Pair(*(it++), m_allocator);
+            }
+        );
+    }
 }
 
 Object& Object::operator=(Object&& other) {
@@ -76,6 +92,10 @@ Object& Object::operator=(Object&& other) {
 }
 
 Object::~Object() {
-    std::for_each(m_begin, m_end, [](Pair& pair) { pair.~Pair(); });
+    std::for_each(m_begin, m_end,
+        [](Pair& pair) {
+            pair.~Pair();
+        }
+    );
     m_allocator->deallocate(m_begin.base(), size() * sizeof(Pair));
 }

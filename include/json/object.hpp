@@ -113,6 +113,30 @@ public:
         return m_end == m_begin;
     }
 
+    iterator begin() {
+        return m_begin;
+    }
+
+    const_iterator begin() const {
+        return m_begin.base();
+    }
+
+    const_iterator cbegin() const {
+        return m_begin.base();
+    }
+
+    iterator end() {
+        return m_end;
+    }
+
+    const_iterator end() const {
+        return m_end.base();
+    }
+
+    const_iterator cend() const {
+        return m_end.base();
+    }
+
     ~Object();
 
     template<typename T>
