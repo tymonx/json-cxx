@@ -47,7 +47,6 @@
 #include <cstddef>
 #include <cstdint>
 
-using json::Size;
 using json::allocator::Pool;
 
 struct Header;
@@ -58,18 +57,9 @@ struct Header {
     Header* end;
 };
 
-static constexpr std::size_t HEADER_ALIGN_SIZE = alignof(Header);
-static constexpr std::size_t HEADER_ALIGN_OFFSET = HEADER_ALIGN_SIZE - 1;
-static constexpr std::uintptr_t HEADER_ALIGN_MASK = ~HEADER_ALIGN_SIZE;
-
-static constexpr std::size_t MAX_ALIGN_SIZE = alignof(std::max_align_t);
+static constexpr std::size_t MAX_ALIGN_SIZE = alignof(json::Value);
 static constexpr std::size_t MAX_ALIGN_OFFSET = MAX_ALIGN_SIZE - 1;
 static constexpr std::uintptr_t MAX_ALIGN_MASK = ~MAX_ALIGN_SIZE;
-
-static inline
-std::uintptr_t header_align(std::uintptr_t p) noexcept {
-    return (p + HEADER_ALIGN_OFFSET) & HEADER_ALIGN_MASK;
-}
 
 static inline
 std::uintptr_t max_align(std::uintptr_t p) noexcept {
@@ -79,7 +69,7 @@ std::uintptr_t max_align(std::uintptr_t p) noexcept {
 template<typename T, typename K>
 static inline T* header_ptr(K* p) noexcept {
     return reinterpret_cast<T*>(max_align(
-        header_align(std::uintptr_t(p)) + sizeof(Header)) - sizeof(Header));
+        std::uintptr_t(p) + sizeof(Header)) - sizeof(Header));
 }
 
 template <typename T>
