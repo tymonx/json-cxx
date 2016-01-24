@@ -57,8 +57,6 @@ public:
     virtual ~Allocator();
 };
 
-Allocator* get_default_allocator();
-
 }
 
 #endif /* JSON_CXX_ALLOCATOR_HPP */

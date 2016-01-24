@@ -49,7 +49,7 @@
 #include <json/string.hpp>
 #include <json/object.hpp>
 #include <json/array.hpp>
-#include <json/allocator.hpp>
+#include <json/allocator/default.hpp>
 
 namespace json {
 
@@ -74,7 +74,7 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container
      * */
-    Value(Allocator* allocator = get_default_allocator()) :
+    Value(Allocator* allocator = allocator::Default::get_instance()) :
         m_type{Type::NIL},
         m_allocator{allocator}
     { }
@@ -84,7 +84,7 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container
      * */
-    Value(Null, Allocator* allocator = get_default_allocator()) :
+    Value(Null, Allocator* allocator = allocator::Default::get_instance()) :
         m_type{Type::NIL},
         m_allocator{allocator}
     { }
@@ -95,7 +95,7 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container
      * */
-    Value(Bool value, Allocator* allocator = get_default_allocator()) :
+    Value(Bool value, Allocator* allocator = allocator::Default::get_instance()) :
         m_type{Type::BOOL},
         m_bool{value},
         m_allocator{allocator}
@@ -107,7 +107,7 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container
      * */
-    Value(Uint value, Allocator* allocator = get_default_allocator()) :
+    Value(Uint value, Allocator* allocator = allocator::Default::get_instance()) :
         m_type{Type::NUMBER},
         m_number{value},
         m_allocator{allocator}
@@ -119,7 +119,7 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container
      * */
-    Value(Int value, Allocator* allocator = get_default_allocator()) :
+    Value(Int value, Allocator* allocator = allocator::Default::get_instance()) :
         m_type{Type::NUMBER},
         m_number{value},
         m_allocator{allocator}
@@ -131,7 +131,7 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container
      * */
-    Value(Double value, Allocator* allocator = get_default_allocator()) :
+    Value(Double value, Allocator* allocator = allocator::Default::get_instance()) :
         m_type{Type::NUMBER},
         m_number{value},
         m_allocator{allocator}
@@ -143,7 +143,7 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container
      * */
-    Value(const Number& value, Allocator* allocator = get_default_allocator()) :
+    Value(const Number& value, Allocator* allocator = allocator::Default::get_instance()) :
         m_type{Type::NUMBER},
         m_number{value},
         m_allocator{allocator}
@@ -155,7 +155,7 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container
      * */
-    Value(const Char* str, Allocator* allocator = get_default_allocator()) :
+    Value(const Char* str, Allocator* allocator = allocator::Default::get_instance()) :
         m_type{Type::STRING},
         m_string{str, allocator},
         m_allocator{allocator}
@@ -170,7 +170,7 @@ public:
      *                      this container
      * */
     Value(const Char* str, Size size,
-            Allocator* allocator = get_default_allocator()) :
+            Allocator* allocator = allocator::Default::get_instance()) :
         m_type{Type::STRING},
         m_string{str, size, allocator},
         m_allocator{allocator}
@@ -183,7 +183,7 @@ public:
      *                      this container
      * */
     template<Size N>
-    Value(const Char str[N], Allocator* allocator = get_default_allocator()) :
+    Value(const Char str[N], Allocator* allocator = allocator::Default::get_instance()) :
         m_type{Type::STRING},
         m_string{str, N - 1, allocator},
         m_allocator{allocator}
@@ -195,7 +195,7 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container
      * */
-    Value(const String& str, Allocator* allocator = get_default_allocator()) :
+    Value(const String& str, Allocator* allocator = allocator::Default::get_instance()) :
         m_type{Type::STRING},
         m_string{str, allocator},
         m_allocator{allocator}
@@ -209,7 +209,7 @@ public:
      *                      this container
      * */
     Value(const String& key, const Value& value,
-            Allocator* allocator = get_default_allocator()) :
+            Allocator* allocator = allocator::Default::get_instance()) :
         m_type{Type::OBJECT},
         m_object(key, value, allocator),
         m_allocator{allocator}
@@ -224,11 +224,11 @@ public:
      *                      this container
      * */
     Value(Type type, Size count = 0,
-            Allocator* allocator = get_default_allocator());
+            Allocator* allocator = allocator::Default::get_instance());
 
-    Value(const Value& other, Allocator* allocator = get_default_allocator());
+    Value(const Value& other, Allocator* allocator = allocator::Default::get_instance());
 
-    Value(Value&& other, Allocator* allocator = get_default_allocator());
+    Value(Value&& other, Allocator* allocator = allocator::Default::get_instance());
 
     Value& operator=(const Value& other) {
         return *this = Value(other, other.m_allocator);
@@ -248,6 +248,10 @@ public:
 
     Value& operator=(Type type) {
         return *this = Value(type);
+    }
+
+    static inline bool validate(const Value& value) noexcept {
+        return static_cast<const void*>(&value) != nullptr;
     }
 
     Value& operator[](const char* key);
@@ -371,7 +375,7 @@ private:
         Bool m_bool;
     };
 
-    Allocator* m_allocator{get_default_allocator()};
+    Allocator* m_allocator{allocator::Default::get_instance()};
 };
 
 }

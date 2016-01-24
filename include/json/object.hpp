@@ -45,7 +45,7 @@
 #define JSON_CXX_OBJECT_HPP
 
 #include <json/types.hpp>
-#include <json/allocator.hpp>
+#include <json/allocator/default.hpp>
 
 #include <iterator>
 #include <type_traits>
@@ -91,7 +91,7 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container and others
      * */
-    Object(Allocator* allocator = get_default_allocator()) :
+    Object(Allocator* allocator = allocator::Default::get_instance()) :
         m_allocator{allocator}
     { }
 
@@ -103,7 +103,7 @@ public:
      *                      this container and others
      * */
     Object(const String& key, const Value& value,
-            Allocator* allocator = get_default_allocator());
+            Allocator* allocator = allocator::Default::get_instance());
 
     /*! @brief Constructs a JSON object with one copied JSON pair
      *
@@ -111,7 +111,7 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container and others
      * */
-    Object(const Pair& pair, Allocator* allocator = get_default_allocator());
+    Object(const Pair& pair, Allocator* allocator = allocator::Default::get_instance());
 
     /*! @brief Constructs a JSON object with the contents of the range [first,
      * last)
@@ -122,7 +122,7 @@ public:
      *                      this container and others
      * */
     Object(const_iterator first, const_iterator last,
-            Allocator* allocator = get_default_allocator());
+            Allocator* allocator = allocator::Default::get_instance());
 
     /*! @brief Constructs a JSON object with the contents of the initializer
      * list
@@ -132,7 +132,7 @@ public:
      *                      this container and others
      * */
     Object(std::initializer_list<Pair> init,
-        Allocator* allocator = get_default_allocator());
+        Allocator* allocator = allocator::Default::get_instance());
 
     /*! @brief Copy constructor. Constructs a JSON object with the copy of
      * other. Use allocator from other
@@ -445,7 +445,7 @@ public:
 private:
     iterator m_begin{nullptr};
     iterator m_end{nullptr};
-    Allocator* m_allocator{get_default_allocator()};
+    Allocator* m_allocator{allocator::Default::get_instance()};
 };
 
 }

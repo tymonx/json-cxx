@@ -45,7 +45,7 @@
 #define JSON_CXX_STRING_HPP
 
 #include <json/types.hpp>
-#include <json/allocator.hpp>
+#include <json/allocator/default.hpp>
 
 #include <iterator>
 #include <type_traits>
@@ -74,38 +74,38 @@ public:
 
     static const constexpr Size npos{Size(-1)};
 
-    String(Allocator* allocator = get_default_allocator());
+    String(Allocator* allocator = allocator::Default::get_instance());
 
-    String(Size count, Char ch, Allocator* allocator = get_default_allocator());
+    String(Size count, Char ch, Allocator* allocator = allocator::Default::get_instance());
 
     String(const String& other, Size pos, Size count = npos,
-            Allocator* allocator = get_default_allocator());
+            Allocator* allocator = allocator::Default::get_instance());
 
     String(const Char* str, Size count,
-            Allocator* allocator = get_default_allocator());
+            Allocator* allocator = allocator::Default::get_instance());
 
-    String(const Char* str, Allocator* allocator = get_default_allocator());
+    String(const Char* str, Allocator* allocator = allocator::Default::get_instance());
 
     String(const_iterator first, const_iterator last,
-            Allocator* allocator = get_default_allocator()) :
+            Allocator* allocator = allocator::Default::get_instance()) :
         String(first.base(), Size(last - first), allocator)
     { }
 
     template<Size N>
-    String(const Char str[N], Allocator* allocator = get_default_allocator()) :
+    String(const Char str[N], Allocator* allocator = allocator::Default::get_instance()) :
         String(str, N - 1, allocator)
     { }
 
     String(std::initializer_list<Char> init,
-            Allocator* allocator = get_default_allocator()) :
+            Allocator* allocator = allocator::Default::get_instance()) :
         String(init.begin(), init.size(), allocator)
     { }
 
-    String(const String& other, Allocator* allocator = get_default_allocator()) :
+    String(const String& other, Allocator* allocator = allocator::Default::get_instance()) :
         String(other.data(), other.size(), allocator)
     { }
 
-    String(String&& other, Allocator* allocator = get_default_allocator()) :
+    String(String&& other, Allocator* allocator = allocator::Default::get_instance()) :
         m_begin{other.m_begin},
         m_end{other.m_end},
         m_allocator{allocator}
@@ -439,7 +439,7 @@ public:
 private:
     iterator m_begin{nullptr};
     iterator m_end{nullptr};
-    Allocator* m_allocator{get_default_allocator()};
+    Allocator* m_allocator{allocator::Default::get_instance()};
 };
 
 }

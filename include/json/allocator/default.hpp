@@ -36,28 +36,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/allocator.cpp
+ * @file json/allocator/default.hpp
  *
- * @brief JSON allocator interface
+ * @brief JSON default allocator interface
  * */
 
-#include "default_allocator.hpp"
+#ifndef JSON_CXX_ALLOCATOR_DEFAULT_HPP
+#define JSON_CXX_ALLOCATOR_DEFAULT_HPP
 
-#include <cstdlib>
+#include <json/types.hpp>
+#include <json/allocator.hpp>
 
-using json::DefaultAllocator;
+namespace json {
+namespace allocator {
 
-json::Allocator* json::get_default_allocator() {
-    static DefaultAllocator allocator{};
-    return &allocator;
+class Default: public Allocator {
+public:
+    static Allocator* get_instance();
+
+    virtual void* allocate(Size n) final override;
+
+    virtual void deallocate(void* ptr) noexcept final override;
+
+    virtual ~Default();
+};
+
+}
 }
 
-void* DefaultAllocator::allocate(Size n) {
-    return (0 != n) ? std::malloc(n) : nullptr;
-}
-
-void DefaultAllocator::deallocate(void* ptr) noexcept {
-    std::free(ptr);
-}
-
-DefaultAllocator::~DefaultAllocator() { }
+#endif /* JSON_CXX_ALLOCATOR_DEFAULT_HPP */

@@ -30,7 +30,6 @@
 add_library(json-cxx
     array.cpp
     allocator.cpp
-    default_allocator.cpp
     exception.cpp
     number.cpp
     object.cpp
@@ -40,6 +39,7 @@ add_library(json-cxx
     string.cpp
     value.cpp
     allocator/pool.cpp
+    allocator/default.cpp
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES GNU)

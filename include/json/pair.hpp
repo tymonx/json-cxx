@@ -46,13 +46,13 @@
 
 #include <json/string.hpp>
 #include <json/value.hpp>
-#include <json/allocator.hpp>
+#include <json/allocator/default.hpp>
 
 namespace json {
 
 class Pair {
 public:
-    Pair(Allocator* allocator = get_default_allocator()) :
+    Pair(Allocator* allocator = allocator::Default::get_instance()) :
         key{allocator},
         value(allocator)
     { }
@@ -88,7 +88,7 @@ public:
     }
 
     Pair(const String& str, const Value& other,
-            Allocator* allocator = get_default_allocator()) :
+            Allocator* allocator = allocator::Default::get_instance()) :
         key{str, allocator},
         value(other, allocator)
     { }
