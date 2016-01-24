@@ -47,11 +47,6 @@
 
 using json::allocator::Default;
 
-json::Allocator* Default::get_instance() {
-    static Default allocator{};
-    return &allocator;
-}
-
 void* Default::allocate(Size n) {
     return (0 != n) ? std::malloc(n) : nullptr;
 }

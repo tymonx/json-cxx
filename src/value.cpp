@@ -144,6 +144,7 @@ Value::~Value() {
     default:
         break;
     }
+    m_type = Type::NIL;
 }
 
 Value& Value::operator=(Value&& other) {

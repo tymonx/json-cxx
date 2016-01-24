@@ -61,25 +61,25 @@ static constexpr std::uintptr_t MAX_ALIGN_OFFSET = MAX_ALIGN_SIZE - 1;
 static constexpr std::uintptr_t MAX_ALIGN_MASK = ~MAX_ALIGN_OFFSET;
 
 template <typename T>
-static inline Header* header_cast(T* p) noexcept {
+static inline Header* header_cast(T* p) {
     return static_cast<Header*>(p);
 }
 
-static inline std::uintptr_t max_align(std::uintptr_t ptr) noexcept {
+static inline std::uintptr_t max_align(std::uintptr_t ptr) {
     return (ptr + MAX_ALIGN_OFFSET) & MAX_ALIGN_MASK;
 }
 
-static inline std::uintptr_t align(std::uintptr_t ptr) noexcept {
+static inline std::uintptr_t align(std::uintptr_t ptr) {
     return max_align(ptr + sizeof(Header)) - sizeof(Header);
 }
 
 template<typename T, typename K>
-static inline T* align(K* ptr) noexcept {
+static inline T* align(K* ptr) {
     return reinterpret_cast<T*>(align(std::uintptr_t(ptr)));
 }
 
 template<typename T>
-static inline T* align(std::uintptr_t ptr) noexcept {
+static inline T* align(std::uintptr_t ptr) {
     return reinterpret_cast<T*>(align(ptr));
 }
 

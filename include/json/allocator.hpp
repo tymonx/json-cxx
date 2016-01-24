@@ -50,6 +50,8 @@ namespace json {
 
 class Allocator {
 public:
+    static Allocator* get_default();
+
     virtual void* allocate(Size n) = 0;
 
     virtual void deallocate(void* ptr) noexcept = 0;

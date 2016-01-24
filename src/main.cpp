@@ -1,6 +1,7 @@
 
 #include <json/json.hpp>
 #include <json/allocator/pool.hpp>
+#include <json/allocator/default.hpp>
 
 #include <cstdint>
 #include <iostream>
@@ -31,6 +32,14 @@ int main() {
 
     json::allocator::Pool pool(g_pool.data(), g_pool.size());
 
+    const Object cobj({
+        {"test", 0},
+        {"tttt", 1}
+    }, &pool);
+
+    std::cout << "Null: " << cobj["tes"].is_null() << std::endl;
+
+    std::cout << "Test" << sizeof(json::allocator::Default) << std::endl;
     json::Value value(&pool);
     //json::Value value;
     //R"(-0.00000000001e+20)" >> value;
@@ -48,7 +57,9 @@ int main() {
     Object object(&pool);
     //Object object;
     dump();
+    std::cout << "Test" << std::endl;
     object["test1"] = 0;
+    std::cout << "Test" << std::endl;
     dump();
     cout << object[0].key << endl;
     object["test2"] = 1;

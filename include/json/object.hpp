@@ -45,8 +45,10 @@
 #define JSON_CXX_OBJECT_HPP
 
 #include <json/types.hpp>
-#include <json/allocator/default.hpp>
+#include <json/string.hpp>
+#include <json/allocator.hpp>
 
+#include <cstring>
 #include <iterator>
 #include <type_traits>
 #include <initializer_list>
@@ -55,7 +57,6 @@ namespace json {
 
 class Pair;
 class Value;
-class String;
 
 /*! @brief JSON object class
  *
@@ -91,7 +92,7 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container and others
      * */
-    Object(Allocator* allocator = allocator::Default::get_instance()) :
+    Object(Allocator* allocator = Allocator::get_default()) :
         m_allocator{allocator}
     { }
 
@@ -103,7 +104,7 @@ public:
      *                      this container and others
      * */
     Object(const String& key, const Value& value,
-            Allocator* allocator = allocator::Default::get_instance());
+            Allocator* allocator = Allocator::get_default());
 
     /*! @brief Constructs a JSON object with one copied JSON pair
      *
@@ -111,7 +112,8 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container and others
      * */
-    Object(const Pair& pair, Allocator* allocator = allocator::Default::get_instance());
+    Object(const Pair& pair,
+            Allocator* allocator = Allocator::get_default());
 
     /*! @brief Constructs a JSON object with the contents of the range [first,
      * last)
@@ -122,7 +124,7 @@ public:
      *                      this container and others
      * */
     Object(const_iterator first, const_iterator last,
-            Allocator* allocator = allocator::Default::get_instance());
+            Allocator* allocator = Allocator::get_default());
 
     /*! @brief Constructs a JSON object with the contents of the initializer
      * list
@@ -132,7 +134,7 @@ public:
      *                      this container and others
      * */
     Object(std::initializer_list<Pair> init,
-        Allocator* allocator = allocator::Default::get_instance());
+            Allocator* allocator = Allocator::get_default());
 
     /*! @brief Copy constructor. Constructs a JSON object with the copy of
      * other. Use allocator from other
@@ -152,7 +154,9 @@ public:
      * @param[in] allocator Allocator to use for all memory allocations of
      *                      this container and others
      * */
-    Object(const Object& other, Allocator* allocator);
+    Object(const Object& other, Allocator* allocator) :
+        Object(other.cbegin(), other.cend(), allocator)
+    { }
 
     /*! @brief Move constructor. Constructs a JSON object with the contents
      * of the other using move semantics. Use allocator from other
@@ -186,13 +190,17 @@ public:
 
     Object& operator=(Object&&);
 
-    Value& at(const Char* str);
-
-    const Value& at(const Char* str) const;
-
     Value& at(const Char* str, Size size);
 
     const Value& at(const Char* str, Size size) const;
+
+    Value& at(const Char* str) {
+        return at(str, std::strlen(str));
+    }
+
+    const Value& at(const Char* str) const {
+        return at(str, std::strlen(str));
+    }
 
     template<Size N>
     Value& at(const Char str[N]) {
@@ -204,9 +212,13 @@ public:
         return at(str, N - 1);
     }
 
-    Value& at(const String& str);
+    Value& at(const String& str) {
+        return at(str, str.length());
+    }
 
-    const Value& at(const String& str) const;
+    const Value& at(const String& str) const {
+        return at(str, str.length());
+    }
 
     Value& operator[](const Char* str) {
         return at(str);
@@ -258,9 +270,35 @@ public:
         return m_end == m_begin;
     }
 
-    iterator erase(const_iterator pos);
+    Pair& front() {
+        return *m_begin;
+    }
 
-    iterator erase(const_iterator first, const_iterator last);
+    const Pair& front() const {
+        return *m_begin;
+    }
+
+    Pair& back() {
+        return *(m_end - 1);
+    }
+
+    const Pair& back() const {
+        return *(m_end - 1);
+    }
+
+    Pair* data() {
+        return m_begin;
+    }
+
+    const Pair* data() const {
+        return m_begin;
+    }
+
+    void clear() noexcept;
+
+    iterator erase(const_iterator pos) noexcept;
+
+    iterator erase(const_iterator first, const_iterator last) noexcept;
 
     iterator begin() {
         return m_begin;
@@ -310,7 +348,7 @@ public:
         return const_reverse_iterator(m_begin);
     }
 
-    ~Object();
+    ~Object() noexcept;
 
     template<typename T>
     class base_iterator : public
@@ -445,7 +483,7 @@ public:
 private:
     iterator m_begin{nullptr};
     iterator m_end{nullptr};
-    Allocator* m_allocator{allocator::Default::get_instance()};
+    Allocator* m_allocator{Allocator::get_default()};
 };
 
 }

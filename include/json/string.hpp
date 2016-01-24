@@ -45,8 +45,9 @@
 #define JSON_CXX_STRING_HPP
 
 #include <json/types.hpp>
-#include <json/allocator/default.hpp>
+#include <json/allocator.hpp>
 
+#include <cstring>
 #include <iterator>
 #include <type_traits>
 #include <initializer_list>
@@ -74,38 +75,50 @@ public:
 
     static const constexpr Size npos{Size(-1)};
 
-    String(Allocator* allocator = allocator::Default::get_instance());
-
-    String(Size count, Char ch, Allocator* allocator = allocator::Default::get_instance());
-
-    String(const String& other, Size pos, Size count = npos,
-            Allocator* allocator = allocator::Default::get_instance());
-
-    String(const Char* str, Size count,
-            Allocator* allocator = allocator::Default::get_instance());
-
-    String(const Char* str, Allocator* allocator = allocator::Default::get_instance());
-
-    String(const_iterator first, const_iterator last,
-            Allocator* allocator = allocator::Default::get_instance()) :
-        String(first.base(), Size(last - first), allocator)
+    String(Allocator* allocator = Allocator::get_default()) :
+        String(nullptr, nullptr, allocator)
     { }
 
+    String(Size count, Char ch, Allocator* allocator = Allocator::get_default());
+
+    String(const String& other, Size pos, Size count = npos,
+            Allocator* allocator = Allocator::get_default());
+
+    String(const Char* str, Size count,
+            Allocator* allocator = Allocator::get_default()) :
+        String(str, str + count, allocator)
+    { }
+
+    String(const Char* str, Allocator* allocator = Allocator::get_default()) :
+        String(str, std::strlen(str), allocator)
+    { }
+
+    String(const_iterator first, const_iterator last,
+            Allocator* allocator = Allocator::get_default());
+
     template<Size N>
-    String(const Char str[N], Allocator* allocator = allocator::Default::get_instance()) :
+    String(const Char str[N], Allocator* allocator = Allocator::get_default()) :
         String(str, N - 1, allocator)
     { }
 
     String(std::initializer_list<Char> init,
-            Allocator* allocator = allocator::Default::get_instance()) :
+            Allocator* allocator = Allocator::get_default()) :
         String(init.begin(), init.size(), allocator)
     { }
 
-    String(const String& other, Allocator* allocator = allocator::Default::get_instance()) :
+    String(const String& other) :
+        String(other.data(), other.size(), other.m_allocator)
+    { }
+
+    String(const String& other, Allocator* allocator) :
         String(other.data(), other.size(), allocator)
     { }
 
-    String(String&& other, Allocator* allocator = allocator::Default::get_instance()) :
+    String(String&& other) :
+        String(std::move(other), other.m_allocator)
+    { }
+
+    String(String&& other, Allocator* allocator) :
         m_begin{other.m_begin},
         m_end{other.m_end},
         m_allocator{allocator}
@@ -439,7 +452,7 @@ public:
 private:
     iterator m_begin{nullptr};
     iterator m_end{nullptr};
-    Allocator* m_allocator{allocator::Default::get_instance()};
+    Allocator* m_allocator{Allocator::get_default()};
 };
 
 }

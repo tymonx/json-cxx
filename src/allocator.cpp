@@ -42,7 +42,13 @@
  * */
 
 #include <json/allocator.hpp>
+#include <json/allocator/default.hpp>
 
 using json::Allocator;
+
+Allocator* Allocator::get_default() {
+    static json::allocator::Default allocator{};
+    return &allocator;
+}
 
 Allocator::~Allocator() { }

@@ -80,10 +80,6 @@ Object::Object(const Pair& pair, Allocator* allocator) :
     Object(&pair, &pair + 1, allocator)
 { }
 
-Object::Object(const Object& other, Allocator* allocator) :
-    Object(other.cbegin(), other.cend(), allocator)
-{ }
-
 Object& Object::operator=(Object&& other) {
     if (this != &other) {
         this->~Object();
@@ -95,28 +91,12 @@ Object& Object::operator=(Object&& other) {
     return *this;
 }
 
-Object::~Object() {
+Object::~Object() noexcept {
     for (auto it = begin(); it < cend(); ++it) {
         it->~Pair();
     }
     m_allocator->deallocate(m_begin);
     m_end = m_begin = nullptr;
-}
-
-Value& Object::at(const Char* str) {
-    return at(str, std::strlen(str));
-}
-
-const Value& Object::at(const Char* str) const {
-    return at(str, std::strlen(str));
-}
-
-Value& Object::at(const String& str) {
-    return at(str, str.length());
-}
-
-const Value& Object::at(const String& str) const {
-    return at(str, str.length());
 }
 
 Value& Object::at(const Char* key, Size length) {
@@ -154,7 +134,7 @@ const Value& Object::at(const Char* key, Size length) const {
     return g_null_value;
 }
 
-Object::iterator Object::erase(const_iterator pos) {
+Object::iterator Object::erase(const_iterator pos) noexcept {
     if ((pos >= m_begin) && (pos < m_end)) {
         Size num = size();
         pos->~Pair();
@@ -166,7 +146,8 @@ Object::iterator Object::erase(const_iterator pos) {
     return m_end;
 }
 
-Object::iterator Object::erase(const_iterator first, const_iterator last) {
+Object::iterator
+Object::erase(const_iterator first, const_iterator last) noexcept {
     Size count = Size(last - first);
     iterator it{m_end};
 
@@ -175,4 +156,14 @@ Object::iterator Object::erase(const_iterator first, const_iterator last) {
     }
 
     return it;
+}
+
+void Object::clear() noexcept {
+    if (!empty()) {
+        for (auto it = begin(); it < cend(); ++it) {
+            it->~Pair();
+        }
+        m_allocator->deallocate(m_begin);
+        m_end = m_begin = nullptr;
+    }
 }
