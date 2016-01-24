@@ -61,7 +61,7 @@ public:
      * @brief JSON value type
      * */
     enum Type {
-        NIL,        /*!< JSON null type */
+        NIL = 0,    /*!< JSON null type */
         OBJECT,     /*!< JSON object type */
         ARRAY,      /*!< JSON array type */
         STRING,     /*!< JSON string type */

@@ -59,13 +59,9 @@ public:
         Pool(static_cast<void*>(memory), max_size)
     { }
 
-    virtual void lock() noexcept;
+    virtual void* allocate(Size n) override;
 
-    virtual void unlock() noexcept;
-
-    virtual void* allocate(Size n) override final;
-
-    virtual void deallocate(void* ptr) noexcept override final;
+    virtual void deallocate(void* ptr) noexcept override;
 
     virtual ~Pool();
 private:

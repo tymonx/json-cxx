@@ -44,7 +44,6 @@
 #include <json/allocator/pool.hpp>
 #include <json/value.hpp>
 
-#include <cstddef>
 #include <cstdint>
 
 using json::allocator::Pool;
@@ -84,7 +83,9 @@ static inline T* align(std::uintptr_t ptr) noexcept {
     return reinterpret_cast<T*>(align(ptr));
 }
 
-#include <iostream>
+static inline bool minimal_capacity(const void* begin, const void* end) {
+    return (std::uintptr_t(end) - std::uintptr_t(begin)) > sizeof(Header);
+}
 
 Pool::Pool(void* memory, Size max_size) :
     m_memory{memory}
@@ -94,10 +95,15 @@ Pool::Pool(void* memory, Size max_size) :
         m_end = reinterpret_cast<void*>(
             (std::uintptr_t(m_memory) + max_size) & MAX_ALIGN_MASK
         );
-        header_cast(m_begin)->prev = nullptr;
-        header_cast(m_begin)->next = header_cast(m_end);
-        header_cast(m_begin)->end = header_cast(m_begin) + 1;
-        m_last = m_begin;
+        if (minimal_capacity(m_begin, m_end)) {
+            header_cast(m_begin)->prev = nullptr;
+            header_cast(m_begin)->next = header_cast(m_end);
+            header_cast(m_begin)->end = header_cast(m_begin) + 1;
+            m_last = m_begin;
+        }
+        else {
+            m_end = m_begin = nullptr;
+        }
     }
 }
 
@@ -106,7 +112,6 @@ void* Pool::allocate(Size size) {
 
     void* ptr = nullptr;
 
-    lock();
     auto pos = header_cast(m_last);
     while (pos >= header_cast(m_begin)) {
         ptr = pos->end + 1;
@@ -130,9 +135,6 @@ void* Pool::allocate(Size size) {
             pos = pos->prev;
         }
     }
-    unlock();
-
-    std::cout << "Allocate pos: " << ptr << std::endl;
 
     return ptr;
 }
@@ -140,10 +142,7 @@ void* Pool::allocate(Size size) {
 void Pool::deallocate(void* ptr) noexcept {
     auto pos = header_cast(ptr) - 1;
 
-    std::cout << "Deallocate pos: " << ptr << std::endl;
     if ((pos > header_cast(m_begin)) && (pos < header_cast(m_end))) {
-        std::cout << "Deallocate pos2: " << ptr << std::endl;
-        lock();
         pos->prev->next = pos->next;
         if (pos->next < header_cast(m_end)) {
             pos->next->prev = pos->prev;
@@ -151,12 +150,7 @@ void Pool::deallocate(void* ptr) noexcept {
         if (pos == header_cast(m_last)) {
             m_last = pos->prev;
         }
-        unlock();
     }
 }
-
-void Pool::lock() noexcept { }
-
-void Pool::unlock() noexcept { }
 
 Pool::~Pool() { }

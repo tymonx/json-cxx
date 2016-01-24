@@ -54,9 +54,9 @@ class Default: public Allocator {
 public:
     static Allocator* get_instance();
 
-    virtual void* allocate(Size n) final override;
+    virtual void* allocate(Size n) override;
 
-    virtual void deallocate(void* ptr) noexcept final override;
+    virtual void deallocate(void* ptr) noexcept override;
 
     virtual ~Default();
 };

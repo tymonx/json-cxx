@@ -51,8 +51,9 @@ using json::Pair;
 using json::Value;
 using json::Object;
 
-static Value* g_invalid_value = nullptr;
-static const Value g_null_value = nullptr;
+alignas(Value) static const char g_null_value_raw[sizeof(Value)]{};
+static const Value& g_null_value = *static_cast<const Value*>(
+        static_cast<const void*>(g_null_value_raw));
 
 Object::Object(const_iterator first, const_iterator last, Allocator* allocator) :
     m_allocator{allocator}
@@ -135,7 +136,8 @@ Value& Object::at(const Char* key, Size length) {
         m_end = m_begin + num + 1;
         return (new (m_begin + num) Pair(key, nullptr, m_allocator))->value;
     }
-    return *g_invalid_value;
+    /* Invalid JSON value! */
+    return *static_cast<Value*>(nullptr);
 }
 
 const Value& Object::at(const Char* key, Size length) const {
