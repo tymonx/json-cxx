@@ -52,7 +52,7 @@ class Allocator {
 public:
     virtual void* allocate(Size n) = 0;
 
-    virtual void deallocate(void* ptr, Size n) noexcept = 0;
+    virtual void deallocate(void* ptr) noexcept = 0;
 
     virtual ~Allocator();
 };

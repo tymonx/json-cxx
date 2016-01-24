@@ -57,40 +57,174 @@ class Value {
 public:
     friend class Parser;
 
+    /*! @enum Type
+     * @brief JSON value type
+     * */
     enum Type {
-        NIL,
-        OBJECT,
-        ARRAY,
-        STRING,
-        NUMBER,
-        BOOL
+        NIL,        /*!< JSON null type */
+        OBJECT,     /*!< JSON object type */
+        ARRAY,      /*!< JSON array type */
+        STRING,     /*!< JSON string type */
+        NUMBER,     /*!< JSON number type */
+        BOOL        /*!< JSON bool type */
     };
 
+    /*! @brief Create default JSON null
+     *
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container
+     * */
     Value(Allocator* allocator = get_default_allocator()) :
         m_type{Type::NIL},
         m_allocator{allocator}
     { }
 
+    /*! @brief Create JSON null
+     *
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container
+     * */
     Value(Null, Allocator* allocator = get_default_allocator()) :
         m_type{Type::NIL},
         m_allocator{allocator}
     { }
 
+    /*! @brief Create JSON bool
+     *
+     * @param[in] value     Boolean type, true or false
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container
+     * */
     Value(Bool value, Allocator* allocator = get_default_allocator()) :
         m_type{Type::BOOL},
         m_bool{value},
         m_allocator{allocator}
     { }
 
-    Value(Type type, Size count = 0,
-            Allocator* allocator = get_default_allocator());
-
-    Value(const Number& number,
-            Allocator* allocator = get_default_allocator()) :
-        m_type{Value::NUMBER},
-        m_number{number},
+    /*! @brief Create JSON number
+     *
+     * @param[in] value     Unsigned integer
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container
+     * */
+    Value(Uint value, Allocator* allocator = get_default_allocator()) :
+        m_type{Type::NUMBER},
+        m_number{value},
         m_allocator{allocator}
     { }
+
+    /*! @brief Create JSON number
+     *
+     * @param[in] value     Signed integer
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container
+     * */
+    Value(Int value, Allocator* allocator = get_default_allocator()) :
+        m_type{Type::NUMBER},
+        m_number{value},
+        m_allocator{allocator}
+    { }
+
+    /*! @brief Create JSON number
+     *
+     * @param[in] value     Floating precision type
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container
+     * */
+    Value(Double value, Allocator* allocator = get_default_allocator()) :
+        m_type{Type::NUMBER},
+        m_number{value},
+        m_allocator{allocator}
+    { }
+
+    /*! @brief Create JSON number
+     *
+     * @param[in] value     JSON number
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container
+     * */
+    Value(const Number& value, Allocator* allocator = get_default_allocator()) :
+        m_type{Type::NUMBER},
+        m_number{value},
+        m_allocator{allocator}
+    { }
+
+    /*! @brief Create JSON string
+     *
+     * @param[in] str       Null-terminated character ('\0') string
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container
+     * */
+    Value(const Char* str, Allocator* allocator = get_default_allocator()) :
+        m_type{Type::STRING},
+        m_string{str, allocator},
+        m_allocator{allocator}
+    { }
+
+    /*! @brief Create JSON string
+     *
+     * @param[in] str       Null-terminated character ('\0') string
+     * @param[in] size      String length without the null-terminated
+     *                      character ('\0')
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container
+     * */
+    Value(const Char* str, Size size,
+            Allocator* allocator = get_default_allocator()) :
+        m_type{Type::STRING},
+        m_string{str, size, allocator},
+        m_allocator{allocator}
+    { }
+
+    /*! @brief Create JSON string
+     *
+     * @param[in] str       Null-terminated character ('\0') string
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container
+     * */
+    template<Size N>
+    Value(const Char str[N], Allocator* allocator = get_default_allocator()) :
+        m_type{Type::STRING},
+        m_string{str, N - 1, allocator},
+        m_allocator{allocator}
+    { }
+
+    /*! @brief Create JSON string
+     *
+     * @param[in] str       JSON string
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container
+     * */
+    Value(const String& str, Allocator* allocator = get_default_allocator()) :
+        m_type{Type::STRING},
+        m_string{str, allocator},
+        m_allocator{allocator}
+    { }
+
+    /*! @brief Create JSON object with one key value pair
+     *
+     * @param[in] key       Key for value
+     * @param[in] value     JSON value
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container
+     * */
+    Value(const String& key, const Value& value,
+            Allocator* allocator = get_default_allocator()) :
+        m_type{Type::OBJECT},
+        m_object(key, value, allocator),
+        m_allocator{allocator}
+    { }
+
+    /*! @brief Create JSON value
+     *
+     * @param[in] type      JSON value type
+     * @param[in] count     For containers like array, object or string
+     *                      give default number of elements
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container
+     * */
+    Value(Type type, Size count = 0,
+            Allocator* allocator = get_default_allocator());
 
     Value(const Value& other, Allocator* allocator = get_default_allocator());
 
@@ -98,6 +232,10 @@ public:
 
     Value& operator=(const Value& other) {
         return *this = Value(other, other.m_allocator);
+    }
+
+    Allocator* get_allocator() const {
+        return m_allocator;
     }
 
     Value& operator=(Value&& other);

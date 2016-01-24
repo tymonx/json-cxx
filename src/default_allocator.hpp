@@ -53,7 +53,7 @@ class DefaultAllocator: public Allocator {
 public:
     virtual void* allocate(Size n) final override;
 
-    virtual void deallocate(void* ptr, Size n) noexcept final override;
+    virtual void deallocate(void* ptr) noexcept final override;
 
     virtual ~DefaultAllocator();
 };

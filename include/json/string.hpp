@@ -228,15 +228,8 @@ public:
     /*! @brief Returns a pointer to the first Character of a string
      *
      * */
-    Char* data() {
-        return m_begin.base();
-    }
-
-    /*! @brief Returns a pointer to the first Character of a string
-     *
-     * */
     const Char* data() const {
-        return m_begin.base();
+        return c_str();
     }
 
     /*! @brief Returns an iterator to the beginning
@@ -307,9 +300,9 @@ public:
         return m_end == m_begin;
     }
 
-    operator char*() { return m_begin.base(); }
+    operator const char*() const { return c_str(); }
 
-    operator char*() const { return m_begin.base(); }
+    const Char* c_str() const;
 
     Allocator* get_allocator() {
         return m_allocator;

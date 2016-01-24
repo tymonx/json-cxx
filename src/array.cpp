@@ -97,5 +97,5 @@ Array::~Array() {
             value.~Value();
         }
     );
-    m_allocator->deallocate(m_begin.base(), size() * sizeof(Value));
+    m_allocator->deallocate(m_begin.base());
 }

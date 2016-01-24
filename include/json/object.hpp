@@ -49,11 +49,18 @@
 
 #include <iterator>
 #include <type_traits>
+#include <initializer_list>
 
 namespace json {
 
 class Pair;
+class Value;
+class String;
 
+/*! @brief JSON object class
+ *
+ * JSON object that stores JSON pairs that includes key string and JSON value
+ * */
 class Object {
 public:
     friend class Parser;
@@ -61,27 +68,111 @@ public:
     template<typename T>
     class base_iterator;
 
+    /*!< Iterator */
     using iterator = base_iterator<Pair>;
 
+    /*!< Const iterator */
     using const_iterator = base_iterator<const Pair>;
 
+    /*!< Reverse iterator */
     using reverse_iterator = std::reverse_iterator<iterator>;
 
+    /*!< Const reverse iterator */
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+    /*!< Difference type that can hold difference between pointers */
     using difference_type = Difference;
 
+    /*!< Size type */
     using size_type = Size;
 
+    /*! @brief Default constructor. Constructs an empty JSON object
+     *
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container and others
+     * */
     Object(Allocator* allocator = get_default_allocator()) :
         m_allocator{allocator}
     { }
 
-    Object(Size size, Allocator* allocator = get_default_allocator());
+    /*! @brief Constructs a JSON object with one JSON pair
+     *
+     * @param[in] key       String key for the pair
+     * @param[in] value     JSON value for the pair
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container and others
+     * */
+    Object(const String& key, const Value& value,
+            Allocator* allocator = get_default_allocator());
 
-    Object(const Object&, Allocator* allocator = get_default_allocator());
+    /*! @brief Constructs a JSON object with one copied JSON pair
+     *
+     * @param[in] pair      JSON pair to copy
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container and others
+     * */
+    Object(const Pair& pair, Allocator* allocator = get_default_allocator());
 
-    Object(Object&& other, Allocator* allocator = get_default_allocator()) :
+    /*! @brief Constructs a JSON object with the contents of the range [first,
+     * last)
+     *
+     * @param[in] first     First iterator
+     * @param[in] last      Last iterator
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container and others
+     * */
+    Object(const_iterator first, const_iterator last,
+            Allocator* allocator = get_default_allocator());
+
+    /*! @brief Constructs a JSON object with the contents of the initializer
+     * list
+     *
+     * @param[in] init      Initializer list ti initialize the elements
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container and others
+     * */
+    Object(std::initializer_list<Pair> init,
+        Allocator* allocator = get_default_allocator());
+
+    /*! @brief Copy constructor. Constructs a JSON object with the copy of
+     * other. Use allocator from other
+     *
+     * @param[in] other     Another JSON object to be used as source to
+     *                      initialize the elements of the JSON object with
+     * */
+    Object(const Object& other) :
+        Object(other, other.m_allocator)
+    { }
+
+    /*! @brief Copy constructor. Constructs a JSON object with the copy of
+     * other
+     *
+     * @param[in] other     Another JSON object to be used as source to
+     *                      initialize the elements of the JSON object with
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container and others
+     * */
+    Object(const Object& other, Allocator* allocator);
+
+    /*! @brief Move constructor. Constructs a JSON object with the contents
+     * of the other using move semantics. Use allocator from other
+     *
+     * @param[in] other     Another JSON object to be used as source to
+     *                      initialize the elements of the JSON object with
+     * */
+    Object(Object&& other) :
+        Object(std::move(other), other.m_allocator)
+    { }
+
+    /*! @brief Move constructor. Constructs a JSON object with the contents
+     * of the other using move semantics
+     *
+     * @param[in] other     Another JSON object to be used as source to
+     *                      initialize the elements of the JSON object with
+     * @param[in] allocator Allocator to use for all memory allocations of
+     *                      this container and others
+     * */
+    Object(Object&& other, Allocator* allocator) :
         m_begin{other.m_begin},
         m_end{other.m_end},
         m_allocator{allocator}
@@ -90,18 +181,72 @@ public:
     }
 
     Object& operator=(const Object& other) {
-        return *this = Object(other);
+        return *this = Object(other, m_allocator);
     }
 
     Object& operator=(Object&&);
 
-    template<typename T>
-    Pair& operator[] (const T& pos) {
+    Value& at(const Char* str);
+
+    const Value& at(const Char* str) const;
+
+    Value& at(const Char* str, Size size);
+
+    const Value& at(const Char* str, Size size) const;
+
+    template<Size N>
+    Value& at(const Char str[N]) {
+        return at(str, N - 1);
+    }
+
+    template<Size N>
+    const Value& at(const Char str[N]) const {
+        return at(str, N - 1);
+    }
+
+    Value& at(const String& str);
+
+    const Value& at(const String& str) const;
+
+    Value& operator[](const Char* str) {
+        return at(str);
+    }
+
+    const Value& operator[](const Char* str) const {
+        return at(str);
+    }
+
+    template<Size N>
+    Value& operator[](const Char str[N]) {
+        return at(str, N - 1);
+    }
+
+    template<Size N>
+    const Value& operator[](const Char str[N]) const {
+        return at(str, N - 1);
+    }
+
+    Value& operator[](const String& str) {
+        return at(str);
+    }
+
+    const Value& operator[](const String& str) const {
+        return at(str);
+    }
+
+    Pair& operator[] (int pos) {
         return m_begin[pos];
     }
 
-    template<typename T>
-    const Pair& operator[] (const T& pos) const {
+    const Pair& operator[] (int pos) const {
+        return m_begin[pos];
+    }
+
+    Pair& operator[] (Size pos) {
+        return m_begin[pos];
+    }
+
+    const Pair& operator[] (Size pos) const {
         return m_begin[pos];
     }
 
@@ -113,16 +258,20 @@ public:
         return m_end == m_begin;
     }
 
+    iterator erase(const_iterator pos);
+
+    iterator erase(const_iterator first, const_iterator last);
+
     iterator begin() {
         return m_begin;
     }
 
     const_iterator begin() const {
-        return m_begin.base();
+        return m_begin;
     }
 
     const_iterator cbegin() const {
-        return m_begin.base();
+        return m_begin;
     }
 
     iterator end() {
@@ -130,11 +279,35 @@ public:
     }
 
     const_iterator end() const {
-        return m_end.base();
+        return m_end;
     }
 
     const_iterator cend() const {
-        return m_end.base();
+        return m_end;
+    }
+
+    reverse_iterator rbegin() {
+        return reverse_iterator(m_end);
+    }
+
+    const_reverse_iterator rbegin() const {
+        return const_reverse_iterator(m_end);
+    }
+
+    const_reverse_iterator crbegin() const {
+        return const_reverse_iterator(m_end);
+    }
+
+    reverse_iterator rend() {
+        return reverse_iterator(m_begin);
+    }
+
+    const_reverse_iterator rend() const {
+        return const_reverse_iterator(m_begin);
+    }
+
+    const_reverse_iterator crend() const {
+        return const_reverse_iterator(m_begin);
     }
 
     ~Object();
@@ -228,6 +401,14 @@ public:
         pointer base() const { return m_ptr; }
 
         bool operator!() const { return nullptr == m_ptr; }
+
+        operator pointer() {
+            return m_ptr;
+        }
+
+        operator const pointer() const {
+            return m_ptr;
+        }
 
         void swap(base_iterator& other) {
             base_iterator tmp(*this);

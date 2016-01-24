@@ -43,59 +43,134 @@
 
 #include <json/object.hpp>
 #include <json/pair.hpp>
+#include <json/value.hpp>
 
-#include <algorithm>
+#include <cstring>
 
+using json::Pair;
+using json::Value;
 using json::Object;
 
-Object::Object(Size size, Allocator* allocator) :
+static Value* g_invalid_value = nullptr;
+static const Value g_null_value = nullptr;
+
+Object::Object(const_iterator first, const_iterator last, Allocator* allocator) :
     m_allocator{allocator}
 {
-    m_begin = static_cast<Pair*>(
-        m_allocator->allocate(size * sizeof(Pair))
-    );
-    if (m_begin != nullptr) {
-        m_end = m_begin + size;
-        std::for_each(m_begin, m_end,
-            [this] (Pair& pair)  {
-                new (&pair) Value(m_allocator);
-            }
-        );
+    Size num = Size(last - first);
+    m_begin = static_cast<Pair*>(m_allocator->allocate(num * sizeof(Pair)));
+    if (m_begin) {
+        m_end = m_begin + num;
+        for (auto it = begin(); it < cend(); ++it, ++first) {
+            new (it) Pair(*first, m_allocator);
+        }
     }
 }
 
+Object::Object(std::initializer_list<Pair> init, Allocator* allocator) :
+    Object(init.begin(), init.end(), allocator)
+{ }
+
+Object::Object(const String& key, const Value& value, Allocator* allocator) :
+    Object(Pair(key, value, allocator), allocator)
+{ }
+
+Object::Object(const Pair& pair, Allocator* allocator) :
+    Object(&pair, &pair + 1, allocator)
+{ }
+
 Object::Object(const Object& other, Allocator* allocator) :
-    m_allocator{allocator}
-{
-    m_begin = static_cast<Pair*>(
-        m_allocator->allocate(other.size() * sizeof(Pair))
-    );
-    if (m_begin != nullptr) {
-        m_end = m_begin + other.size();
-        auto it = other.cbegin();
-        std::for_each(m_begin, m_end,
-            [this, &it] (Pair& pair)  {
-                new (&pair) Pair(*(it++), m_allocator);
-            }
-        );
-    }
-}
+    Object(other.cbegin(), other.cend(), allocator)
+{ }
 
 Object& Object::operator=(Object&& other) {
     if (this != &other) {
         this->~Object();
         m_begin = other.m_begin;
         m_end = other.m_end;
+        m_allocator = other.m_allocator;
         other.m_end = other.m_begin = nullptr;
     }
     return *this;
 }
 
 Object::~Object() {
-    std::for_each(m_begin, m_end,
-        [](Pair& pair) {
-            pair.~Pair();
-        }
+    for (auto it = begin(); it < cend(); ++it) {
+        it->~Pair();
+    }
+    m_allocator->deallocate(m_begin);
+    m_end = m_begin = nullptr;
+}
+
+Value& Object::at(const Char* str) {
+    return at(str, std::strlen(str));
+}
+
+const Value& Object::at(const Char* str) const {
+    return at(str, std::strlen(str));
+}
+
+Value& Object::at(const String& str) {
+    return at(str, str.length());
+}
+
+const Value& Object::at(const String& str) const {
+    return at(str, str.length());
+}
+
+Value& Object::at(const Char* key, Size length) {
+    const Value& value = static_cast<const Object*>(this)->at(key, length);
+    if (&value != &g_null_value) {
+        return const_cast<Value&>(value);
+    }
+
+    Size num = size();
+    auto ptr = static_cast<Pair*>(
+        m_allocator->allocate((num + 1) * sizeof(Pair))
     );
-    m_allocator->deallocate(m_begin.base(), size() * sizeof(Pair));
+    if (ptr) {
+        std::memcpy(ptr, m_begin, num * sizeof(Pair));
+        m_allocator->deallocate(m_begin);
+        m_begin = ptr;
+        m_end = m_begin + num + 1;
+        return (new (m_begin + num) Pair(key, nullptr, m_allocator))->value;
+    }
+    return *g_invalid_value;
+}
+
+const Value& Object::at(const Char* key, Size length) const {
+    if (!empty()) {
+        auto it = cend() - 1;
+        while (it >= cbegin()) {
+            if ((it->key.size() == length) &&
+                    !std::memcmp(it->key, key, length)) {
+                return it->value;
+            }
+            --it;
+        }
+    }
+    return g_null_value;
+}
+
+Object::iterator Object::erase(const_iterator pos) {
+    if ((pos >= m_begin) && (pos < m_end)) {
+        Size num = size();
+        pos->~Pair();
+        --m_end;
+        return static_cast<Pair*>(std::memmove(const_cast<Pair*>(pos.base()),
+            pos + 1, (num - 1) * sizeof(Pair)));
+
+    }
+    return m_end;
+}
+
+Object::iterator Object::erase(const_iterator first, const_iterator last) {
+    Size count = Size(last - first);
+    iterator it{m_end};
+
+    while (count--) {
+        it = erase(first);
+    }
+
+    return it;
 }

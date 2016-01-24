@@ -47,11 +47,16 @@
 
 using json::String;
 
+static const json::Char STRING_EMPTY[] = "";
+
 String::String (Allocator* allocator) :
     m_allocator{allocator}
 {
-    m_end = m_begin = static_cast<Char*>(m_allocator->allocate(1));
-    *m_begin = '\0';
+    Char* ptr = static_cast<Char*>(m_allocator->allocate(1));
+    if (ptr) {
+        m_end = m_begin = ptr;
+        *m_begin = '\0';
+    }
 }
 
 String::String(const Char* str, Allocator* allocator) :
@@ -61,19 +66,23 @@ String::String(const Char* str, Allocator* allocator) :
 String::String(const Char* str, Size count, Allocator* allocator) :
     m_allocator{allocator}
 {
-    m_begin = static_cast<Char*>(
-        std::memcpy(m_allocator->allocate(count + 1), str, count));
-    m_end = m_begin + count;
-    *m_end = '\0';
+    Char* ptr = static_cast<Char*>(m_allocator->allocate(count + 1));
+    if (ptr) {
+        m_begin = static_cast<Char*>(std::memcpy(ptr, str, count));
+        m_end = m_begin + count;
+        *m_end = '\0';
+    }
 }
 
 String::String(Size count, Char ch, Allocator* allocator) :
     m_allocator{allocator}
 {
-    m_begin = static_cast<Char*>(
-        std::memset(m_allocator->allocate(count + 1), ch, count));
-    m_end = m_begin + count;
-    *m_end = '\0';
+    Char* ptr = static_cast<Char*>(m_allocator->allocate(count + 1));
+    if (ptr) {
+        m_begin = static_cast<Char*>(std::memset(ptr, ch, count));
+        m_end = m_begin + count;
+        *m_end = '\0';
+    }
 }
 
 String::String(const String& other, Size pos, Size count,
@@ -90,7 +99,8 @@ String::String(const String& other, Size pos, Size count,
 }
 
 String::~String() {
-    m_allocator->deallocate(m_begin, size() + 1);
+    m_allocator->deallocate(m_begin);
+    m_end = m_begin = nullptr;
 }
 
 String& String::operator=(String&& other) {
@@ -117,8 +127,20 @@ void String::swap(String& other) {
 void String::clear() {
     if (m_end != m_begin) {
         this->~String();
-        m_end = m_begin = nullptr;
-        m_end = m_begin = static_cast<Char*>(m_allocator->allocate(1));
-        *m_begin = '\0';
+        Char* str = static_cast<Char*>(m_allocator->allocate(1));
+        if (str) {
+            m_end = m_begin = str;
+            *str = '\0';
+        }
     }
+}
+
+#include <iostream>
+
+const json::Char* String::c_str() const {
+    std::cout << "???"
+        << " begin: " << static_cast<void*>(m_begin)
+        << " end: " << static_cast<void*>(m_end)
+    << std::endl;
+    return empty() ? STRING_EMPTY : m_begin;
 }

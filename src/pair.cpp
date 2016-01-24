@@ -44,15 +44,3 @@
 #include <json/pair.hpp>
 
 using json::Pair;
-
-Pair::Pair(Allocator* allocator) :
-    key(allocator), value(allocator)
-{ }
-
-Pair::Pair(const Pair& other, Allocator* allocator) :
-    key(other.key, allocator), value(other.value, allocator)
-{ }
-
-Pair::Pair(Pair&& other, Allocator* allocator) :
-    key(std::move(other.key), allocator), value(std::move(other.value), allocator)
-{ }

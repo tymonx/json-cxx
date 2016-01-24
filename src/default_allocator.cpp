@@ -56,7 +56,7 @@ void* DefaultAllocator::allocate(Size n) {
     return (0 != n) ? std::malloc(n) : nullptr;
 }
 
-void DefaultAllocator::deallocate(void* ptr, Size) noexcept {
+void DefaultAllocator::deallocate(void* ptr) noexcept {
     std::free(ptr);
 }
 

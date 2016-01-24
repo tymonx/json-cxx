@@ -57,38 +57,47 @@ struct Header {
     Header* end;
 };
 
-static constexpr std::size_t MAX_ALIGN_SIZE = alignof(json::Value);
-static constexpr std::size_t MAX_ALIGN_OFFSET = MAX_ALIGN_SIZE - 1;
-static constexpr std::uintptr_t MAX_ALIGN_MASK = ~MAX_ALIGN_SIZE;
-
-static inline
-std::uintptr_t max_align(std::uintptr_t p) noexcept {
-    return (p + MAX_ALIGN_OFFSET) & MAX_ALIGN_MASK;
-}
-
-template<typename T, typename K>
-static inline T* header_ptr(K* p) noexcept {
-    return reinterpret_cast<T*>(max_align(
-        std::uintptr_t(p) + sizeof(Header)) - sizeof(Header));
-}
+static constexpr std::uintptr_t MAX_ALIGN_SIZE = alignof(json::Value);
+static constexpr std::uintptr_t MAX_ALIGN_OFFSET = MAX_ALIGN_SIZE - 1;
+static constexpr std::uintptr_t MAX_ALIGN_MASK = ~MAX_ALIGN_OFFSET;
 
 template <typename T>
 static inline Header* header_cast(T* p) noexcept {
     return static_cast<Header*>(p);
 }
 
+static inline std::uintptr_t max_align(std::uintptr_t ptr) noexcept {
+    return (ptr + MAX_ALIGN_OFFSET) & MAX_ALIGN_MASK;
+}
+
+static inline std::uintptr_t align(std::uintptr_t ptr) noexcept {
+    return max_align(ptr + sizeof(Header)) - sizeof(Header);
+}
+
+template<typename T, typename K>
+static inline T* align(K* ptr) noexcept {
+    return reinterpret_cast<T*>(align(std::uintptr_t(ptr)));
+}
+
+template<typename T>
+static inline T* align(std::uintptr_t ptr) noexcept {
+    return reinterpret_cast<T*>(align(ptr));
+}
+
+#include <iostream>
+
 Pool::Pool(void* memory, Size max_size) :
     m_memory{memory}
 {
     if (m_memory) {
-        m_begin = header_ptr<void>(m_memory);
-        m_end = reinterpret_cast<void*>(std::uintptr_t(m_memory) + max_size);
-        if (m_begin != m_end) {
-            header_cast(m_begin)->prev = nullptr;
-            header_cast(m_begin)->next = header_cast(m_end);
-            header_cast(m_begin)->end = header_cast(m_begin) + 1;
-            m_last = m_begin;
-        }
+        m_begin = align<void>(m_memory);
+        m_end = reinterpret_cast<void*>(
+            (std::uintptr_t(m_memory) + max_size) & MAX_ALIGN_MASK
+        );
+        header_cast(m_begin)->prev = nullptr;
+        header_cast(m_begin)->next = header_cast(m_end);
+        header_cast(m_begin)->end = header_cast(m_begin) + 1;
+        m_last = m_begin;
     }
 }
 
@@ -96,23 +105,23 @@ void* Pool::allocate(Size size) {
     if ((0 == size) || !m_begin) { return nullptr; }
 
     void* ptr = nullptr;
-    auto pos = header_cast(m_last);
 
+    lock();
+    auto pos = header_cast(m_last);
     while (pos >= header_cast(m_begin)) {
         ptr = pos->end + 1;
-        auto end = header_ptr<Header>(
-            reinterpret_cast<Header*>(std::uintptr_t(ptr) + size));
+        auto end = align<Header>(std::uintptr_t(ptr) + size);
         if (end <= pos->next) {
             auto tmp = pos->next;
             pos->next = pos->end;
             pos->next->prev = pos;
             pos->next->next = tmp;
             pos->next->end = end;
-            if (tmp < header_cast(m_end)) {
-                tmp->prev = pos->next;
-            }
             if (pos->next > header_cast(m_last)) {
                 m_last = pos->next;
+            }
+            if (tmp < header_cast(m_end)) {
+                tmp->prev = pos->next;
             }
             break;
         }
@@ -121,23 +130,26 @@ void* Pool::allocate(Size size) {
             pos = pos->prev;
         }
     }
+    unlock();
+
+    std::cout << "Allocate pos: " << ptr << std::endl;
 
     return ptr;
 }
 
-void Pool::deallocate(void* ptr, Size) noexcept {
+void Pool::deallocate(void* ptr) noexcept {
     auto pos = header_cast(ptr) - 1;
 
+    std::cout << "Deallocate pos: " << ptr << std::endl;
     if ((pos > header_cast(m_begin)) && (pos < header_cast(m_end))) {
+        std::cout << "Deallocate pos2: " << ptr << std::endl;
         lock();
+        pos->prev->next = pos->next;
+        if (pos->next < header_cast(m_end)) {
+            pos->next->prev = pos->prev;
+        }
         if (pos == header_cast(m_last)) {
             m_last = pos->prev;
-        }
-        if (pos->prev) {
-            pos->prev->next = pos->next;
-        }
-        if (pos->next) {
-            pos->next->prev = pos->prev;
         }
         unlock();
     }

@@ -52,11 +52,46 @@ namespace json {
 
 class Pair {
 public:
-    Pair(Allocator* allocator = get_default_allocator());
-    Pair(const Pair&, Allocator* allocator = get_default_allocator());
-    Pair(Pair&&, Allocator* allocator = get_default_allocator());
-    //Pair& operator=(const Pair&);
-    //Pair& operator=(Pair&&);
+    Pair(Allocator* allocator = get_default_allocator()) :
+        key{allocator},
+        value(allocator)
+    { }
+
+    Pair(const Pair& other) :
+        Pair(other, other.value.get_allocator())
+    { }
+
+    Pair(const Pair& other, Allocator* allocator) :
+        key{other.key, allocator},
+        value(other.value, allocator)
+    { }
+
+    Pair(Pair&& other) :
+        Pair(std::move(other), other.value.get_allocator())
+    { }
+
+    Pair(Pair&& other, Allocator* allocator) :
+        key{std::move(other.key), allocator},
+        value(std::move(other.value), allocator)
+    { }
+
+    Pair& operator=(const Pair& other) {
+        key = other.key;
+        value = other.value;
+        return *this;
+    }
+
+    Pair& operator=(Pair&& other) {
+        key = std::move(other.key);
+        value = std::move(other.value);
+        return *this;
+    }
+
+    Pair(const String& str, const Value& other,
+            Allocator* allocator = get_default_allocator()) :
+        key{str, allocator},
+        value(other, allocator)
+    { }
 
     String key;
     Value value;

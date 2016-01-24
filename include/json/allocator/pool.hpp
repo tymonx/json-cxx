@@ -65,7 +65,7 @@ public:
 
     virtual void* allocate(Size n) override final;
 
-    virtual void deallocate(void* ptr, Size n) noexcept override final;
+    virtual void deallocate(void* ptr) noexcept override final;
 
     virtual ~Pool();
 private:

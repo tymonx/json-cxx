@@ -54,7 +54,7 @@ Value::Value(Type type, Size count, Allocator* allocator) :
 {
     switch (m_type) {
     case Type::OBJECT:
-        new (&m_object) Object(count, m_allocator);
+        new (&m_object) Object(m_allocator);
         break;
     case Type::ARRAY:
         new (&m_array) Array(count, m_allocator);
